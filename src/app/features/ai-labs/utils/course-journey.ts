@@ -4,7 +4,8 @@
  * Pure so the template only reads it: the step shell colours its node and chip off `state`, and
  * nothing about the gates leaks into the HTML. Ported from miles-masterclass-v3, with one rule of
  * ours: the lab opens on a passed final assessment (`labOpen`), because our backend refuses
- * `assignment-submit/` before it — upstream opens it on an active plan instead.
+ * `assignment-submit/` before it — upstream opens it on an active plan instead. As upstream, the lab
+ * gates nothing: feedback and the certificate follow the final assessment.
  */
 export type StepState = 'done' | 'current' | 'attention' | 'locked' | 'open';
 
@@ -158,7 +159,7 @@ const STAGE_COPY: Record<ProgressStage, (g: ProgressGates) => StageCopy> = {
   }),
   halfway: (g) => ({
     title: 'Halfway there',
-    detail: 'Video done. Pass the final assessment to open the AI Lab.',
+    detail: 'Video done. Take the final assessment — the AI Lab opens once you pass.',
     next: {
       label: g.quizDone ? 'Take the final assessment' : 'Take the quiz',
       target: 'final',
@@ -166,7 +167,8 @@ const STAGE_COPY: Record<ProgressStage, (g: ProgressGates) => StageCopy> = {
   }),
   retake: () => ({
     title: 'One more try',
-    detail: "The final assessment didn't go your way this time — retake it to open the AI Lab.",
+    detail:
+      "The final assessment didn't go your way this time — retake it to earn your certificate.",
     next: { label: 'Retake the assessment', target: 'final' },
   }),
   lab: () => ({
@@ -183,7 +185,7 @@ const STAGE_COPY: Record<ProgressStage, (g: ProgressGates) => StageCopy> = {
     g.labMapped
       ? {
           title: 'Course complete',
-          detail: 'Every step done — leave your feedback and download your certificate.',
+          detail: 'Every step done. Submit again any time to push your score higher.',
           next: { label: 'View your scores', target: 'grade' },
         }
       : {

@@ -49,7 +49,7 @@ export const PassedReview = withState({
     ...MOCK_AI_LAB_EXAM_RESULT,
     passed: true,
     score_percent: 100,
-    next_step: 'ai_assessment',
+    next_step: 'feedback',
     answers: MOCK_AI_LAB_EXAM_RESULT.answers.map((a) => ({ ...a, is_correct: true })),
   },
   sent: { b4fcae42: ['756fcf51'], c0f57881: ['82b00e71', '584d6a2c'] },

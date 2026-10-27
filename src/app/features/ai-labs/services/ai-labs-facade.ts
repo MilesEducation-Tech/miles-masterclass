@@ -2,7 +2,6 @@ import { HttpContext, HttpErrorResponse, httpResource } from '@angular/common/ht
 import { isPlatformBrowser } from '@angular/common';
 import { computed, DestroyRef, effect, inject, PLATFORM_ID, Service, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Router } from '@angular/router';
 import { catchError, map, Observable, of, Subscription, takeWhile, tap, timer } from 'rxjs';
 import { MASTERCLASS_COURSE_TYPE } from '@core/constants/masterclass';
 import { CommonResponse, SKIP_ERROR_NOTIFICATION, SKIP_LOADING } from '@core/models/http.model';
@@ -12,6 +11,8 @@ import { AuthSession } from '@core/services/auth-session/auth-session';
 import { Logger } from '@core/services/logger/logger';
 import { Storage } from '@core/services/storage/storage';
 import { AI_LABS_API } from '@features/ai-labs/constants/ai-labs-api';
+import { AiLabAccount } from '@features/ai-labs/services/ai-lab-account';
+import { AiLabCredits } from '@features/ai-labs/services/ai-lab-credits';
 import {
   AiLabAccountState,
   AiLabAgentCard,
@@ -34,8 +35,8 @@ const POLL_TIMEOUT_MS = 5 * 60_000;
 /**
  * Remembers that a provisioning request already went out, so a reload during the wait resumes the
  * poll instead of inviting a second create. Session-scoped on purpose: `account-ensure/` has no
- * "pending" state to read back, so this is the only thing that bridges a reload until
- * `account_created` flips.
+ * "pending" state to read back before `account_created` flips, so this bridges a reload until then;
+ * after it, `labs_account.provisioned: false` says the build is still running.
  */
 const ACCOUNT_REQUESTED_KEY = 'ai_lab.account_requested';
 
@@ -58,7 +59,9 @@ const UNGROUPED_HEADING = 'More AI Labs';
  * rail supplies. If the lab list is empty or fails, the learner sees the rail instead of nothing.
  *
  * **Account.** `account-ensure/` is read once per sign-in, browser only, and re-read every 12 s
- * after a create until `account_created` flips or five minutes pass.
+ * after a create until the lab is built or five minutes pass. Built means `account_created` AND
+ * the Microsoft side provisioned: `account_created` turns true while the lab is still being built,
+ * and a Microsoft sign-in before then has no account to sign in to.
  */
 @Service({ autoProvided: false })
 export class AiLabsFacade {
@@ -67,7 +70,8 @@ export class AiLabsFacade {
   private readonly logger = inject(Logger);
   private readonly storage = inject(Storage);
   private readonly utils = inject(Utils);
-  private readonly router = inject(Router);
+  private readonly labAccount = inject(AiLabAccount);
+  private readonly credits = inject(AiLabCredits);
   private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -139,7 +143,20 @@ export class AiLabsFacade {
 
   readonly accountState = computed(() => (this.account.hasValue() ? this.account.value() : null));
   readonly accountLoading = computed(() => this.account.isLoading());
-  readonly hasLabAccount = computed(() => !!this.accountState()?.account_created);
+  private readonly accountCreated = computed(() => !!this.accountState()?.account_created);
+
+  /**
+   * The lab is built: created, and provisioned on the Microsoft side. When AI Labs couldn't be asked
+   * (`provisioned` unknown) `account_created` decides, as the guide's page-load read does.
+   */
+  readonly hasLabAccount = computed(
+    () => this.accountCreated() && this.labAccount.provisioned() !== false,
+  );
+
+  /** Created but still being built — "Setting up" even after the session flag is gone. */
+  private readonly building = computed(
+    () => this.accountCreated() && this.labAccount.provisioned() === false,
+  );
 
   /**
    * The learner's practical record across every lab, for the progress panel. Calls AI Labs, so it
@@ -199,7 +216,7 @@ export class AiLabsFacade {
 
   /** A provisioning request went out and the account hasn't appeared yet. */
   private readonly requested = signal(
-    this.storage.getSession<string>(ACCOUNT_REQUESTED_KEY) === 'true',
+    this.storage.getSession<boolean>(ACCOUNT_REQUESTED_KEY) === true,
   );
   readonly polling = signal(false);
   readonly pollTimedOut = signal(false);
@@ -207,17 +224,20 @@ export class AiLabsFacade {
 
   /** The account is on its way — the hero swaps its secondary slot and copy for the wait. */
   readonly accountRequested = computed(
-    () => !this.hasLabAccount() && (this.polling() || this.requested()),
+    () => !this.hasLabAccount() && (this.polling() || this.requested() || this.building()),
   );
 
   constructor() {
-    // Resume a wait a reload interrupted, and drop the flag once the account exists.
+    // Resume a wait a reload interrupted, and drop the flag once the lab is built. The credits
+    // read keyed on the login alone, so a wait that ends re-reads it: the meter appears with it.
     effect(() => {
       if (this.hasLabAccount()) {
+        const waited = this.requested() || !!this.pollSub;
         this.setRequested(false);
         this.stopPolling();
+        if (waited) this.credits.reload();
       } else if (
-        this.requested() &&
+        (this.requested() || this.building()) &&
         this.account.hasValue() &&
         this.accountState() &&
         !this.pollSub
@@ -267,17 +287,6 @@ export class AiLabsFacade {
     return this.accountCall(AI_LABS_API.accountResetPassword);
   }
 
-  /**
-   * Sign out, then sign in and come back here. For `ACCOUNT_EXISTS` with
-   * `entitlement_refresh_required`: AI Labs reads the entitlement off the login token, and only a
-   * freshly issued one carries it — a refresh is not documented to, so this is the guide's re-login.
-   */
-  async signInAgain(): Promise<void> {
-    const redirect = this.router.url;
-    await this.auth.logout();
-    await this.router.navigate(['/auth/login'], { queryParams: { redirect } });
-  }
-
   // ---- Internals -------------------------------------------------------------
 
   private accountCall(
@@ -294,7 +303,7 @@ export class AiLabsFacade {
       );
   }
 
-  /** Re-read `account-ensure/` every 12 s until the account exists or five minutes pass. */
+  /** Re-read the account every 12 s until the lab is built or five minutes pass. */
   private poll(): void {
     this.stopPolling();
     this.polling.set(true);
@@ -307,7 +316,11 @@ export class AiLabsFacade {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: () => this.account.reload(),
+        // Both reads: `account_created` flips first, `provisioned` after it.
+        next: () => {
+          this.account.reload();
+          this.labAccount.reload();
+        },
         complete: () => {
           this.polling.set(false);
           this.pollSub = null;
@@ -324,7 +337,7 @@ export class AiLabsFacade {
 
   private setRequested(on: boolean): void {
     this.requested.set(on);
-    if (on) this.storage.setSession(ACCOUNT_REQUESTED_KEY, 'true');
+    if (on) this.storage.setSession(ACCOUNT_REQUESTED_KEY, true);
     else this.storage.removeSession(ACCOUNT_REQUESTED_KEY);
   }
 

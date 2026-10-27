@@ -511,8 +511,6 @@ export class AiLabCourse {
         return 'Retake Final Assessment';
       case 'COOL_OFF':
         return `Retake after ${this.coolOffTime()}`;
-      case 'AI_LAB':
-        return 'Continue to AI Lab';
       case 'FEEDBACK':
         return 'Submit Feedback';
       case 'DOWNLOAD':
@@ -556,9 +554,6 @@ export class AiLabCourse {
         return;
       case 'FEEDBACK':
         void this.router.navigate(['feedback'], { relativeTo: this.route });
-        return;
-      case 'AI_LAB':
-        this.scrollToLab();
         return;
       case 'REWATCH':
         this.togglePlayback();
@@ -957,7 +952,13 @@ export class AiLabCourse {
   /** Exactly what the submit POST carries: the picked row's `id` as `agent_ref`, and its list. */
   protected submit(): void {
     const picked = this.pick();
-    if (picked) this.facade.submitPractical({ artefact_kind: picked.kind, agent_ref: picked.id });
+    if (!picked) return;
+    this.retrying.set(false);
+    void this.facade
+      .submitPractical({ artefact_kind: picked.kind, agent_ref: picked.id })
+      .then((outcome) => {
+        if (outcome === 'pick-again') this.pick.set(null);
+      });
   }
 
   // ---- Submission + evaluation -------------------------------------------
@@ -992,77 +993,80 @@ export class AiLabCourse {
   );
 
   /**
-   * ponytail: `completed` alone counts — no pass mark was specified for the lab. Gate on
+   * Graded attempts on record. The status carries the count; the attempts list, once read, agrees.
+   * This — not `completed`, nor `ai_assessment_completed` — is what proves a grade: learners
+   * latched before the practical left the CPE flow read `completed` with no attempt behind it.
+   */
+  protected readonly attemptsUsed = computed(
+    () => this.attemptsData()?.attempts_used ?? this.assignment()?.attempts_used ?? 0,
+  );
+
+  /**
+   * The latest submission is graded. ponytail: no pass mark was specified for the lab — gate on
    * `percentage >= 70` here if one is.
    */
-  protected readonly labDone = computed(() => this.phase() === 'completed');
+  protected readonly labDone = computed(
+    () => this.phase() === 'completed' && this.attemptsUsed() > 0,
+  );
+
+  /** Graded at least once — keeps the step ticked while a resubmission is with the evaluator. */
+  private readonly labEverGraded = computed(() => this.attemptsUsed() > 0);
+
+  /** The allowance is used: the submit would answer 409 `practical_attempts_exhausted`. */
+  protected readonly attemptsExhausted = computed(() => this.assignment()?.attempts_left === 0);
 
   /**
-   * The lab has been graded at least once. Keeps its step ticked while a resubmission is with the
-   * evaluator, when `labDone()` reads false again. `ai_assessment_completed` is the server's latch.
+   * Submit is closed: an attempt is with the evaluator, or the server takes no more
+   * (`can_resubmit` is false once the allowance is used). The picker stays on screen either way,
+   * showing what was sent.
    */
-  private readonly labEverGraded = computed(
-    () =>
-      this.labDone() ||
-      !!this.assignment()?.ai_assessment_completed ||
-      !!this.facade.progress()?.ai_assessment_completed,
+  protected readonly submitClosed = computed(
+    () => this.evaluating() || this.assignment()?.can_resubmit === false,
   );
 
   /**
-   * Nothing about the pick can be changed: an attempt is with the evaluator, or a graded one the
-   * backend won't take again. Upstream reopens the picker on every graded lab; ours answers 409
-   * `practical_already_completed` unless `can_resubmit`, so the picker follows that flag. Either
-   * way it stays on screen, showing what was sent.
+   * Everything the picker can't do right now. Not a status re-read: the grading poll would grey
+   * the select every 12 s, and a submit that lands mid-grading gets a 409 the facade explains.
    */
-  protected readonly alreadySubmitted = computed(
-    () => this.evaluating() || (this.labDone() && !this.assignment()?.can_resubmit),
-  );
-
-  /** Everything the picker can't do right now. */
-  protected readonly pickerLocked = computed(
-    () => this.submitting() || this.statusLoading() || this.alreadySubmitted(),
-  );
+  protected readonly pickerLocked = computed(() => this.submitting() || this.submitClosed());
 
   protected readonly submitDisabled = computed(() => !this.pick() || this.pickerLocked());
+
+  /** "Submit again" on a failed evaluation: the error card steps aside for the picker. */
+  private readonly retrying = signal(false);
 
   /** Which panel the evaluation section shows — `in_progress` only counts once something was sent. */
   protected readonly evaluationView = computed<AiLabLabStatus>(() => {
     if (this.labDone()) return 'completed';
     if (this.evaluating()) return 'in_progress';
-    return this.phase() === 'error' ? 'error' : 'not_started';
+    return this.phase() === 'error' && !this.retrying() ? 'error' : 'not_started';
   });
 
   /** The picker block shows once the lab is open. */
   protected readonly pickerOpen = computed(() => this.labUnlocked());
 
   // ---- 05 Scores -----------------------------------------------------------
-  // Upstream's grade card reads an attempts list (best first, with an allowance); no route of ours
-  // serves one yet (`facade.attempts`, empty). Until then the card shows the latest grade off
-  // `assignment-status/`, and before a first grade a sample card, tagged and watermarked as such.
+  // The grade card reads the attempts list: every graded attempt, oldest first, with the allowance.
+  // Without the list it shows the best grade off `assignment-status/`, and before a first grade a
+  // sample card, tagged and watermarked as such.
 
   private readonly attemptsData = this.facade.attempts;
 
   protected readonly attempts = computed(() => this.attemptsData()?.attempts ?? []);
 
-  /** The best attempt is the grade card — the list arrives best first. */
-  protected readonly bestAttempt = computed<AiLabAttempt | null>(() => this.attempts()[0] ?? null);
-
-  /** All attempts on record — the list carries at most three, but counts them all. */
-  protected readonly totalAttempts = computed(
-    () => this.attemptsData()?.total_attempts ?? this.attempts().length,
-  );
-
-  protected readonly allowedAttempts = computed(() => this.attemptsData()?.allowed_attempt ?? null);
-
-  /** What's left of the allowance — never below zero, `null` with no allowance. */
-  protected readonly attemptsLeft = computed(() => {
-    const allowed = this.allowedAttempts();
-    return allowed === null ? null : Math.max(0, allowed - this.totalAttempts());
+  /** The grade card: the attempt the server names best — a worse retry never lowers it. */
+  protected readonly bestAttempt = computed<AiLabAttempt | null>(() => {
+    const best = this.attemptsData()?.best_attempt_number;
+    return this.attempts().find((attempt) => attempt.attempt_number === best) ?? null;
   });
 
-  /** More attempts exist than the ones listed. */
-  protected readonly attemptsHidden = computed(() =>
-    this.totalAttempts() > this.attempts().length ? this.totalAttempts() : 0,
+  /** The lab's allowance of graded attempts; `null` until the list is read. */
+  protected readonly maxAttempts = computed(
+    () => this.attemptsData()?.max_attempts ?? this.assignment()?.max_attempts ?? null,
+  );
+
+  protected readonly attemptsLeft = computed(
+    () => this.attemptsData()?.attempts_left ?? this.assignment()?.attempts_left ?? null,
   );
 
   protected readonly passMark = LAB_PASS_PERCENT;
@@ -1133,7 +1137,7 @@ export class AiLabCourse {
     if (next) this.selectHistory(String(next.attempt.attempt_number));
   }
 
-  /** The latest grade off `assignment-status/` — the card while there's no attempts list. */
+  /** The best grade off `assignment-status/` — the card while there's no attempts list. */
   protected readonly latestGrade = computed(() => {
     if (this.attempts().length) return null;
     const result = this.assignment();
@@ -1252,10 +1256,12 @@ export class AiLabCourse {
   protected readonly rulesOpen = signal(false);
 
   /**
-   * What a pass opens, shown on step 01. On our backend that's the lab; feedback and the
-   * certificate follow the lab's grade, so they aren't listed as the pass's.
+   * What a pass opens, shown on step 01: feedback and the certificate, as upstream — and, on our
+   * backend, the lab too. The lab gates nothing in return.
    */
   protected readonly examUnlocks = computed(() => [
+    { label: 'Feedback', icon: 'lucideClipboardList', open: this.examPassed() },
+    { label: 'Certificate', icon: 'lucideAward', open: this.examPassed() },
     { label: 'AI Lab', icon: 'lucideFlaskConical', open: this.examPassed() },
   ]);
 
@@ -1294,19 +1300,19 @@ export class AiLabCourse {
     if (this.ctaStage() === 'COOL_OFF') {
       return `Not passed this time — you can retake it after ${this.coolOffTime()}.`;
     }
-    if (!this.examPassed()) return 'Pass the assessment to unlock the AI Lab.';
-    // Our backend opens feedback only once the lab is graded — upstream opens it on the pass.
-    if (!this.labEverGraded())
-      return 'Passed — the AI Lab is open below. Feedback opens once it is graded.';
-    return 'Passed and graded — leave feedback and download your certificate.';
+    if (!this.examPassed())
+      return 'Pass the assessment to unlock feedback, your certificate and the AI Lab.';
+    return this.feedbackDone()
+      ? 'Passed, feedback in. The AI Lab is open below.'
+      : 'Passed — leave feedback for your certificate. The AI Lab is open below.';
   });
 
   /** Status line under the picker. */
   protected readonly labHint = computed(() => {
     if (this.labDone()) {
-      return this.assignment()?.can_resubmit
-        ? 'Evaluated — your scores are above. Submit again to improve them.'
-        : 'Evaluated — your scores are above.';
+      return this.attemptsExhausted()
+        ? `Evaluated — your best score is above. You've used all ${this.maxAttempts()} attempts.`
+        : 'Evaluated — your best score is above. Submit again to improve it.';
     }
     if (this.evaluating()) return 'Submitted — the evaluation is running.';
     const name = this.pickedName();
@@ -1333,13 +1339,18 @@ export class AiLabCourse {
       return `Not passed this time — the retake opens at ${this.coolOffTime()}.`;
     }
     if (!this.examPassed()) {
-      return 'Video complete — pass the final assessment to unlock the AI Lab.';
+      return 'Video complete — pass the final assessment to unlock feedback, your certificate and the AI Lab.';
     }
-    if (!this.labEverGraded()) {
-      return 'Assessment passed — submit your AI Lab build; feedback and the certificate follow its grade.';
+    if (!this.feedbackDone()) {
+      return "Assessment passed — leave feedback to get your certificate. The AI Lab is open below whenever you're ready.";
     }
-    return 'Lab graded — leave feedback and download your certificate.';
+    return this.ctaStage() === 'DOWNLOAD'
+      ? 'Course complete — download your certificate. The AI Lab stays open below.'
+      : 'Course complete — your certificate appears here once it is issued.';
   });
+
+  /** Feedback is in: the lab is closed for CPE, and only the certificate is left. */
+  private readonly feedbackDone = computed(() => !!this.facade.progress()?.feedback_submitted);
 
   // ---- The practical's actions -------------------------------------------
 
@@ -1361,9 +1372,15 @@ export class AiLabCourse {
     this.facade.refreshStatus();
   }
 
-  /** "Submit again" after a failed evaluation: the picker is open again, so take the learner to it. */
+  /**
+   * "Submit again" after a failed evaluation, as upstream: the error card makes way, the lists are
+   * re-read (a fix in Copilot Studio may have renamed or republished the agent), and the learner is
+   * taken to the picker in this step.
+   */
   protected resubmit(): void {
-    this.scrollToLab();
+    this.retrying.set(true);
+    this.facade.refreshArtefacts();
+    this.scrollToSection('grade');
   }
 
   protected downloadGradeCard(): void {

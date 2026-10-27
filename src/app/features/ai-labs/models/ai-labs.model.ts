@@ -542,9 +542,12 @@ export interface AiLabCourseStarted {
   lock_state: AiLabLockState;
 }
 
-/** Which step the backend says comes next. An open string beyond the evidenced ones. */
+/**
+ * Which step the backend says comes next. An open string beyond the evidenced ones. The practical
+ * left this flow on 2026-10-27: a passed final assessment answers `feedback`, never `ai_assessment`.
+ */
 export type AiLabNextStep =
-  'video' | 'quiz' | 'final_assessment' | 'ai_assessment' | 'feedback' | 'done' | (string & {});
+  'video' | 'quiz' | 'final_assessment' | 'feedback' | 'done' | (string & {});
 
 /** One NASBA condition still outstanding before credit can be awarded. */
 export interface AiLabNasbaOutstanding {
@@ -580,6 +583,7 @@ export interface AiLabCourseProgress {
   quiz_questions_to_show: number;
   assessment_required?: boolean;
   final_assessment_passed: boolean;
+  /** A latch from before the practical left the flow — set with no graded attempt behind it. Unread. */
   ai_assessment_completed: boolean;
   feedback_submitted: boolean;
   cpe_awarded: boolean;
@@ -614,10 +618,8 @@ export interface AiLabVideoProgressBody {
  * Where the learner is in the lab, which is what the primary CTA reads from. Derived from
  * `course-progress/`'s `next_step` by `AiLabCourseFacade`.
  *
- * The first six are upstream's, from the micro-learning `action_status`. Two are ours:
+ * The first six are upstream's, from the micro-learning `action_status`. The rest are ours:
  *  - `START` — no enrolment yet; `course-start/` creates it.
- *  - `AI_LAB` — exam passed, practical not graded (`next_step: ai_assessment`). Upstream opens
- *    feedback here; our backend refuses it until the lab is graded, so the CTA points at the lab.
  *  - `COOL_OFF` — the last exam attempt failed and the wait is still running
  *    (`final_assessment_status: cool_off`): the button is disabled and says until when.
  *  - `DOWNLOAD` / `CERTIFICATE_PENDING` — the lab is closed (`next_step: done`) and
@@ -630,7 +632,6 @@ export type AiLabCtaStage =
   | 'REWATCH'
   | 'RETAKE_EXAM'
   | 'COOL_OFF'
-  | 'AI_LAB'
   | 'FEEDBACK'
   | 'DOWNLOAD'
   | 'CERTIFICATE_PENDING';
@@ -640,7 +641,6 @@ export const AI_LAB_QUIZ_BEHIND: readonly AiLabCtaStage[] = [
   'TAKE_EXAM',
   'RETAKE_EXAM',
   'COOL_OFF',
-  'AI_LAB',
   'FEEDBACK',
   'DOWNLOAD',
   'CERTIFICATE_PENDING',
@@ -685,12 +685,15 @@ export type AiLabLabStatus = 'not_started' | 'in_progress' | 'completed' | 'erro
  * `data` of `GET web-api/v1/ai-labs/assignment-status/<uuid>/` (`docs/AI_LABS_API.md` §8).
  *
  * `assessment_status` is an open string: the guide evidences `in_progress` and `completed`.
- * Everything past it is null until the evaluation completes. A learner who hasn't started the lab
- * gets a 404 `no_ai_lab_enrollment` instead of this body.
+ * Since 2026-10-27 the score, comments and grade card are the BEST graded attempt's. A learner who
+ * hasn't started the lab gets a 404 `no_ai_lab_enrollment` instead of this body.
+ *
+ * `completed` alone doesn't mean graded: learners latched before the practical left the CPE flow
+ * read `completed` with no submission and `attempts_used: 0`. `attempts_used` is what counts.
  */
 export interface AiLabAssignmentStatus {
   assessment_status: string;
-  /** Latched once graded — stays true while a resubmission is being evaluated. */
+  /** The pre-split latch (see above) — unread. */
   ai_assessment_completed: boolean;
   submission_id: string | null;
   artefact_kind: 'agent' | 'flow' | null;
@@ -707,7 +710,13 @@ export interface AiLabAssignmentStatus {
   grade_card_pdf_url: string | null;
   grade_card_expires_at: string | null;
   grade_card_is_expired: boolean;
-  /** The backend refuses another submit (409 `practical_already_completed`) unless this is true. */
+  /** The lab's allowance of graded attempts (admin "Max practical attempts"). */
+  max_attempts: number;
+  /** Graded attempts so far — one still grading, or one AI Labs failed to grade, doesn't count. */
+  attempts_used: number;
+  /** At 0 the submit answers 409 `practical_attempts_exhausted`. */
+  attempts_left: number;
+  /** The final assessment is passed, nothing is grading, and attempts are left. */
   can_resubmit: boolean;
 }
 
@@ -793,17 +802,24 @@ export interface AiLabAttempt {
 }
 
 /**
- * `data` of `GET web-api/v1/ai-labs/assignment-attempts/<uuid>/`: the newest `allowed_attempt`
- * graded attempts, best score first. `is_provisioned: false` answers an empty list.
+ * `data` of `GET web-api/v1/ai-labs/assignment-attempts/<uuid>/`: EVERY graded attempt, oldest
+ * first (2026-10-27). The best one (`best_attempt_number`) is the learner's result.
+ * `is_provisioned: false` answers an empty list.
  */
 export interface AiLabAttempts {
   is_provisioned: boolean;
-  /** Every submission, still-grading ones included — can exceed the list and the allowance. */
+  /** AI Labs' own count, relayed — the allowance we show is `max_attempts`. */
   total_attempts: number;
-  /** The allowance and the list's cap. Not enforced at submit. `null` without a lab account. */
+  /** AI Labs' own number, relayed. `null` without a lab account. */
   allowed_attempt: number | null;
   /** When every `grade_card_url` in this response stops working. */
   grade_card_urls_expire_at: string | null;
+  /** The lab's allowance of graded attempts. */
+  max_attempts: number;
+  attempts_used: number;
+  attempts_left: number;
+  /** The attempt whose score is the result; `null` before any grade. */
+  best_attempt_number: number | null;
   attempts: AiLabAttempt[];
 }
 
@@ -1032,7 +1048,7 @@ export function labExamReview(
 
 /**
  * `data` of `GET web-api/v1/ai-labs/course-feedback-gate/<uuid>/`. A refusal is a 200 with
- * `allowed: false`: `reason` is `no_ai_lab_enrollment` or `ai_assessment_not_completed`, and
+ * `allowed: false`: `reason` is `no_ai_lab_enrollment` or `final_assessment_not_passed`, and
  * `remark` is the sentence to show.
  */
 export interface AiLabFeedbackGate {

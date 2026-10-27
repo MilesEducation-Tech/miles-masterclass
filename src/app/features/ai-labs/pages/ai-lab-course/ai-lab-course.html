@@ -142,18 +142,15 @@
                   <span>{{ ctaLabel() }}</span>
                 </button>
               }
-              <!-- At the lab stage the main button already goes there. -->
-              @if (ctaStage() !== 'AI_LAB') {
-                <button
-                  app-button
-                  type="button"
-                  variant="outline"
-                  class="h-12 px-5"
-                  (click)="scrollToLab()"
-                >
-                  Go to the AI Lab
-                </button>
-              }
+              <button
+                app-button
+                type="button"
+                variant="outline"
+                class="h-12 px-5"
+                (click)="scrollToLab()"
+              >
+                Go to the AI Lab
+              </button>
             }
           </div>
 
@@ -419,7 +416,7 @@
             <app-ai-lab-step
               [index]="stepIndex('final')"
               heading="Final MCQ assessment"
-              caption="Pass it to open the AI Lab."
+              caption="Pass it to unlock feedback, your certificate and the AI Lab."
               [step]="journey().final"
             >
               @let view = finalView();
@@ -851,6 +848,21 @@
                   <p class="mt-3 text-[12.5px] text-destructive" role="alert">{{ err }}</p>
                 } @else if (labAuth.hint(); as hint) {
                   <p class="mt-3 text-[12.5px] text-muted-foreground">{{ hint }}</p>
+                }
+
+                <!-- The lab is built but this Miles login predates it: AI Labs refuses the token
+                     (agents, flows, submit) until a fresh login. -->
+                @if (labUnlocked() && labAccount.needsRelogin()) {
+                  <p class="mt-3 text-[12.5px] leading-relaxed text-muted-foreground" role="status">
+                    Your AI Lab account is ready — sign in to Miles again to use it.
+                    <button
+                      type="button"
+                      class="font-medium text-foreground underline underline-offset-2 hover:text-accent focus-visible:outline-2 focus-visible:outline-ring"
+                      (click)="labAccount.relogin()"
+                    >
+                      Sign in again
+                    </button>
+                  </p>
                 }
 
                 <!-- Copilot Studio signs in by itself, as whichever Microsoft account last used it
@@ -1407,13 +1419,13 @@
               }
 
               @if (bestAttempt(); as best) {
-                <!-- The grade card: the best attempt (the list arrives best first),
-                     with the allowance when the lab sets one. -->
+                <!-- The grade card: the attempt the server names best, with the
+                     allowance. -->
                 <div class="overflow-hidden rounded-2xl border border-border bg-card">
                   <div
                     class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b-2 border-accent bg-card-hover px-6 py-3 lg:px-8"
                   >
-                    @if (allowedAttempts(); as allowed) {
+                    @if (maxAttempts(); as allowed) {
                       <p class="text-[13px] text-muted-foreground">
                         <span class="font-semibold text-foreground">Best score</span>
                         from attempt {{ best.attempt_number }}
@@ -1425,7 +1437,7 @@
                           Attempts
                         </span>
                         <span class="font-serif text-[22px] leading-none font-semibold">
-                          {{ totalAttempts() }}
+                          {{ attemptsUsed() }}
                         </span>
                         <span class="text-[13px] text-muted-foreground">of {{ allowed }}</span>
                         <span
@@ -1451,7 +1463,7 @@
                           {{ best.attempt_number }}
                         </span>
                         <span class="text-[13px] text-muted-foreground"
-                          >of {{ totalAttempts() }}</span
+                          >of {{ attemptsUsed() }}</span
                         >
                       </p>
                     }
@@ -1500,8 +1512,10 @@
                             'Attempt ' +
                               best.attempt_number +
                               ', your highest-scoring evaluation of ' +
-                              totalAttempts() +
-                              '. Submit again any time to try for a better score.'
+                              attemptsUsed() +
+                              (attemptsExhausted()
+                                ? '.'
+                                : '. Submit again any time to try for a better score.')
                         }}
                       </p>
                       <div class="mt-5 flex items-center gap-3">
@@ -1556,7 +1570,7 @@
                           <p class="text-[13px] font-semibold text-foreground" aria-live="polite">
                             Attempt {{ historyRows()[historyIndex()]?.attempt?.attempt_number }}
                             <span class="font-normal text-muted-foreground">
-                              of {{ attemptsHidden() || historyRows().length }}
+                              of {{ historyRows().length }}
                             </span>
                           </p>
                           <div
@@ -1750,12 +1764,6 @@
                           }
                         </div>
                       }
-
-                      @if (attemptsHidden(); as total) {
-                        <p class="mt-1 text-[11px] text-muted-foreground">
-                          Your best {{ historyRows().length }} of {{ total }} attempts
-                        </p>
-                      }
                     </div>
                   }
                 </div>
@@ -1766,7 +1774,7 @@
                   <div
                     class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b-2 border-accent bg-card-hover px-6 py-3 lg:px-8"
                   >
-                    <p class="text-[13px] font-semibold text-foreground">Latest evaluation</p>
+                    <p class="text-[13px] font-semibold text-foreground">Best evaluation</p>
                     @if (result.evaluated_at ?? result.submitted_at; as when) {
                       <p class="text-[12.5px] text-muted-foreground">
                         {{ when | date: 'd MMM y, HH:mm' }}
@@ -1959,14 +1967,21 @@
                     <div class="min-w-0">
                       <h3 class="text-[14px] font-semibold text-foreground">
                         @if (hasAttempts()) {
-                          Re-evaluate your {{ flows().length ? 'agent or workflow' : 'agent' }}
+                          Re-evaluate your
+                          {{ offerableFlows().length ? 'agent or workflow' : 'agent' }}
                         } @else {
-                          Submit your {{ flows().length ? 'agent or workflow' : 'agent' }}
+                          Submit your {{ offerableFlows().length ? 'agent or workflow' : 'agent' }}
                         }
                       </h3>
-                      @if (hasAttempts()) {
+                      @if (attemptsExhausted()) {
                         <p class="mt-0.5 max-w-[70ch] text-[12.5px] text-muted-foreground">
-                          Improved it in the AI Lab? Submit it again for a fresh evaluation.
+                          You've used all {{ maxAttempts() }} graded attempts — your best score
+                          stands.
+                        </p>
+                      } @else if (hasAttempts()) {
+                        <p class="mt-0.5 max-w-[70ch] text-[12.5px] text-muted-foreground">
+                          Improved it in the AI Lab? Submit it again for a fresh evaluation — your
+                          best score is kept.
                         </p>
                       }
                     </div>
@@ -1991,24 +2006,42 @@
                       <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
                         <div class="grid min-w-0 flex-1 gap-3">
                           @if (agents().length) {
-                            <app-select
-                              id="lab-agent"
-                              label="Select your agent"
-                              [options]="agentOptions()"
-                              [value]="agentId()"
-                              (valueChange)="choose('agent', $event)"
-                              [disabled]="pickerLocked()"
-                            />
+                            <div class="grid gap-1.5">
+                              <span
+                                class="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase"
+                                aria-hidden="true"
+                              >
+                                Agent
+                              </span>
+                              <app-select
+                                id="lab-agent"
+                                placeholder="Choose an agent"
+                                ariaLabel="Agent to submit"
+                                [options]="agentOptions()"
+                                [value]="agentId()"
+                                (valueChange)="choose('agent', $event)"
+                                [disabled]="pickerLocked()"
+                              />
+                            </div>
                           }
-                          @if (flows().length) {
-                            <app-select
-                              id="lab-flow"
-                              label="Select your workflow"
-                              [options]="flowOptions()"
-                              [value]="flowId()"
-                              (valueChange)="choose('flow', $event)"
-                              [disabled]="pickerLocked()"
-                            />
+                          @if (offerableFlows().length) {
+                            <div class="grid gap-1.5">
+                              <span
+                                class="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase"
+                                aria-hidden="true"
+                              >
+                                Workflow
+                              </span>
+                              <app-select
+                                id="lab-flow"
+                                placeholder="Choose a workflow"
+                                ariaLabel="Workflow to submit"
+                                [options]="flowOptions()"
+                                [value]="flowId()"
+                                (valueChange)="choose('flow', $event)"
+                                [disabled]="pickerLocked()"
+                              />
+                            </div>
                           }
                         </div>
                         <div class="flex items-center gap-2">
@@ -2040,9 +2073,11 @@
                           >
                             @if (submitting()) {
                               Submitting…
-                            } @else if (alreadySubmitted()) {
+                            } @else if (evaluating()) {
                               Submitted
-                            } @else if (labDone()) {
+                            } @else if (attemptsExhausted()) {
+                              No attempts left
+                            } @else if (hasAttempts()) {
                               Submit again
                             } @else {
                               Submit for evaluation

@@ -102,15 +102,15 @@ export const AI_LABS_API = {
   assignmentStatus: `${ROOT}web-api/v1/ai-labs/assignment-status/`,
 
   /**
-   * `IsAuthenticated`: the newest `allowed_attempt` graded attempts, best score first, each with a
-   * signed grade-card link. Append `<uuid>/`. `no-store`; 409 `ai_lab_assignment_not_configured`
+   * `IsAuthenticated`: every graded attempt, oldest first, with the allowance (`max_attempts`,
+   * `attempts_left`) and the best one's number; each has a signed grade-card link. Append `<uuid>/`. `no-store`; 409 `ai_lab_assignment_not_configured`
    * when the lab has no practical.
    */
   assignmentAttempts: `${ROOT}web-api/v1/ai-labs/assignment-attempts/`,
 
   /**
    * `IsAuthenticated`, strict body `{artefact_kind, agent_ref}`: 202 `in_progress`. Refusals carry
-   * a learner-facing message (`final_assessment_not_passed`, `practical_already_completed`,
+   * a learner-facing message (`final_assessment_not_passed`, `practical_attempts_exhausted`,
    * `AI_LABS_ALREADY_IN_PROGRESS`, …).
    */
   assignmentSubmit: {
@@ -171,7 +171,7 @@ export const AI_LABS_API = {
   /**
    * `IsAuthenticated`, strict body `{answers: [{question_id, selected_option_ids}]}` — every answer
    * with a selection. 200 carries the score and the per-answer review; a pass moves `next_step`
-   * on to `ai_assessment`.
+   * on to `feedback`.
    */
   assessmentSubmit: {
     path: `${ROOT}api/v1/ai-labs/course-assessment-submit/:id/`,

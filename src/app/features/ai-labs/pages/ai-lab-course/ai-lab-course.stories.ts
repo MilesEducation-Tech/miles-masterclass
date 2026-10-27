@@ -15,6 +15,7 @@ import {
   MOCK_AI_LAB_EMAIL,
   MOCK_AI_LAB_EVALUATED,
   MOCK_AI_LAB_EVALUATING,
+  MOCK_AI_LAB_EXHAUSTED,
   MOCK_AI_LAB_FLOWS,
   MOCK_AI_LAB_HINTS,
   MOCK_AI_LAB_NOT_STARTED,
@@ -27,8 +28,9 @@ import {
  * The AI Lab course page, on a stand-in `AiLabCourseFacade` (`provideStoryAiLabCourse`), so each
  * story is one state of the page without HTTP.
  *
- * The stories step through the gates — start → watch → quiz → exam → lab → feedback — because
- * every section below the hero is gated on one of them. Before the start the frame plays the
+ * The stories step through the gates — start → watch → quiz → exam → feedback → certificate —
+ * because every section below the hero is gated on one of them. The lab opens on the exam pass
+ * and gates nothing: it runs beside feedback and the certificate. Before the start the frame plays the
  * trailer; once started, the lab video. Stories without either show the lab's artwork.
  *
  * The page is the v3 redesign: a journey sidebar (progress overview + step navigator) beside five
@@ -133,22 +135,22 @@ export const ExamCoolOff = withState({
 export const BriefRetry = withState({
   lab,
   started: MOCK_AI_LAB_STARTED,
-  progress: mockAiLabProgress('ai_assessment'),
-  ctaStage: 'AI_LAB',
+  progress: mockAiLabProgress('feedback'),
+  ctaStage: 'FEEDBACK',
   ...practical,
   brief: null,
   briefProblem: "AI Labs couldn't prepare the file links. Try again in a moment.",
 });
 
 /**
- * Exam passed, lab open, artefacts listed (`next_step: ai_assessment`). Feedback isn't offered:
- * our backend opens it only once the lab is graded, so the CTA points at the lab instead.
+ * Exam passed (`next_step: feedback`): the CTA asks for feedback, and the lab is open beside it
+ * with the artefacts listed.
  */
 export const LabUnlocked = withState({
   lab,
   started: MOCK_AI_LAB_STARTED,
-  progress: mockAiLabProgress('ai_assessment'),
-  ctaStage: 'AI_LAB',
+  progress: mockAiLabProgress('feedback'),
+  ctaStage: 'FEEDBACK',
   ...practical,
 });
 
@@ -159,23 +161,33 @@ export const LabUnlocked = withState({
 export const LabSignedIn = withState({
   lab,
   started: MOCK_AI_LAB_STARTED,
-  progress: mockAiLabProgress('ai_assessment'),
-  ctaStage: 'AI_LAB',
+  progress: mockAiLabProgress('feedback'),
+  ctaStage: 'FEEDBACK',
   ...practical,
   labSignedInAs: MOCK_AI_LAB_EMAIL,
+});
+
+/** The lab is built but this Miles login predates it: Launch says to sign in to Miles again. */
+export const NeedsRelogin = withState({
+  lab,
+  started: MOCK_AI_LAB_STARTED,
+  progress: mockAiLabProgress('feedback'),
+  ctaStage: 'FEEDBACK',
+  ...practical,
+  labNeedsRelogin: true,
 });
 
 /** An attempt is with the evaluator: the picker stays visible but nothing can be changed. */
 export const Evaluating = withState({
   lab,
   started: MOCK_AI_LAB_STARTED,
-  progress: mockAiLabProgress('ai_assessment'),
-  ctaStage: 'AI_LAB',
+  progress: mockAiLabProgress('feedback'),
+  ctaStage: 'FEEDBACK',
   ...practical,
   assignment: MOCK_AI_LAB_EVALUATING,
 });
 
-/** Graded, and the backend won't take another submit: the picker stays locked. Feedback opens. */
+/** Graded once of three: the picker stays open to try for a better score. */
 export const Evaluated = withState({
   lab,
   started: MOCK_AI_LAB_STARTED,
@@ -185,14 +197,14 @@ export const Evaluated = withState({
   assignment: MOCK_AI_LAB_EVALUATED,
 });
 
-/** Graded with `can_resubmit`: the picker reopens so the learner can try for a better score. */
-export const EvaluatedResubmittable = withState({
+/** Every attempt of the allowance graded: "No attempts left", and the best score stands. */
+export const AttemptsExhausted = withState({
   lab,
   started: MOCK_AI_LAB_STARTED,
-  progress: mockAiLabProgress('feedback'),
-  ctaStage: 'FEEDBACK',
+  progress: mockAiLabProgress('done'),
+  ctaStage: 'DOWNLOAD',
   ...practical,
-  assignment: { ...MOCK_AI_LAB_EVALUATED, can_resubmit: true },
+  assignment: MOCK_AI_LAB_EXHAUSTED,
 });
 
 /** The grade card's link expired and the status is being re-read before it opens. */
@@ -210,8 +222,8 @@ export const GradeCardPreparing = withState({
 export const EvaluationFailed = withState({
   lab,
   started: MOCK_AI_LAB_STARTED,
-  progress: mockAiLabProgress('ai_assessment'),
-  ctaStage: 'AI_LAB',
+  progress: mockAiLabProgress('feedback'),
+  ctaStage: 'FEEDBACK',
   ...practical,
   assignment: { ...MOCK_AI_LAB_EVALUATING, assessment_status: 'failed' },
 });
@@ -220,8 +232,8 @@ export const EvaluationFailed = withState({
 export const BriefUnavailable = withState({
   lab,
   started: MOCK_AI_LAB_STARTED,
-  progress: mockAiLabProgress('ai_assessment'),
-  ctaStage: 'AI_LAB',
+  progress: mockAiLabProgress('feedback'),
+  ctaStage: 'FEEDBACK',
   ...practical,
   brief: null,
   briefUnavailable: "This AI Lab's practical is not set up yet. Our team has been notified.",
@@ -231,8 +243,8 @@ export const BriefUnavailable = withState({
 export const LabNotMapped = withState({
   lab,
   started: MOCK_AI_LAB_STARTED,
-  progress: mockAiLabProgress('ai_assessment'),
-  ctaStage: 'AI_LAB',
+  progress: mockAiLabProgress('feedback'),
+  ctaStage: 'FEEDBACK',
   labMapped: false,
 });
 
@@ -243,20 +255,23 @@ export const LabNotMapped = withState({
 export const RedesignLabOpen = withState({
   lab: withHints,
   started: MOCK_AI_LAB_STARTED,
-  progress: mockAiLabProgress('ai_assessment'),
-  ctaStage: 'AI_LAB',
+  progress: mockAiLabProgress('feedback'),
+  ctaStage: 'FEEDBACK',
   ...practical,
   brief: MOCK_AI_LAB_BRIEF_FULL,
 });
 
-/** Graded three times of five allowed: the best attempt's card and the history beneath it. */
+/**
+ * Graded three times of five allowed: the best attempt's card (#2, not the latest) and the
+ * history beneath it, oldest first.
+ */
 export const RedesignGradedWithHistory = withState({
   lab: withHints,
   started: MOCK_AI_LAB_STARTED,
   progress: mockAiLabProgress('feedback'),
   ctaStage: 'FEEDBACK',
   ...practical,
-  assignment: { ...MOCK_AI_LAB_EVALUATED, can_resubmit: true },
+  assignment: { ...MOCK_AI_LAB_EVALUATED, max_attempts: 5, attempts_used: 3, attempts_left: 2 },
   attempts: MOCK_AI_LAB_ATTEMPTS,
 });
 

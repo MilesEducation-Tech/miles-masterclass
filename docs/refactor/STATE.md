@@ -7,7 +7,24 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- 🔧 **2026-10-27, NON-REFACTOR, MIL-117: lab identity, UNCOMMITTED** (`prompts/ai-labs-lab-identity.md`).
+- 🔧 **2026-10-27, NON-REFACTOR, MIL-117: practical split + picker/set-up fixes, UNCOMMITTED**
+  (`prompts/ai-labs-practical-split.md`). Backend guide items 12–13 (live on UAT, checked with
+  usaid's token): feedback follows the MCQ, the `AI_LAB` stage is gone, and attempts read
+  `max_attempts` / `attempts_used` / `attempts_left` / `best_attempt_number`. Submit follows
+  `can_resubmit` and says "No attempts left".
+  - **"Graded" means `attempts_used > 0`.** usaid's status reads `completed` with no submission
+    (a pre-split latch), and `ai_assessment_completed` is no longer read.
+  - **Picker:** labelled selects, `labProvisioned` behind `hasValue()`, disabled flows don't count,
+    no lock during status reads, "Submit again" reopens the picker, submit errors per reason, and a
+    list error shown when one list fails with nothing else to pick.
+  - **Re-login:** `entitled: false` shows a "Sign in again" line.
+  - **Landing set-up wait:** ends on `labs_account.provisioned`, the session flag is a boolean,
+    "taking longer" can show, and credits are re-read when set-up ends.
+  - **Checks:** CDP-verified 14 scenarios on dev 4101. Gates green. Lab identity (below) was
+    committed as `50d2b31`.
+  - **Open with backend:** the list in chat 2026-10-27 (pre-split latch, null certificate on a
+    done lab, `labs_account` extra fields, report route…).
+- 🔧 **2026-10-27, NON-REFACTOR, MIL-117: lab identity, committed `50d2b31`** (`prompts/ai-labs-lab-identity.md`).
   Launch opened Copilot Studio as another Microsoft account (charitha) while the lab sign-in was
   usaid's. **Copilot Studio picks its own account** — its shell reads no `login_hint`/tenant from
   the link (checked in `main.456b1b99.js`), so no link can choose it. Shipped: new route-scoped

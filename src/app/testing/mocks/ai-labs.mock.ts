@@ -263,10 +263,16 @@ export const MOCK_AI_LAB_EVALUATING: AiLabAssignmentStatus = {
   grade_card_pdf_url: null,
   grade_card_expires_at: null,
   grade_card_is_expired: false,
+  max_attempts: 3,
+  attempts_used: 0,
+  attempts_left: 3,
   can_resubmit: false,
 };
 
-/** `assignment-status/` once graded — the guide's sample, with the comments shortened. */
+/**
+ * `assignment-status/` once graded — the guide's sample, with the comments shortened. One attempt
+ * of three is used, so another submit is open.
+ */
 export const MOCK_AI_LAB_EVALUATED: AiLabAssignmentStatus = {
   ...MOCK_AI_LAB_EVALUATING,
   assessment_status: 'completed',
@@ -280,6 +286,17 @@ export const MOCK_AI_LAB_EVALUATED: AiLabAssignmentStatus = {
     'Classification flags fire on renewal options but miss termination-for-convenience.',
   grade_card_pdf_url: 'https://example.com/grade-card.pdf',
   grade_card_expires_at: '2026-10-27T10:15:30Z',
+  attempts_used: 1,
+  attempts_left: 2,
+  can_resubmit: true,
+};
+
+/** Every attempt of the allowance graded: the submit answers 409, so the picker stays shut. */
+export const MOCK_AI_LAB_EXHAUSTED: AiLabAssignmentStatus = {
+  ...MOCK_AI_LAB_EVALUATED,
+  attempts_used: 3,
+  attempts_left: 0,
+  can_resubmit: false,
 };
 
 /* ---------------------------------------------------------------------------
@@ -408,7 +425,7 @@ export const MOCK_AI_LAB_STARTED: AiLabCourseStarted = {
 
 /** `course-progress/` at a given step. The flags follow from it, as the backend's would. */
 export function mockAiLabProgress(step: AiLabCourseProgress['next_step']): AiLabCourseProgress {
-  const order = ['video', 'quiz', 'final_assessment', 'ai_assessment', 'feedback', 'done'];
+  const order = ['video', 'quiz', 'final_assessment', 'feedback', 'done'];
   const past = (s: string) => order.indexOf(step) > order.indexOf(s);
   return {
     ai_lab_course_id: MOCK_AI_LAB_DETAIL.id,
@@ -419,7 +436,7 @@ export function mockAiLabProgress(step: AiLabCourseProgress['next_step']): AiLab
     quiz_questions_to_show: 2,
     assessment_required: true,
     final_assessment_passed: past('final_assessment'),
-    ai_assessment_completed: past('ai_assessment'),
+    ai_assessment_completed: false,
     feedback_submitted: past('feedback'),
     cpe_awarded: step === 'done',
     is_course_closed: step === 'done',
@@ -458,6 +475,8 @@ export interface AiLabCourseStoryState {
   attemptsProblem?: string | null;
   /** Signed in to the lab (Microsoft) as this account — shows the Copilot Studio account line. */
   labSignedInAs?: string;
+  /** The lab is built but the Miles login predates it — the "Sign in again" line. */
+  labNeedsRelogin?: boolean;
 }
 
 /** The learner's lab account, as `account-ensure/?include=labs_account` names it. */
@@ -518,13 +537,32 @@ export const MOCK_AI_LAB_HINTS: string[] = [
 
 const MOCK_FILE_URL = 'https://example.com/ai-labs/grade-cards/attempt.pdf';
 
-/** Three graded attempts, best first, scored out of 10; five submitted against an allowance of 3. */
+/**
+ * Three graded attempts of an allowance of five, oldest first, scored out of 10. The second is the
+ * best — the grade card — and the third, a worse retry, doesn't lower it.
+ */
 export const MOCK_AI_LAB_ATTEMPTS: AiLabAttempts = {
   is_provisioned: true,
-  total_attempts: 5,
+  total_attempts: 3,
   allowed_attempt: 3,
   grade_card_urls_expire_at: '2099-01-01T00:00:00Z',
+  max_attempts: 5,
+  attempts_used: 3,
+  attempts_left: 2,
+  best_attempt_number: 2,
   attempts: [
+    {
+      attempt_number: 1,
+      status: 'graded',
+      score: '5.40',
+      max_score: '10.00',
+      percentage: '54.00',
+      submitted_at: '2026-10-19T11:40:00Z',
+      graded_at: '2026-10-19T11:45:00Z',
+      grade_card_url: null,
+      master_comment: null,
+      minor_comment: null,
+    },
     {
       attempt_number: 2,
       status: 'graded',
@@ -547,18 +585,6 @@ export const MOCK_AI_LAB_ATTEMPTS: AiLabAttempts = {
       graded_at: '2026-10-21T14:07:00Z',
       grade_card_url: MOCK_FILE_URL,
       master_comment: 'Solid, but the guardrail on missing dates regressed.',
-      minor_comment: null,
-    },
-    {
-      attempt_number: 1,
-      status: 'graded',
-      score: '5.40',
-      max_score: '10.00',
-      percentage: '54.00',
-      submitted_at: '2026-10-19T11:40:00Z',
-      graded_at: '2026-10-19T11:45:00Z',
-      grade_card_url: null,
-      master_comment: null,
       minor_comment: null,
     },
   ],
@@ -619,7 +645,7 @@ export function provideStoryAiLabCourse(state: AiLabCourseStoryState): Provider[
     retry: () => undefined,
     start: () => undefined,
     reportVideoProgress: () => undefined,
-    submitPractical: () => undefined,
+    submitPractical: () => Promise.resolve('sent'),
     refreshArtefacts: () => undefined,
     refreshStatus: () => undefined,
     downloadGradeCard: () => undefined,
@@ -636,6 +662,10 @@ export function provideStoryAiLabCourse(state: AiLabCourseStoryState): Provider[
     labEmail: signal(MOCK_AI_LAB_EMAIL),
     environmentUrl: signal(MOCK_AI_LAB_ENVIRONMENT_URL),
     isLoading: signal(false),
+    provisioned: signal(true),
+    needsRelogin: signal(state.labNeedsRelogin ?? false),
+    reload: () => undefined,
+    relogin: () => Promise.resolve(),
     signIn: () => Promise.resolve(),
     launch: () => undefined,
     copyLabLink: () => Promise.resolve(),

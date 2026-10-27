@@ -1,6 +1,7 @@
 import { HttpContext, httpResource } from '@angular/common/http';
 import { isPlatformBrowser } from '@angular/common';
 import { computed, DOCUMENT, effect, inject, PLATFORM_ID, Service, untracked } from '@angular/core';
+import { Router } from '@angular/router';
 import { CommonResponse, SKIP_ERROR_NOTIFICATION, SKIP_LOADING } from '@core/models/http.model';
 import { apiUrl } from '@core/services/api-client/api-client';
 import { AiLabAuth } from '@core/services/ai-lab-auth/ai-lab-auth';
@@ -44,6 +45,7 @@ export class AiLabAccount {
   private readonly auth = inject(AuthSession);
   private readonly labAuth = inject(AiLabAuth);
   private readonly notification = inject(NotificationService);
+  private readonly router = inject(Router);
   private readonly document = inject(DOCUMENT);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -72,6 +74,20 @@ export class AiLabAccount {
   readonly environmentUrl = computed(() => copilotLink(this.account()?.environment_url));
   readonly isLoading = computed(() => this.accountRes.isLoading());
 
+  /**
+   * Whether the Microsoft side is built. `null` while unknown — no answer yet, or AI Labs couldn't
+   * be asked (`labs_account` absent) — so callers fall back to `account_created`.
+   */
+  readonly provisioned = computed(() => this.account()?.provisioned ?? null);
+
+  /**
+   * The lab account is built but this Miles login predates it: AI Labs reads the entitlement off
+   * the login token, so agents, flows and submit refuse it until a fresh login.
+   */
+  readonly needsRelogin = computed(
+    () => this.account()?.provisioned === true && this.account()?.entitled === false,
+  );
+
   constructor() {
     // A lab session for anyone but this learner — left by a previous person on this browser, or
     // picked in the popup — goes the moment both are known.
@@ -82,6 +98,18 @@ export class AiLabAccount {
         if (!this.labAuth.belongsTo(labEmail)) void this.labAuth.dropForeignSession(labEmail);
       });
     });
+  }
+
+  /** Re-read the account — the landing's set-up poll, until it is built. */
+  reload(): void {
+    this.accountRes.reload();
+  }
+
+  /** The fresh login `needsRelogin` asks for: sign out, sign in, and come back to this page. */
+  async relogin(): Promise<void> {
+    const redirect = this.router.url;
+    await this.auth.logout();
+    await this.router.navigate(['/auth/login'], { queryParams: { redirect } });
   }
 
   /** The Microsoft sign-in, hinted to this learner's lab account. Straight from a click. */

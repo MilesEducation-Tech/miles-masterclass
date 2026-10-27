@@ -30,7 +30,7 @@ export const Form = withState({ questions: MOCK_AI_LAB_FEEDBACK_QUESTIONS });
 
 /** The gate refused: the practical isn't graded yet. */
 export const NotYet = withState({
-  notYet: 'Your AI assessment is still pending. Feedback opens once it is graded.',
+  notYet: 'Pass the final assessment first — feedback opens once you do.',
 });
 
 /** Submitted: v3's short thank-you. The certificate is still generating, so no button. */

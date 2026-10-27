@@ -82,6 +82,11 @@ export class AiLabCredits {
     }
   }
 
+  /** Re-read the balance — once the lab account is built, the landing's wait ends with a meter. */
+  reload(): void {
+    this.tokensRes.reload();
+  }
+
   /**
    * Open the top-up dialog and, if the learner picks an add-on, raise the request. The dialog
    * loads on demand, in its own chunk. The meter never offers this while a request is pending, so

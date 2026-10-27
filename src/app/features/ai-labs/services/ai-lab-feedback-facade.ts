@@ -37,7 +37,7 @@ export const LAB_FEEDBACK_COPY = {
     title: 'Thanks, your feedback is in',
     body: 'You have already submitted feedback for this AI Lab.',
   },
-  notYet: { title: 'Feedback opens once your AI Lab is graded' },
+  notYet: { title: 'Feedback opens once you pass the final assessment' },
   backToLab: 'Back to the Lab',
   loadFailed: { title: "Couldn't load the feedback form", body: 'Please try again in a moment.' },
   submitFailed: {
@@ -58,9 +58,9 @@ const unwrap =
  * `CourseEvaluationFacade` on the lab routes.
  *
  * Route-scoped (`autoProvided: false`, on the `…/feedback` route). The gate is read first; the form
- * only once it allows. Our backend opens feedback only after the AI practical is graded, so a gate
- * refusal is the common early case and is shown in the gate's own words (`remark`). The lab detail
- * is read too, for the page header.
+ * only once it allows. Feedback opens on a passed final assessment (the practical left the CPE flow
+ * on 2026-10-27), so a gate refusal is shown in the gate's own words (`remark`). The lab detail is
+ * read too, for the page header.
  *
  * A 409 `nasba_conditions_unmet` on submit means the feedback WAS recorded but the lab couldn't
  * close — so it ends on the thank-you view, carrying the server's explanation.
@@ -114,7 +114,7 @@ export class AiLabFeedbackFacade {
   readonly notYet = computed(() => {
     const gate = this.gate();
     if (!gate || gate.allowed || gate.already_submitted) return null;
-    return gate.remark || 'Finish the AI Lab first — feedback opens once it is graded.';
+    return gate.remark || 'Pass the final assessment first — feedback opens once you do.';
   });
 
   readonly isLoading = computed(() => this.gateRes.isLoading() || this.questionsRes.isLoading());

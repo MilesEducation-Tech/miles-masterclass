@@ -696,7 +696,7 @@ export class AiLabs {
       'Sign in again',
       'Your AI Lab account is ready. Sign in again to finish connecting it to your Miles login.',
       'Sign in again',
-      () => void this.facade.signInAgain(),
+      () => void this.labAccount.relogin(),
     );
   }
 

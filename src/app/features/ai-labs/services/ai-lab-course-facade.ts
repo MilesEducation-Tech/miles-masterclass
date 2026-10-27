@@ -108,7 +108,6 @@ const STAGE_FOR_STEP: Record<string, AiLabCtaStage | null> = {
   video: null,
   quiz: 'TAKE_QUIZ',
   final_assessment: 'TAKE_EXAM',
-  ai_assessment: 'AI_LAB',
   feedback: 'FEEDBACK',
   // Refined by `lab_certificate_url` in `ctaStage`: Download, or the wait for the PDF.
   done: 'DOWNLOAD',
@@ -387,21 +386,33 @@ export class AiLabCourseFacade {
     () => this.agentsRes.isLoading() || this.flowsRes.isLoading(),
   );
 
-  /** Both lists failed — one alone still leaves something to pick from. */
-  readonly artefactsError = computed(() => !!this.agentsRes.error() && !!this.flowsRes.error());
+  /**
+   * A list failed and the other leaves nothing to pick — otherwise the picker would say "no agents
+   * yet" when AI Labs simply refused to list them.
+   */
+  readonly artefactsError = computed(() => {
+    const agentsFailed = !!this.agentsRes.error();
+    const flowsFailed = !!this.flowsRes.error();
+    if (agentsFailed && flowsFailed) return true;
+    if (agentsFailed) return !this.flows().some((flow) => flow.enabled);
+    return flowsFailed && !this.agents().length;
+  });
 
   /** What the picker's error says: a session AI Labs refused needs a fresh login, not a retry. */
   readonly artefactsErrorMessage = computed(() =>
-    SESSION_REFUSED.has(reasonOf(this.agentsRes.error()) ?? '')
+    SESSION_REFUSED.has(reasonOf(this.agentsRes.error() ?? this.flowsRes.error()) ?? '')
       ? 'AI Labs didn’t accept your session. Sign out and back in, then try again.'
       : 'We hit a snag reaching your Copilot environment. Try again in a moment.',
   );
 
-  /** False when AI Labs has no account for this learner — the picker says to create one. */
+  /**
+   * False when AI Labs has no account for this learner — the picker says to create one. Read
+   * behind `hasValue()`: a failed list throws on `value()`, and one list can fail alone.
+   */
   readonly labProvisioned = computed(
     () =>
-      this.agentsRes.value()?.is_provisioned !== false &&
-      this.flowsRes.value()?.is_provisioned !== false,
+      (!this.agentsRes.hasValue() || this.agentsRes.value()?.is_provisioned !== false) &&
+      (!this.flowsRes.hasValue() || this.flowsRes.value()?.is_provisioned !== false),
   );
 
   /** The practical's state; also the missed-webhook reconciler, so polling heals one. */
@@ -575,34 +586,73 @@ export class AiLabCourseFacade {
 
   /**
    * `POST assignment-submit/<uuid>/` with the picked artefact. A 202 means "with the evaluator":
-   * the status re-read that follows reports `in_progress`, which starts the poll. Refusals carry a
-   * sentence written for the learner, relayed as-is.
+   * the status re-read that follows reports `in_progress`, which starts the poll. A refusal is told
+   * by its reason (upstream's wording where it has the case); `'pick-again'` asks the page to drop
+   * the pick, because AI Labs refused that artefact.
    */
-  submitPractical(body: AiLabSubmitBody): void {
+  submitPractical(body: AiLabSubmitBody): Promise<'sent' | 'pick-again' | 'refused'> {
     const id = this.courseId();
-    if (!id || this.submitting()) return;
+    if (!id || this.submitting()) return Promise.resolve('refused');
     this.submitting.set(true);
     const route = AI_LABS_API.assignmentSubmit;
-    this.api
-      .call({ ...route, path: route.path.replace(':id', id) }, body, {
-        context: new HttpContext().set(SKIP_ERROR_NOTIFICATION, true),
-      })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (res) => {
-          this.submitting.set(false);
-          this.notification.success('Submitted for grading', res.message);
-          this.statusRes.reload();
-        },
-        error: (err: unknown) => {
-          this.submitting.set(false);
-          const message = SESSION_REFUSED.has(reasonOf(err) ?? '')
-            ? 'AI Labs didn’t accept your session. Sign out and back in, then try again.'
-            : messageOf(err);
-          this.notification.error("Couldn't submit", message);
-          this.statusRes.reload();
-        },
-      });
+    return new Promise((resolve) => {
+      this.api
+        .call({ ...route, path: route.path.replace(':id', id) }, body, {
+          context: new HttpContext().set(SKIP_ERROR_NOTIFICATION, true),
+        })
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (res) => {
+            this.submitting.set(false);
+            this.notification.success('Submitted for grading', res.message);
+            this.statusRes.reload();
+            resolve('sent');
+          },
+          error: (err: unknown) => {
+            this.submitting.set(false);
+            this.statusRes.reload();
+            resolve(this.submitRefused(err));
+          },
+        });
+    });
+  }
+
+  /** Says why a submit was refused and re-reads what the reason makes stale. */
+  private submitRefused(err: unknown): 'pick-again' | 'refused' {
+    const reason = reasonOf(err) ?? '';
+    const status = err instanceof HttpErrorResponse ? err.status : 0;
+    if (reason === 'practical_attempts_exhausted') {
+      const max = this.assignment()?.max_attempts;
+      this.notification.info(
+        'No attempts left',
+        max ? `You've used all ${max} graded attempts for this lab.` : messageOf(err),
+      );
+      this.attemptsRes.reload();
+    } else if (reason === 'ai_lab_assignment_not_configured') {
+      this.notification.error('Lab not set up', "This AI Lab's practical is not set up yet.");
+    } else if (status === 409) {
+      // The guide: every other 409 here means "already being graded — check the status".
+      this.notification.info('Already submitted', 'An evaluation is already running.');
+    } else if (reason === 'final_assessment_not_passed') {
+      this.notification.info('Not yet', 'Pass the final assessment before submitting the lab.');
+    } else if (reason === 'AI_LABS_VALIDATION_REJECTED') {
+      this.notification.error('Pick again', messageOf(err));
+      this.refreshArtefacts();
+      return 'pick-again';
+    } else if (reason === 'AI_LABS_NOT_PROVISIONED') {
+      this.notification.info(
+        'Lab not ready',
+        'Your AI Lab account is still being set up. Try again in a few minutes.',
+      );
+    } else if (SESSION_REFUSED.has(reason)) {
+      this.notification.error(
+        "Couldn't submit",
+        'AI Labs didn’t accept your session. Sign out and back in, then try again.',
+      );
+    } else {
+      this.notification.error("Couldn't submit", messageOf(err));
+    }
+    return 'refused';
   }
 
   /** The picker's Refresh — after building something new in Copilot Studio. */
