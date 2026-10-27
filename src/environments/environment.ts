@@ -16,7 +16,9 @@ export const environment = {
   S3_BUCKET_URL: 'https://d1pp0977rsxmiq.cloudfront.net/',
   GCS_URL: 'https://asset.milesmasterclass.com/media/web-app/',
   LOGGER: {
-    LogLevel: LogLevel.DEBUG,
+    // why: learners' consoles get warnings and errors only; debug and info
+    // output stays on UAT and local.
+    LogLevel: LogLevel.WARN,
   },
 
   // ---- Features --------------------------------------------------------------

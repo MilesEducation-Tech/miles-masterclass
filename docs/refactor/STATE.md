@@ -7,6 +7,10 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🟡 **2026-10-27, NON-REFACTOR — production log level `WARN`. DONE, UNCOMMITTED** (patch 1 of 3; see the hand-off).
+  `environment.ts` `LOGGER.LogLevel` changed from `DEBUG` to `WARN`, so `Logger.debug`/`info` stay silent in production.
+  UAT and local stay `DEBUG`.
+
 - 🟡 **2026-10-27, NON-REFACTOR — environment cleanup (`prompts/environment-cleanup.md`). DONE, GATES GREEN,
   UNCOMMITTED**, in the working tree on top of `fix/MIL-140-live-room-isolation`, together with the uncommitted
   `liveEnabled` comment edits. Branch it off as `refactor/MIL-<n>-environment-cleanup` before committing.
