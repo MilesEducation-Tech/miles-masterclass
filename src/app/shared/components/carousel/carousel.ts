@@ -96,7 +96,9 @@ type FilterMode = 'api' | 'client';
   host: { class: 'w-full flex flex-col space-y-4' },
 })
 export class Carousel {
-  readonly cardTemplate = contentChild<TemplateRef<unknown>>(TemplateRef);
+  // Top level only: a `[carouselAction]` control's own `@if` is a template too,
+  // and with descendants it came first and rendered in every slide.
+  readonly cardTemplate = contentChild<TemplateRef<unknown>>(TemplateRef, { descendants: false });
 
   private readonly platformId = inject(PLATFORM_ID);
   private readonly destroyRef = inject(DestroyRef);

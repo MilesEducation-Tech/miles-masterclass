@@ -18,6 +18,8 @@
         }
       </button>
     }
+    <!-- A page's own heading control, e.g. a filter it runs itself. -->
+    <ng-content select="[carouselAction]" />
   </div>
 }
 <!-- One skeleton for every pre-Swiper phase (the placeholder before idle, the
