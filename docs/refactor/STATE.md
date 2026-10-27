@@ -7,6 +7,35 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🟡 **2026-10-27, NON-REFACTOR — MIL-128 (feature), a filter on every masterclass rail. PLAN APPROVED, DONE,
+  GATES GREEN, UNCOMMITTED** (`prompts/masterclass-rail-filter.md`), on `feat/MIL-128-masterclass-rail-filter` off
+  `master` (`2f493dde`).
+  - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 228.09 kB,
+    only `ai-labs.css`.
+  - **Verified (dev 4101, Playwright):**
+    - **Signed out:** the 3 tracks have the icon. The first click makes 4 `filter/` reads, and none happen before
+      it.
+    - **Track 2, Adam Tahir:** 34 → 1, matching UAT's own instructor tags. The badge shows 1, and reopening shows
+      the tick.
+    - **Empty:** adding "Greater than 5 credits" shows the empty line, and the other tracks are untouched. Clear All
+      brings back all 34.
+    - **Signed in (stubbed rails):** all 9 rails have the icon. My List's dialog lists only its own courses'
+      options. A second rail makes no new reads, and Escape changes nothing.
+    - **`filter/` 500:** the dialog shows Field of Study and Credit, the failure is logged, and the next open
+      retries.
+    - **Layout:** no overflow at 375 / 768 / 1440.
+  - **Two shared fixes found while verifying (in the plan's "Changes from the plan"):**
+    - `Carousel`'s card query is now `{ descendants: false }`. The badge's `@if` had been rendering in every slide.
+    - `FilterDialog`'s panel is now `md:w-auto`. It had been filling the screen with a grey band.
+  - **Size:** about 600 changed source lines, over the ~400 guideline. 428 of them are the three new files.
+  - **Groups:** Instructor, Field of Study, Additional Category, CAIRA Level and Credit. There's no Category group:
+    the backend confirmed it's the same as Field of Study.
+  - **Data:** Field of Study and Credit come from the cards. Instructor and Additional Category come from one
+    `filter/?content_type=masterclass_course&page_size=100` read. CAIRA Level comes from one
+    `filter/?…&level=<id>` read per level (UAT: 22 + 31 + 11 = 64 courses).
+  - **Loading:** the reads run on the first dialog open and are shared by every rail.
+  - **Open:** whether a new route-scoped `MasterclassRailFilterFacade` is OK (plan assumption 1).
+
 - 🟡 **2026-10-26, NON-REFACTOR — MIL-127 (bug), signed-in rails on the masterclass page. PLAN APPROVED, DONE,
   GATES GREEN, UNCOMMITTED** (`prompts/masterclass-signed-in-rails.md`), on `fix/MIL-127-masterclass-signed-in-rails`
   off `master` (`70ec9353`).
