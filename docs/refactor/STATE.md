@@ -7,11 +7,28 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- 🔧 **2026-10-26, NON-REFACTOR, MIL-117: the stash-pop conflicts are only partly resolved.**
-  `src/styles/styles.css` is resolved in the working tree but not staged. The upstream side was
-  empty, so the stashed `--color-miles` and `--color-copilot-*` tokens stay; `ai-lab-course.html`
-  uses them. **`structure-baseline.json` still carries conflict markers** and breaks
-  `check:structure` and the pre-commit hook; this file is still `UU` in git. Dev server is up on 4101.
+- 🔧 **2026-10-27, NON-REFACTOR, MIL-117: lab identity, UNCOMMITTED** (`prompts/ai-labs-lab-identity.md`).
+  Launch opened Copilot Studio as another Microsoft account (charitha) while the lab sign-in was
+  usaid's. **Copilot Studio picks its own account** — its shell reads no `login_hint`/tenant from
+  the link (checked in `main.456b1b99.js`), so no link can choose it. Shipped: new route-scoped
+  `AiLabAccount` (`account-ensure/?include=labs_account` → `lab_email`, `environment_url`);
+  sign-in hinted to `lab_email`; a lab session for anyone else dropped with a message (load, popup,
+  and at the Launch click); Launch opens the learner's own environment; an account line + Copy lab
+  link under Launch; `verifyOtp` clears any lab session left on the browser. CDP-verified (foreign
+  session dropped, popup hint, launch URL). Gates green. **Next queued:** `prompts/ai-labs-live-state.md`
+  (awaiting approval, not started). **Open with backend:** resubmission after a graded
+  attempt — `allowed_attempt: 3` vs `can_resubmit` false / 409 `practical_already_completed`.
+- 🔧 **2026-10-27, NON-REFACTOR, MIL-117: full-flow bug list fixed, UNCOMMITTED** on top of
+  `a485733` (`prompts/ai-labs-flow-bugs.md`). Graded labs lead "Where your labs stand"; v3's short
+  feedback thank-you; build guide + flow chart open v3's viewer tab (`utils/file-viewer.ts`);
+  "Back to AI Labs" routes to the landing, never history; `lab_certificate_url` (guide `01c7a4d`)
+  drives Download Certificate → the shared certificate pop-up (new link mode, union data), with
+  "Certificate is being generated" + 5 s progress re-reads for at most 60 s, then Rewatch.
+  - **Found while verifying:** a route's `providers` injector outlives the page, so the course,
+    exam and feedback facades kept the previous visit's reads (back from feedback the CTA still said
+    Submit Feedback). Their `open()` now re-reads when the same lab is opened again.
+  - Verified by CDP on dev 4101 (4 scenarios); lint 0 errors, structure ✔, build:prod ✔ (227.61 kB),
+    storybook ✔. Still wants a real pass on UAT: certificate bucket download, Google viewer fallback.
 - 🔧 **2026-10-20, NON-REFACTOR — AI Labs UI parity with `miles-masterclass-v3@master`
   (`prompts/ai-labs-ui-parity.md`, approved in plan mode). SUBTASK 1 OF 3 DONE, UNCOMMITTED** on
   `feat/ai-labs-ui-parity` (branched from `master` `28d96f1`).
@@ -6062,6 +6079,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-27 · NON-REFACTOR · **MIL-117 flow bugs 0–4 + `lab_certificate_url`** (uncommitted): graded-first, v3 thank-you, viewer tab, explicit back link, certificate pop-up + pending poll; facades re-read on re-open · CDP 4 scenarios on dev 4101 · lint 0 errors, structure ✔, build:prod ✔, storybook ✔
 
 - 2026-10-26 · NON-REFACTOR · **MIL-117 hints bound (guide rev 3, `6a5c42d`)**, uncommitted on top of `9133259`: `ai_lab_course_hints` → `AiLabCourseFacade.hints` (numbered by place); no hints (and no flow chart) hides step 04 from page + navigator and renumbers (05 → 04); `docs/AI_LABS_API.md` → rev 3 · verified in Storybook + dev 4101 (with hints: 5 steps, "Hint 1 of 3"; `[]`: 4 steps) · lint 0 errors, structure ✔, build:prod ✔ (227.65 kB)
 

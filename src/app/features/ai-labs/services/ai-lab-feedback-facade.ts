@@ -30,10 +30,9 @@ export const LAB_FEEDBACK_COPY = {
   submitting: 'Submitting...',
   loading: 'Loading feedback form...',
   thanks: { title: 'Thank You!', body: 'Your feedback has been submitted successfully.' },
-  cpeAwarded: (credits: number) => `${credits} CPE credits have been awarded for this AI Lab.`,
   certificate: 'Download Certificate',
-  certificatePending:
-    'Your certificate is being generated — it will be in your CPE tracker shortly.',
+  /** v3's label. It returns to the lab page, as v3's `redirect` does. */
+  returnHome: 'Return to Course',
   submitted: {
     title: 'Thanks, your feedback is in',
     body: 'You have already submitted feedback for this AI Lab.',
@@ -137,9 +136,10 @@ export class AiLabFeedbackFacade {
 
   /** The lab the URL names. */
   open(courseId: string): void {
-    if (this.courseId() === courseId) return;
     this.done.set(null);
-    this.courseId.set(courseId);
+    // The route's injector outlives the page: a second visit re-reads rather than replay the first.
+    if (this.courseId() === courseId) this.reload();
+    else this.courseId.set(courseId);
   }
 
   reload(): void {

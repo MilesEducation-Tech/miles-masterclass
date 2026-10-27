@@ -65,6 +65,7 @@ import {
 } from '@features/ai-labs/models/ai-labs.model';
 import { AiLabAuth } from '@core/services/ai-lab-auth/ai-lab-auth';
 import { AiLabCourseFacade } from '@features/ai-labs/services/ai-lab-course-facade';
+import { AiLabAccount } from '@features/ai-labs/services/ai-lab-account';
 import { AiLabCredits } from '@features/ai-labs/services/ai-lab-credits';
 import { AiLabQuizFacade } from '@features/ai-labs/services/ai-lab-quiz-facade';
 import { renderBriefMarkdown } from '@features/ai-labs/utils/brief-markdown';
@@ -363,6 +364,8 @@ export class AiLabCourse {
 
   /** The Microsoft sign-in to the lab — Launch AI signs in first, then opens Copilot Studio. */
   protected readonly labAuth = inject(AiLabAuth);
+  /** Whose lab this is — the sign-in and Launch are checked against it (`AiLabAccount`). */
+  protected readonly labAccount = inject(AiLabAccount);
 
   protected readonly signInLabel = computed(() =>
     this.labAuth.isSignedIn() ? 'Launch AI Lab' : 'Sign in & launch AI',
@@ -514,6 +517,8 @@ export class AiLabCourse {
         return 'Submit Feedback';
       case 'DOWNLOAD':
         return 'Download Certificate';
+      case 'CERTIFICATE_PENDING':
+        return 'Certificate is being generated';
       case 'REWATCH':
         return 'Rewatch';
     }
@@ -528,6 +533,7 @@ export class AiLabCourse {
     () =>
       this.ctaLoading() ||
       this.ctaStage() === 'COOL_OFF' ||
+      this.ctaStage() === 'CERTIFICATE_PENDING' ||
       !!this.facade.lockRemark() ||
       (this.ctaStage() === null && !this.playbackCta()),
   );
@@ -558,21 +564,21 @@ export class AiLabCourse {
         this.togglePlayback();
         return;
       case 'DOWNLOAD':
-        // No read carries the lab certificate's link — only the feedback submit's answer does — so
-        // a later visit goes where every certificate lives.
-        void this.router.navigate(this.localeLink('cpe-tracker'));
+        void this.facade.openCertificate();
         return;
     }
   }
 
   /**
-   * `/:country/:profession_type/<page>`, off this route's own params — not `Utils`, which pulls the
-   * subscription dialog and the feature facade in for two strings.
+   * The sub-bar's "Back to AI Labs": `/:country/:profession_type/ai-labs`, off this route's own
+   * params (not `Utils`, which pulls the subscription dialog and the feature facade in for two
+   * strings). An explicit path, not history: after the exam or the feedback page, the previous entry
+   * is that page, not the landing.
    */
-  private localeLink(page: string): string[] {
+  protected readonly labsHome = (() => {
     const params = Object.assign({}, ...this.route.snapshot.pathFromRoot.map((r) => r.params));
-    return ['/', params['country'], params['profession_type'], page];
-  }
+    return `/${params['country']}/${params['profession_type']}/ai-labs`;
+  })();
 
   // ---- 03 Lab materials --------------------------------------------------
 
@@ -618,6 +624,11 @@ export class AiLabCourse {
   /** A brief file, in a new tab — a stale signed link is re-read first. */
   protected openFile(file: AiLabFile): void {
     this.facade.openFile(file);
+  }
+
+  /** A brief file shown in a viewer tab, with a Download button — v3's `openBriefPreview`. */
+  protected previewFile(file: AiLabFile, label: string): void {
+    this.facade.previewFile(file, label);
   }
 
   // ---- 04 Hints ----------------------------------------------------------
@@ -1258,6 +1269,8 @@ export class AiLabCourse {
   protected readonly launchLabel = computed(() => {
     if (this.labAuth.restoring()) return 'Checking sign-in…';
     if (this.labAuth.signingIn()) return 'Signing in…';
+    if (this.labAuth.isSignedIn() && this.labAccount.isLoading())
+      return 'Checking your lab account…';
     return this.labAuth.isSignedIn() ? 'Launch AI' : 'Sign in & launch AI';
   });
 
@@ -1292,8 +1305,8 @@ export class AiLabCourse {
   protected readonly labHint = computed(() => {
     if (this.labDone()) {
       return this.assignment()?.can_resubmit
-        ? 'Evaluated — your scores are below. Submit again to improve them.'
-        : 'Evaluated — your scores are below.';
+        ? 'Evaluated — your scores are above. Submit again to improve them.'
+        : 'Evaluated — your scores are above.';
     }
     if (this.evaluating()) return 'Submitted — the evaluation is running.';
     const name = this.pickedName();
@@ -1332,11 +1345,12 @@ export class AiLabCourse {
 
   /**
    * Upstream's rule: not signed in to the lab → the Microsoft popup (straight from the click, or
-   * it's blocked); signed in → Copilot Studio as that account.
+   * it's blocked), hinted to this learner's lab account; signed in → Copilot Studio, in their own
+   * environment, once the session is checked to be theirs.
    */
   protected launchLab(): void {
-    if (this.labAuth.isSignedIn()) this.labAuth.launchCopilot();
-    else void this.labAuth.signIn();
+    if (this.labAuth.isSignedIn()) this.labAccount.launch();
+    else void this.labAccount.signIn();
   }
 
   protected refreshArtefacts(): void {

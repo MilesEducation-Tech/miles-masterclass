@@ -60,3 +60,20 @@ export const NoBadge: Story = {
     template: `<div style="width: 500px;"><app-certificate-download-dialog /></div>`,
   }),
 };
+
+/** A link the caller already holds (AI Labs' `lab_certificate_url`): Download is that link. */
+export const LinkedCertificate: Story = {
+  decorators: [
+    moduleMetadata({
+      providers: [
+        provideStoryDialogRef({
+          certificateUrl: 'https://certificates.milesone.example/ai-labs/lab/certificate.pdf',
+          courseTitle: 'Lease Audit Agent',
+        }),
+      ],
+    }),
+  ],
+  render: () => ({
+    template: `<div style="width: 500px;"><app-certificate-download-dialog /></div>`,
+  }),
+};

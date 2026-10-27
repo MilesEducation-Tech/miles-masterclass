@@ -2,6 +2,8 @@
      feedback facade. -->
 <div class="min-h-screen bg-background text-white p-6 md:p-12 pt-28! flex flex-col items-center">
   @if (facade.done(); as done) {
+    <!-- v3's course-feedback success view. The certificate's state lives on the lab page now:
+         this answer's `lab_certificate_url` is usually still null (it's generated a moment later). -->
     <div
       class="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6 max-w-2xl mx-auto"
     >
@@ -12,33 +14,31 @@
       </div>
       <h1 class="text-3xl font-bold">{{ copy.thanks.title }}</h1>
       <p class="text-gray-400 text-lg">{{ copy.thanks.body }}</p>
-      @if (done.result?.cpe_awarded; as credits) {
-        <p class="text-gray-300">{{ copy.cpeAwarded(credits) }}</p>
-      }
       <!-- 409 `nasba_conditions_unmet`: recorded, but the lab couldn't close yet. -->
       @if (done.notice; as notice) {
         <p class="text-amber-300" role="status">{{ notice }}</p>
-      } @else if (done.result && !done.result.lab_certificate_url) {
-        <p class="text-gray-400 text-sm">{{ copy.certificatePending }}</p>
       }
-      <div class="flex flex-col gap-3 sm:flex-row mt-4">
-        @if (done.result?.lab_certificate_url; as url) {
-          <!-- A link, not a button: `app-button` only styles <button>, so it borrows the default
-               variant's look. -->
-          <a
-            [href]="url"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-white px-4 text-sm font-semibold text-black no-underline hover:bg-white/90"
-          >
-            <ng-icon name="heroArrowDownTray" size="1rem" aria-hidden="true" />
-            {{ copy.certificate }}
-          </a>
-        }
-        <button app-button type="button" variant="outline" (click)="backToLab()">
-          {{ copy.backToLab }}
-        </button>
-      </div>
+      @if (done.result?.lab_certificate_url; as url) {
+        <!-- A link, not a button: `app-button` only styles <button>, so it borrows the outline
+             variant's look. -->
+        <a
+          [href]="url"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="mt-8 inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-white px-4 text-sm font-medium text-white no-underline hover:bg-white/10"
+        >
+          {{ copy.certificate }}
+        </a>
+      }
+      <button
+        app-button
+        type="button"
+        variant="link"
+        class="text-gray-400 mt-8"
+        (click)="backToLab()"
+      >
+        {{ copy.returnHome }}
+      </button>
     </div>
   } @else if (facade.alreadySubmitted()) {
     <div class="mx-auto flex max-w-md flex-col items-center gap-4 py-24 text-center">

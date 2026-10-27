@@ -107,7 +107,11 @@ export class AiLabAssessmentFacade {
 
   /** The lab the URL names. */
   open(courseId: string): void {
-    if (this.courseId() === courseId) return;
+    // The route's injector outlives the page: a second visit gets a fresh paper, not the last result.
+    if (this.courseId() === courseId) {
+      this.retake();
+      return;
+    }
     this.result.set(null);
     this.courseId.set(courseId);
   }

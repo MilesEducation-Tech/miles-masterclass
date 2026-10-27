@@ -33,7 +33,7 @@ export const NotYet = withState({
   notYet: 'Your AI assessment is still pending. Feedback opens once it is graded.',
 });
 
-/** Submitted: CPE awarded, the certificate still being generated. */
+/** Submitted: v3's short thank-you. The certificate is still generating, so no button. */
 export const ThankYou = withState({
   done: {
     result: {

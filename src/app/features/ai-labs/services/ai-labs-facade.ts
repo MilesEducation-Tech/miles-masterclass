@@ -172,14 +172,18 @@ export class AiLabsFacade {
    * assignment it holds; a row without `ai_lab_course_id` isn't mapped to a lab on Masterclass, so
    * it has no page and no Start, and is dropped. The counts are re-taken from the rows that remain
    * so "N of M labs" matches the list — `graded` is what AI Labs counts as completed.
-   * `average_percentage` stays as sent: it is a server-owned score, not a count.
+   * `average_percentage` stays as sent: it is a server-owned score, not a count. Graded labs lead
+   * the list; the rest keep AI Labs' order behind them (the sort is stable).
    */
   readonly practicalProgress = computed<AiLabPracticalProgress | null>(() => {
     const progress = this.practicalProgressRes.hasValue()
       ? this.practicalProgressRes.value()
       : null;
     if (!progress) return null;
-    const assignments = progress.assignments.filter((row) => !!row.ai_lab_course_id);
+    const graded = (row: { status: string }) => (row.status === 'graded' ? 0 : 1);
+    const assignments = progress.assignments
+      .filter((row) => !!row.ai_lab_course_id)
+      .sort((a, b) => graded(a) - graded(b));
     return {
       ...progress,
       assignments,

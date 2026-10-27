@@ -1,7 +1,7 @@
 import { Component, computed, effect, inject, input, linkedSignal, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { heroArrowDownTray, heroBookOpen, heroCheck } from '@ng-icons/heroicons/outline';
+import { heroBookOpen, heroCheck } from '@ng-icons/heroicons/outline';
 import { RatingStar } from '@shared/components/rating-star/rating-star';
 import { Button } from '@shared/ui/button/button';
 import { ErrorState } from '@shared/ui/error-state/error-state';
@@ -30,7 +30,7 @@ import {
   selector: 'app-ai-lab-feedback',
   imports: [NgIcon, RatingStar, Button, ErrorState, Field, PageLoading, Textarea],
   templateUrl: './ai-lab-feedback.html',
-  viewProviders: [provideIcons({ heroArrowDownTray, heroBookOpen, heroCheck })],
+  viewProviders: [provideIcons({ heroBookOpen, heroCheck })],
 })
 export class AiLabFeedback {
   /** The `:courseId` route param, bound by `withComponentInputBinding`. */

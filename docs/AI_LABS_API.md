@@ -1,7 +1,7 @@
 # AI Labs APIs - Frontend Guide
 
 Every AI Labs route the merged backend serves (45 routes), with the request, a full success response and
-the errors each one can answer. **Last updated 2026-10-26** against the backend at commit `6a5c42d`. App and web twins are documented together when they answer the same
+the errors each one can answer. **Last updated 2026-10-27** against the backend at commit `01c7a4d`. App and web twins are documented together when they answer the same
 body; where they differ, both are shown.
 
 |            |                                                                                                                                                              |
@@ -15,18 +15,19 @@ body; where they differ, both are shown.
 
 ### What changed since the 2026-10-20 edition (bind these first)
 
-| #   | Route(s)                                                                   | Change                                                                                                                                                                                                                                                                                                                                                                            | Action for FE                                           |
-| --- | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| 1   | **NEW** `GET {app,web}-api/v1/ai-labs/assignment-attempts/<id>/`           | The learner's most recent graded practical attempts (up to `allowed_attempt`), best score first, each with a grade-card PDF link and the grader's comments. Scores out of 10.                                                                                                                                                                                                     | New screen / section - see section 8.                   |
-| 2   | `GET .../assignment-brief/<id>/`                                           | The brief now carries the full learner brief: `slug, name, details, problem_statement, guardrails, requirements, exercise_files, build_guides, sharepoint_links, sample_grade_card, flow_chart, tools`. `input_files`, `logic_flow`, `difficulty`, `version`, `published_date`, `scenarios` are GONE. `problem_statement` is **Markdown**. Response is `Cache-Control: no-store`. | Re-bind the brief screen; render Markdown; never cache. |
-| 3   | `GET .../course/<id>/` (lab detail)                                        | `instructors` is now a list of **objects** (was a list of names). New `chapter` object (the lab video). New `final_assessment_status` block. `chapter.hls_video_link` / `transcript_*` are `null` until the learner has started the lab.                                                                                                                                          | Re-bind instructors; play the video from `chapter`.     |
-| 4   | `GET .../course-progress/<id>/`, `POST .../course-assessment-submit/<id>/` | New `final_assessment_status` block, always the LAST key.                                                                                                                                                                                                                                                                                                                         | Drive the assessment button from it (section 1a).       |
-| 5   | Vendor error vocabulary                                                    | New `AI_LABS_STORAGE_UNAVAILABLE` (503, retry) and `AI_LABS_CONFIGURATION_REJECTED` (502, backend config). On brief / attempts a vendor validation error now answers `409 ai_lab_assignment_not_configured`.                                                                                                                                                                      | Add the two codes to your error switch (section 2).     |
-| 6   | `GET api/v1/ai-labs/account-ensure/`                                       | Optional `?include=labs_account` adds the AI Labs side (`exists, entitled, enrolled, provisioned, lab_email, environment_url`).                                                                                                                                                                                                                                                   | Use it on the AI Labs account screen only.              |
-| 7   | Quiz / assessment questions                                                | Question rows now come from the AI Labs' own serializer. Same keys (`id, question_text, question_type, options[{id,text,order}]`).                                                                                                                                                                                                                                                | None.                                                   |
-| 8   | `POST api/v1/ai-labs/account-reset-password/`                              | New reason `PROVISIONING_IN_PROGRESS` (200) while the lab is still being built; `RESET_EMAIL_FAILED` (502) now also when the password was reset but the mail failed.                                                                                                                                                                                                              | Add the new reason to the reset screen.                 |
-| 9   | `GET .../assignment-attempts/<id>/`                                        | New `allowed_attempt`; scores out of 10; per-attempt `master_comment` / `minor_comment`.                                                                                                                                                                                                                                                                                          | Read `allowed_attempt`, never hard-code 3.              |
-| 10  | `GET .../course/<id>/` (lab detail)                                        | **New 2026-10-26:** `ai_lab_course_hints` - the lab's hints, a list of plain-text strings in display order (`[]` when the lab has none).                                                                                                                                                                                                                                          | Build the Hints card from it (section 3, "One AI Lab"). |
+| #   | Route(s)                                                                   | Change                                                                                                                                                                                                                                                                                                                                                                            | Action for FE                                                                                                             |
+| --- | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **NEW** `GET {app,web}-api/v1/ai-labs/assignment-attempts/<id>/`           | The learner's most recent graded practical attempts (up to `allowed_attempt`), best score first, each with a grade-card PDF link and the grader's comments. Scores out of 10.                                                                                                                                                                                                     | New screen / section - see section 8.                                                                                     |
+| 2   | `GET .../assignment-brief/<id>/`                                           | The brief now carries the full learner brief: `slug, name, details, problem_statement, guardrails, requirements, exercise_files, build_guides, sharepoint_links, sample_grade_card, flow_chart, tools`. `input_files`, `logic_flow`, `difficulty`, `version`, `published_date`, `scenarios` are GONE. `problem_statement` is **Markdown**. Response is `Cache-Control: no-store`. | Re-bind the brief screen; render Markdown; never cache.                                                                   |
+| 3   | `GET .../course/<id>/` (lab detail)                                        | `instructors` is now a list of **objects** (was a list of names). New `chapter` object (the lab video). New `final_assessment_status` block. `chapter.hls_video_link` / `transcript_*` are `null` until the learner has started the lab.                                                                                                                                          | Re-bind instructors; play the video from `chapter`.                                                                       |
+| 4   | `GET .../course-progress/<id>/`, `POST .../course-assessment-submit/<id>/` | New `final_assessment_status` block, always the LAST key.                                                                                                                                                                                                                                                                                                                         | Drive the assessment button from it (section 1a).                                                                         |
+| 5   | Vendor error vocabulary                                                    | New `AI_LABS_STORAGE_UNAVAILABLE` (503, retry) and `AI_LABS_CONFIGURATION_REJECTED` (502, backend config). On brief / attempts a vendor validation error now answers `409 ai_lab_assignment_not_configured`.                                                                                                                                                                      | Add the two codes to your error switch (section 2).                                                                       |
+| 6   | `GET api/v1/ai-labs/account-ensure/`                                       | Optional `?include=labs_account` adds the AI Labs side (`exists, entitled, enrolled, provisioned, lab_email, environment_url`).                                                                                                                                                                                                                                                   | Use it on the AI Labs account screen only.                                                                                |
+| 7   | Quiz / assessment questions                                                | Question rows now come from the AI Labs' own serializer. Same keys (`id, question_text, question_type, options[{id,text,order}]`).                                                                                                                                                                                                                                                | None.                                                                                                                     |
+| 8   | `POST api/v1/ai-labs/account-reset-password/`                              | New reason `PROVISIONING_IN_PROGRESS` (200) while the lab is still being built; `RESET_EMAIL_FAILED` (502) now also when the password was reset but the mail failed.                                                                                                                                                                                                              | Add the new reason to the reset screen.                                                                                   |
+| 9   | `GET .../assignment-attempts/<id>/`                                        | New `allowed_attempt`; scores out of 10; per-attempt `master_comment` / `minor_comment`.                                                                                                                                                                                                                                                                                          | Read `allowed_attempt`, never hard-code 3.                                                                                |
+| 10  | `GET .../course/<id>/` (lab detail)                                        | **New 2026-10-26:** `ai_lab_course_hints` - the lab's hints, a list of plain-text strings in display order (`[]` when the lab has none).                                                                                                                                                                                                                                          | Build the Hints card from it (section 3, "One AI Lab").                                                                   |
+| 11  | `GET .../course-progress/<id>/`                                            | **New 2026-10-27:** `lab_certificate_url` - the learner's issued lab certificate PDF, `null` until it is issued. Sits just before `final_assessment_status` (still the last key).                                                                                                                                                                                                 | Drive "Download Certificate" from it; after feedback submit, re-read progress until it fills (section 4, "Lab progress"). |
 
 ---
 
@@ -46,6 +47,7 @@ AI practical ......... GET  assignment-brief/<id>/  +  agents/ | flows/
                        GET  assignment-attempts/<id>/ (last 3 graded attempts + grade cards)
 Feedback ............. GET  course-feedback-gate/<id>/ -> course-feedback-questions/<id>/
                        POST course-feedback-submit/<id>/   (closes the lab, awards CPE)
+Certificate .......... GET  course-progress/<id>/  ->  lab_certificate_url (null until issued)
 Credits .............. GET  tokens/   POST tokens-request/
 ```
 
@@ -626,7 +628,8 @@ No body.
 - **Replaces legacy:** `/ai-labs/course/<uuid:ai_lab_course_id>/progress/`
 - **Changed from legacy:** Path app-api/v1/ai-labs/course-progress/<uuid>/ (was ai-labs/course/<uuid>/progress/); same flow keys plus a new nasba block {eligible, delivery_method, outstanding:[{rule,code,message,required,actual}]}; enveloped.
 - **Changed 2026-10-23:** new `final_assessment_status` block as the last key.
-- **Backend:** `AppAILabCourseProgressViewV1` (AILabs/views.py:3748)
+- **Changed 2026-10-27:** new `lab_certificate_url` - the issued lab certificate PDF, else `null`.
+- **Backend:** `AppAILabCourseProgressViewV1` (AILabs/views.py:3759)
 
 **Request**
 
@@ -659,6 +662,7 @@ No body.
       "delivery_method": "QAS Self Study",
       "outstanding": []
     },
+    "lab_certificate_url": null,
     "final_assessment_status": {
       "final_assessment_enum_values": "ended",
       "final_assessment_cool_off_ends_at": null
@@ -669,6 +673,36 @@ No body.
 
 `next_step` is one of `video`, `quiz`, `final_assessment`, `ai_assessment`, `feedback`, `done`.
 `final_assessment_status` is section 1a.
+
+**Lab closed and certificate issued** - same body; the steps are done and the link is filled (sample data):
+
+```json
+"feedback_submitted": true,
+"cpe_awarded": true,
+"is_course_closed": true,
+"next_step": "done",
+"nasba": {
+  "eligible": true,
+  "delivery_method": "QAS Self Study",
+  "outstanding": []
+},
+"lab_certificate_url": "https://certificates.milesone.example/ai-labs/f6570df7-0ad9-4463-9a4d-75df10e14d59/certificate.pdf",
+"final_assessment_status": {
+  "final_assessment_enum_values": "ended",
+  "final_assessment_cool_off_ends_at": null
+}
+```
+
+**`lab_certificate_url` (new 2026-10-27)**
+
+|              |                                                                                                                                                                                   |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Type         | string (URL) or `null`; always present                                                                                                                                            |
+| Filled       | once the lab's certificate PDF has been ISSUED by the certificate service                                                                                                         |
+| `null`       | before feedback; for a few seconds after feedback while the PDF is generated; if generation failed; or when the lab has no certificate template set in the admin                  |
+| Whose        | the signed-in learner's own certificate only                                                                                                                                      |
+| Button       | show "Download Certificate" when it is a URL; when `next_step` is `done` but it is still `null`, show "Certificate is being generated" and re-read this route after a few seconds |
+| Same name as | `lab_certificate_url` in the feedback-submit response, which is usually still `null` at that moment                                                                               |
 
 **Errors**
 
@@ -2295,7 +2329,8 @@ No body.
 - **When:** Last step of the lab.
 - **Replaces legacy:** `/ai-labs/course/<uuid:ai_lab_course_id>/feedback/submit/`
 - **Changed from legacy:** Path api/v1/ai-labs/course-feedback-submit/<uuid>/; feedback questions/answers now live in BadgeCertificateCPE (AILabFeedbackQuestionModule ids, not CAIRA_Masterclass_Feedback_Question ids); new 409 nasba_conditions_unmet; enveloped.
-- **Backend:** `AILabFeedbackSubmitViewV1` (AILabs/views.py:3183)
+- **Backend:** `AILabFeedbackSubmitViewV1` (AILabs/views.py:3194)
+- **The certificate:** submitting feedback REQUESTS the lab certificate (`lab_certificate_triggered: true` when the lab has a certificate template). The PDF is generated a moment later, so `lab_certificate_url` here is usually `null`; read it from **Lab progress** (`course-progress/<id>/`, section 4), where it fills once issued.
 
 **Request**
 
@@ -2401,7 +2436,7 @@ Body:
   (paginated block under `data`, slug `masterclass_ai_labs_courses_web`, default 6). Served by the Masterclass app
   (`WebMasterclassAILabsViewV1`), not counted in the 45 above.
 
-_Updated 2026-10-26 from the backend at `6a5c42d`: lab detail `ai_lab_course_hints` (Hints card); earlier the same day at `21a0042`: new attempts route, re-cut brief, lab detail `chapter` /
+_Updated 2026-10-27 from the backend at `01c7a4d`: lab progress `lab_certificate_url`; 2026-10-26 at `6a5c42d`: lab detail `ai_lab_course_hints` (Hints card); earlier the same day at `21a0042`: new attempts route, re-cut brief, lab detail `chapter` /
 instructor objects, `final_assessment_status`, the two new vendor codes and current backend line numbers;
 samples for those are code-derived (vendor-relayed bodies follow AI Labs' published contracts). First generated
 on 2026-10-20: success bodies are the published API-migration page's AI Labs

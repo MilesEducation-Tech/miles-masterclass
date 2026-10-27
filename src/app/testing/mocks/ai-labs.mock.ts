@@ -19,6 +19,8 @@ import {
   AiLabTokenBalance,
   AiLabTokenRequest,
 } from '@features/ai-labs/models/ai-labs.model';
+import { AiLabAuth } from '@core/services/ai-lab-auth/ai-lab-auth';
+import { AiLabAccount } from '@features/ai-labs/services/ai-lab-account';
 import { AiLabCourseFacade } from '@features/ai-labs/services/ai-lab-course-facade';
 import { AiLabCredits } from '@features/ai-labs/services/ai-lab-credits';
 import { AiLabQuizFacade } from '@features/ai-labs/services/ai-lab-quiz-facade';
@@ -423,8 +425,12 @@ export function mockAiLabProgress(step: AiLabCourseProgress['next_step']): AiLab
     is_course_closed: step === 'done',
     next_step: step,
     nasba: { eligible: step === 'done', delivery_method: 'QAS Self Study', outstanding: [] },
+    lab_certificate_url: step === 'done' ? MOCK_AI_LAB_CERTIFICATE_URL : null,
   };
 }
+
+/** The issued certificate PDF on a closed lab's `course-progress/` (the guide's sample). */
+export const MOCK_AI_LAB_CERTIFICATE_URL = `https://certificates.milesone.example/ai-labs/${MOCK_AI_LAB_DETAIL.id}/certificate.pdf`;
 
 /** What a story sets on the stand-in facade. Anything left out takes the idle default. */
 export interface AiLabCourseStoryState {
@@ -450,7 +456,14 @@ export interface AiLabCourseStoryState {
   coolOffEndsAt?: string | null;
   briefProblem?: string | null;
   attemptsProblem?: string | null;
+  /** Signed in to the lab (Microsoft) as this account — shows the Copilot Studio account line. */
+  labSignedInAs?: string;
 }
+
+/** The learner's lab account, as `account-ensure/?include=labs_account` names it. */
+export const MOCK_AI_LAB_EMAIL = 'learner.4f2a@milesailabs.onmicrosoft.com';
+export const MOCK_AI_LAB_ENVIRONMENT_URL =
+  'https://copilotstudio.microsoft.com/environments/Default-4f2a';
 
 /** Two lab quiz questions, as `course-quiz-questions/` sends them (HTML text, as in the guide). */
 export const MOCK_AI_LAB_QUIZ: AiLabQuizQuestion[] = [
@@ -611,10 +624,21 @@ export function provideStoryAiLabCourse(state: AiLabCourseStoryState): Provider[
     refreshStatus: () => undefined,
     downloadGradeCard: () => undefined,
     openFile: () => undefined,
+    previewFile: () => undefined,
+    openCertificate: () => Promise.resolve(),
+    certificateUrl: signal(progress?.lab_certificate_url ?? null),
     openAttemptGradeCard: () => undefined,
     retryBrief: () => undefined,
     retryAttempts: () => undefined,
     sendTestEmails: () => undefined,
+  };
+  const account = {
+    labEmail: signal(MOCK_AI_LAB_EMAIL),
+    environmentUrl: signal(MOCK_AI_LAB_ENVIRONMENT_URL),
+    isLoading: signal(false),
+    signIn: () => Promise.resolve(),
+    launch: () => undefined,
+    copyLabLink: () => Promise.resolve(),
   };
   const credits = {
     balance: signal(state.balance ?? null),
@@ -645,6 +669,23 @@ export function provideStoryAiLabCourse(state: AiLabCourseStoryState): Provider[
     { provide: AiLabCourseFacade, useValue: stub },
     { provide: AiLabQuizFacade, useValue: quiz },
     { provide: AiLabCredits, useValue: credits },
+    { provide: AiLabAccount, useValue: account },
+    ...(state.labSignedInAs
+      ? [
+          {
+            provide: AiLabAuth,
+            useValue: {
+              isSignedIn: signal(true),
+              identity: signal(state.labSignedInAs),
+              restoring: signal(false),
+              signingIn: signal(false),
+              error: signal(null),
+              hint: signal(null),
+              restoreSession: () => Promise.resolve(),
+            },
+          },
+        ]
+      : []),
   ];
 }
 

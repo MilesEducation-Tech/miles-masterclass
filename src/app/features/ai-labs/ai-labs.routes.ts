@@ -3,6 +3,7 @@ import { provideGsap } from '@code_with_sachin/ngx-gsap';
 import { provideMotion } from '@code_with_sachin/ngx-motion';
 import { authGuard } from '@core/guards/auth/auth-guard';
 import { canDeactivateExamGuard } from '@core/guards/can-deactivate-exam-guard';
+import { AiLabAccount } from '@features/ai-labs/services/ai-lab-account';
 import { AiLabAssessmentFacade } from '@features/ai-labs/services/ai-lab-assessment-facade';
 import { AiLabFeedbackFacade } from '@features/ai-labs/services/ai-lab-feedback-facade';
 import { AiLabCourseFacade } from '@features/ai-labs/services/ai-lab-course-facade';
@@ -38,6 +39,7 @@ export const AI_LABS_ROUTES: Route[] = [
       provideMotion({ reducedMotion: 'user' }),
       AiLabsFacade,
       AiLabCredits,
+      AiLabAccount,
     ],
     loadComponent: () => import('./pages/ai-labs/ai-labs').then((m) => m.AiLabs),
   },
@@ -58,7 +60,7 @@ export const AI_LABS_ROUTES: Route[] = [
   {
     path: ':courseId/:courseTitle',
     canMatch: [authGuard],
-    providers: [AiLabCourseFacade, AiLabQuizFacade, AiLabCredits],
+    providers: [AiLabCourseFacade, AiLabQuizFacade, AiLabCredits, AiLabAccount],
     loadComponent: () => import('./pages/ai-lab-course/ai-lab-course').then((m) => m.AiLabCourse),
   },
   /**

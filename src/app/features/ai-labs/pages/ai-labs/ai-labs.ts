@@ -77,6 +77,7 @@ import {
 } from '@features/ai-labs/models/ai-labs.model';
 import { AiLabAuth } from '@core/services/ai-lab-auth/ai-lab-auth';
 import { AiLabsFacade } from '@features/ai-labs/services/ai-labs-facade';
+import { AiLabAccount } from '@features/ai-labs/services/ai-lab-account';
 import { AiLabCredits } from '@features/ai-labs/services/ai-lab-credits';
 import { AiLabProgressPanel } from '@features/ai-labs/components/ai-lab-progress-panel/ai-lab-progress-panel';
 import { AiLabTokenMeter } from '@features/ai-labs/components/ai-lab-token-meter/ai-lab-token-meter';
@@ -216,6 +217,8 @@ export class AiLabs {
   protected readonly facade = inject(AiLabsFacade);
   /** Copilot Credits, for the floating meter and the progress panel. */
   protected readonly credits = inject(AiLabCredits);
+  /** Whose lab this is — the sign-in and Launch are checked against it (`AiLabAccount`). */
+  protected readonly labAccount = inject(AiLabAccount);
   private readonly dialogs = inject(NgpDialogManager);
   private readonly router = inject(Router);
   // The showcase's log and progress bar move along the reading direction.
@@ -494,10 +497,10 @@ export class AiLabs {
       return;
     }
 
-    // Signed in to the lab: Launch AI Lab opens Copilot Studio as that account. Ahead of the account
-    // read, as upstream — a live lab session is enough, whatever `account-ensure/` is doing.
+    // Signed in to the lab: Launch AI Lab opens Copilot Studio in the learner's own environment,
+    // once the session is checked to be their lab account (`AiLabAccount.launch`).
     if (this.auth.isSignedIn()) {
-      this.auth.launchCopilot();
+      this.labAccount.launch();
       return;
     }
 
@@ -529,9 +532,9 @@ export class AiLabs {
       return;
     }
 
-    // The account exists but this browser isn't signed in to it: the Microsoft popup. Straight
-    // from the click — the popup must open before any await, or it's blocked.
-    void this.auth.signIn();
+    // The account exists but this browser isn't signed in to it: the Microsoft popup, hinted to the
+    // learner's lab account. Straight from the click — the popup must open before any await.
+    void this.labAccount.signIn();
   }
 
   /** Participant agreement; the POST only happens if the user accepted. */
@@ -744,7 +747,7 @@ export class AiLabs {
 
   /** Sign in as a different Microsoft account: the picker, not the remembered one. */
   protected switchAccount(): void {
-    void this.auth.signIn({ switchAccount: true });
+    void this.labAccount.signIn({ switchAccount: true });
   }
 
   /** The hero's Log out — the lab session only; the Miles login stays. */

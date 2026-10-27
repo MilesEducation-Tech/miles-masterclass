@@ -14,7 +14,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-import { firstValueFrom, Subscription, takeWhile, timer } from 'rxjs';
+import { firstValueFrom, map, Observable, of, Subscription, takeWhile, timer } from 'rxjs';
 import { CommonResponse, SKIP_ERROR_NOTIFICATION, SKIP_LOADING } from '@core/models/http.model';
 import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
 import { AuthSession } from '@core/services/auth-session/auth-session';
@@ -22,6 +22,9 @@ import { NotificationService } from '@core/services/notification/notification';
 import { AI_LABS_API } from '@features/ai-labs/constants/ai-labs-api';
 // Type-only: the rules dialog loads with `import()` when the exam is started (AGENTS.md §4.4).
 import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
+// Type-only: the certificate pop-up loads with `import()` on Download Certificate.
+import type { CertificateDialogData } from '@shared/dialogs/certificate-download-dialog/certificate-download-dialog';
+import { renderFileViewer } from '@features/ai-labs/utils/file-viewer';
 import {
   AiLabAgent,
   AiLabAssignmentBrief,
@@ -58,6 +61,14 @@ const STATUS_POLL_TIMEOUT_MS = 30 * 60_000;
 
 /** Brief file links are signed for ~15 minutes — re-read the brief before handing out an older one. */
 const BRIEF_LINK_MAX_AGE_MS = 10 * 60_000;
+
+/**
+ * A closed lab whose certificate PDF isn't issued yet: re-read progress this often, for this long.
+ * The guide says "a few seconds"; past the budget the URL is likely never coming (generation failed,
+ * or the lab has no certificate template), so the CTA stops claiming it is.
+ */
+const CERTIFICATE_POLL_MS = 5_000;
+const CERTIFICATE_POLL_TIMEOUT_MS = 60_000;
 
 /**
  * Brief / attempts failures a retry can fix, in AI Labs' vocabulary (`docs/AI_LABS_API.md` §2).
@@ -99,8 +110,8 @@ const STAGE_FOR_STEP: Record<string, AiLabCtaStage | null> = {
   final_assessment: 'TAKE_EXAM',
   ai_assessment: 'AI_LAB',
   feedback: 'FEEDBACK',
-  // There is no lab-certificate link to download on any read yet, so a closed lab rewatches.
-  done: 'REWATCH',
+  // Refined by `lab_certificate_url` in `ctaStage`: Download, or the wait for the PDF.
+  done: 'DOWNLOAD',
 };
 
 const unwrap =
@@ -162,6 +173,11 @@ export class AiLabCourseFacade {
     this.progressRes.hasValue() ? this.progressRes.value() : null,
   );
 
+  /** The learner's issued lab certificate PDF; `null` until it is issued (guide §4, Lab progress). */
+  readonly certificateUrl = computed(() => this.progress()?.lab_certificate_url ?? null);
+  /** The certificate re-reads ran out of budget without a URL — see `CERTIFICATE_POLL_TIMEOUT_MS`. */
+  private readonly certificateWaitOver = signal(false);
+
   /** The first paint is waiting on the lab itself; the rest fill in behind it. */
   readonly isLoading = computed(() => !this.lab() && this.detailRes.isLoading());
   readonly error = computed(() => !!this.detailRes.error());
@@ -217,6 +233,9 @@ export class AiLabCourseFacade {
     if (!started.started) return 'START';
     const step = this.progress()?.next_step;
     if (step === 'final_assessment') return this.examStage();
+    if (step === 'done' && !this.certificateUrl()) {
+      return this.certificateWaitOver() ? 'REWATCH' : 'CERTIFICATE_PENDING';
+    }
     return step === undefined ? null : (STAGE_FOR_STEP[step] ?? null);
   });
 
@@ -456,11 +475,29 @@ export class AiLabCourseFacade {
 
   // ---- Actions ---------------------------------------------------------------
 
-  /** The lab the URL names. Re-running with a new id re-keys every read. */
+  /**
+   * The lab the URL names. A new id re-keys every read. The same id re-reads them: the route's
+   * injector — and so this facade — outlives the page, so coming back from the exam or the feedback
+   * page would otherwise show the state from before it.
+   */
   open(courseId: string): void {
-    this.courseId.set(courseId);
     this.lastReported = 0;
     this.videoDuration.set(null);
+    this.certificateWaitOver.set(false);
+    if (this.courseId() !== courseId) {
+      this.courseId.set(courseId);
+      return;
+    }
+    for (const res of [
+      this.detailRes,
+      this.startedRes,
+      this.progressRes,
+      this.briefRes,
+      this.statusRes,
+      this.attemptsRes,
+    ]) {
+      res.reload();
+    }
   }
 
   /** Re-read the gate flags — after the quiz completes, so the CTA moves on to the exam. */
@@ -652,40 +689,82 @@ export class AiLabCourseFacade {
   }
 
   /**
-   * Open a brief file. Build guides are public; the rest are signed for ~15 minutes, so a brief
-   * older than 10 is re-read and the file's fresh link used — matched by `sort_order` and name. The
-   * tab opens inside the click; pointing it after the read is what keeps it from being blocked.
+   * Open a brief file in a new tab. The tab opens inside the click; pointing it after the read is
+   * what keeps it from being blocked.
    */
   openFile(file: AiLabFile): void {
-    const fresh = Date.now() - this.briefFetchedAt < BRIEF_LINK_MAX_AGE_MS;
-    if (fresh || this.buildGuides().some((g) => g.url === file.url)) {
-      this.openTab(file.url);
-      return;
-    }
     const tab = this.openTab('');
-    this.api
+    this.freshFileUrl(file).subscribe({
+      next: (url) => (url && tab ? (tab.location.href = url) : tab?.close()),
+      error: () => {
+        tab?.close();
+        this.notification.error('File unavailable', 'Please try again in a moment.');
+      },
+    });
+  }
+
+  /**
+   * A brief file shown in a viewer tab with a Download button, rather than downloading itself —
+   * v3's `openBriefPreview` (`utils/file-viewer.ts`). Tab opened first, inside the click.
+   */
+  previewFile(file: AiLabFile, label: string): void {
+    const tab = this.openTab('');
+    if (!tab) return;
+    tab.document.title = 'Opening…';
+    const labName = this.brief()?.name ?? this.lab()?.ai_lab_course_name ?? 'AI Lab';
+    this.freshFileUrl(file).subscribe({
+      next: (url) => (url ? void renderFileViewer(tab, url, file, label, labName) : tab.close()),
+      error: () => {
+        tab.close();
+        this.notification.error(
+          label,
+          `Could not open the ${label.toLowerCase()}. Please try again.`,
+        );
+      },
+    });
+  }
+
+  /**
+   * A brief file's link, fresh. Build guides are public; the rest are signed for ~15 minutes, so a
+   * brief older than 10 is re-read and the file's new link used — matched by `sort_order` and name.
+   * `null` when the re-read no longer carries the file.
+   */
+  private freshFileUrl(file: AiLabFile): Observable<string | null> {
+    const fresh = Date.now() - this.briefFetchedAt < BRIEF_LINK_MAX_AGE_MS;
+    if (fresh || this.buildGuides().some((g) => g.url === file.url)) return of(file.url);
+    return this.api
       .get<CommonResponse<AiLabVendorBody<'brief', AiLabAssignmentBrief>>>(
         `${AI_LABS_API.assignmentBrief}${this.courseId()}/`,
         { context: QUIET() },
       )
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (res) => {
+      .pipe(
+        map((res) => {
           const brief = res.data?.brief;
-          const match = brief?.name
-            ? briefFiles(brief).find(
-                (f) => f.sort_order === file.sort_order && f.filename === file.filename,
-              )
-            : undefined;
-          if (match && tab) tab.location.href = match.url;
-          else tab?.close();
           this.briefRes.reload();
-        },
-        error: () => {
-          tab?.close();
-          this.notification.error('File unavailable', 'Please try again in a moment.');
-        },
-      });
+          return brief?.name
+            ? (briefFiles(brief).find(
+                (f) => f.sort_order === file.sort_order && f.filename === file.filename,
+              )?.url ?? null)
+            : null;
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      );
+  }
+
+  /**
+   * Download Certificate: the shared certificate pop-up (the one v3 opens), handed the link
+   * `course-progress/` carries. The learner downloads from there.
+   */
+  async openCertificate(): Promise<void> {
+    const certificateUrl = this.certificateUrl();
+    if (!certificateUrl) return;
+    const { CertificateDownloadDialog } =
+      await import('@shared/dialogs/certificate-download-dialog/certificate-download-dialog');
+    const data: CertificateDialogData = {
+      certificateUrl,
+      courseTitle: this.lab()?.ai_lab_course_name,
+    };
+    this.dialogs.open(CertificateDownloadDialog, { data });
   }
 
   /**
@@ -748,6 +827,22 @@ export class AiLabCourseFacade {
     effect(() => {
       const grading = this.grading();
       untracked(() => (grading ? this.startStatusPoll() : this.stopStatusPoll(true)));
+    });
+
+    // A closed lab whose certificate isn't issued yet: re-read progress until the link lands, within
+    // a budget. A reload keeps the value, so the stage holds steady between reads.
+    effect((onCleanup) => {
+      if (this.ctaStage() !== 'CERTIFICATE_PENDING' || !this.isBrowser) return;
+      const started = Date.now();
+      const poll = setInterval(() => {
+        if (Date.now() - started < CERTIFICATE_POLL_TIMEOUT_MS) {
+          this.progressRes.reload();
+          return;
+        }
+        clearInterval(poll);
+        this.certificateWaitOver.set(true);
+      }, CERTIFICATE_POLL_MS);
+      onCleanup(() => clearInterval(poll));
     });
 
     this.destroyRef.onDestroy(() => this.stopStatusPoll(false));

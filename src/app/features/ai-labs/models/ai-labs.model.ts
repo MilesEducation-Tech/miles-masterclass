@@ -79,6 +79,22 @@ export interface AiLabAccountState {
    * token carries. The guide's instruction is to force a re-login.
    */
   entitlement_refresh_required?: boolean;
+  /** Only with `?include=labs_account`, and absent when AI Labs couldn't be asked. */
+  labs_account?: AiLabLabsAccount;
+}
+
+/** The AI Labs side of the learner's account (guide §7, `account-ensure/?include=labs_account`). */
+export interface AiLabLabsAccount {
+  exists: boolean;
+  /** `false`: the login token predates the account — a re-login fixes it. */
+  entitled: boolean;
+  enrolled: boolean;
+  /** `false` (with `lab_email` null) while the account is still being built. */
+  provisioned: boolean;
+  /** The Microsoft account this learner's lab belongs to, e.g. `learner.4f2a@milesailabs.onmicrosoft.com`. */
+  lab_email: string | null;
+  /** The learner's own Copilot Studio environment. */
+  environment_url: string | null;
 }
 
 /**
@@ -574,6 +590,11 @@ export interface AiLabCourseProgress {
     delivery_method: string | null;
     outstanding: AiLabNasbaOutstanding[];
   };
+  /**
+   * The learner's issued lab certificate PDF (2026-10-27). `null` before feedback, for a few seconds
+   * after it while the PDF is generated, if generation failed, or when the lab has no template.
+   */
+  lab_certificate_url: string | null;
   final_assessment_status?: AiLabFinalAssessmentStatus;
 }
 
@@ -599,6 +620,8 @@ export interface AiLabVideoProgressBody {
  *    feedback here; our backend refuses it until the lab is graded, so the CTA points at the lab.
  *  - `COOL_OFF` — the last exam attempt failed and the wait is still running
  *    (`final_assessment_status: cool_off`): the button is disabled and says until when.
+ *  - `DOWNLOAD` / `CERTIFICATE_PENDING` — the lab is closed (`next_step: done`) and
+ *    `lab_certificate_url` is a link / still `null` while the PDF is generated.
  */
 export type AiLabCtaStage =
   | 'START'
@@ -609,7 +632,8 @@ export type AiLabCtaStage =
   | 'COOL_OFF'
   | 'AI_LAB'
   | 'FEEDBACK'
-  | 'DOWNLOAD';
+  | 'DOWNLOAD'
+  | 'CERTIFICATE_PENDING';
 
 /** The stages that sit past the chapter quiz — reaching any of them means it is behind the learner. */
 export const AI_LAB_QUIZ_BEHIND: readonly AiLabCtaStage[] = [
@@ -619,6 +643,7 @@ export const AI_LAB_QUIZ_BEHIND: readonly AiLabCtaStage[] = [
   'AI_LAB',
   'FEEDBACK',
   'DOWNLOAD',
+  'CERTIFICATE_PENDING',
 ];
 
 /** One Copilot Studio agent — a row of `agents` on `web-api/v1/ai-labs/agents/`. */

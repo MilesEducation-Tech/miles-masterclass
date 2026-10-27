@@ -35,17 +35,31 @@
             </p>
           </div>
           <div>
-            <button
-              app-button
-              type="button"
-              class="flex items-center justify-center rounded-lg"
-              variant="default"
-              aria-label="Download NASBA certificate"
-              [disabled]="downloadingNasba()"
-              (click)="download('nasba')"
-            >
-              <ng-icon name="phosphorDownloadSimpleFill" size="1.2rem"></ng-icon>
-            </button>
+            @if (data.certificateUrl; as url) {
+              <!-- A link the caller holds: the learner's click opens it, so it downloads (or shows
+                   in the browser's viewer) whatever the bucket's CORS. Styled as the button below. -->
+              <a
+                [href]="url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="flex h-10 items-center justify-center rounded-lg bg-white px-4 text-black transition-colors hover:bg-white/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                aria-label="Download NASBA certificate"
+              >
+                <ng-icon name="phosphorDownloadSimpleFill" size="1.2rem"></ng-icon>
+              </a>
+            } @else {
+              <button
+                app-button
+                type="button"
+                class="flex items-center justify-center rounded-lg"
+                variant="default"
+                aria-label="Download NASBA certificate"
+                [disabled]="downloadingNasba()"
+                (click)="download('nasba')"
+              >
+                <ng-icon name="phosphorDownloadSimpleFill" size="1.2rem"></ng-icon>
+              </button>
+            }
           </div>
         </div>
       }

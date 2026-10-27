@@ -142,6 +142,9 @@ export class AuthSession {
         .call(AUTH_ROUTES.verifyOtp, { ...contact, code }, { context: QUIET })
         .pipe(map((res) => res.data)),
     );
+    // A new sign-in starts with no lab session. One left on this browser by a previous learner —
+    // whose Miles cookies simply expired, so `clear()` never ran — would otherwise carry over.
+    clearAiLabSession(this.storage);
     this.store(session);
     return session;
   }

@@ -12,6 +12,7 @@ import {
   MOCK_AI_LAB_DETAIL,
   MOCK_AI_LAB_DETAIL_WITH_TRAILER,
   MOCK_AI_LAB_DETAIL_WITH_VIDEO,
+  MOCK_AI_LAB_EMAIL,
   MOCK_AI_LAB_EVALUATED,
   MOCK_AI_LAB_EVALUATING,
   MOCK_AI_LAB_FLOWS,
@@ -151,6 +152,19 @@ export const LabUnlocked = withState({
   ...practical,
 });
 
+/**
+ * Signed in to the lab: under Launch, the account Copilot Studio should show and Copy lab link —
+ * Copilot Studio picks its own account, so the page says which one to look for.
+ */
+export const LabSignedIn = withState({
+  lab,
+  started: MOCK_AI_LAB_STARTED,
+  progress: mockAiLabProgress('ai_assessment'),
+  ctaStage: 'AI_LAB',
+  ...practical,
+  labSignedInAs: MOCK_AI_LAB_EMAIL,
+});
+
 /** An attempt is with the evaluator: the picker stays visible but nothing can be changed. */
 export const Evaluating = withState({
   lab,
@@ -244,6 +258,26 @@ export const RedesignGradedWithHistory = withState({
   ...practical,
   assignment: { ...MOCK_AI_LAB_EVALUATED, can_resubmit: true },
   attempts: MOCK_AI_LAB_ATTEMPTS,
+});
+
+/** Feedback in, certificate issued: the CTA opens the certificate pop-up. */
+export const CertificateReady = withState({
+  lab,
+  started: MOCK_AI_LAB_STARTED,
+  progress: mockAiLabProgress('done'),
+  ctaStage: 'DOWNLOAD',
+  ...practical,
+  assignment: MOCK_AI_LAB_EVALUATED,
+});
+
+/** Feedback in, the PDF still generating (`lab_certificate_url: null`): the CTA waits, disabled. */
+export const CertificatePending = withState({
+  lab,
+  started: MOCK_AI_LAB_STARTED,
+  progress: { ...mockAiLabProgress('done'), lab_certificate_url: null },
+  ctaStage: 'CERTIFICATE_PENDING',
+  ...practical,
+  assignment: MOCK_AI_LAB_EVALUATED,
 });
 
 export const Loading = withState({ isLoading: true });

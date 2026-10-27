@@ -212,7 +212,7 @@ export class AiLabAuth {
    * `await`, because a `window.open` that happens after an await has lost the user-gesture context
    * and gets blocked.
    */
-  async signIn(opts?: { switchAccount?: boolean }): Promise<void> {
+  async signIn(opts?: { switchAccount?: boolean; labEmail?: string | null }): Promise<void> {
     if (!this.isBrowser) return;
     // Don't block on `signingIn`: a user who closes the popup without signing in leaves a wait we
     // cannot observe (COOP hides `popup.closed`), so a second click must be able to supersede it
@@ -237,9 +237,14 @@ export class AiLabAuth {
     this.signingIn.set(true);
     try {
       const client = await this.getClient();
-      const lastEmail = opts?.switchAccount
-        ? null
-        : this.storage.getLocal<string>(AI_LAB_LAST_EMAIL_KEY);
+      // The learner's own lab account when the caller knows it — never the browser's last one, which
+      // may be someone else's. A switch keeps that hint but still shows the picker.
+      const hint =
+        opts?.labEmail !== undefined
+          ? opts.labEmail
+          : opts?.switchAccount
+            ? null
+            : this.storage.getLocal<string>(AI_LAB_LAST_EMAIL_KEY);
       const { data, error } = await client.auth.signInWithOAuth({
         provider: 'azure',
         options: {
@@ -251,7 +256,8 @@ export class AiLabAuth {
             // A known account plus a live Entra session round-trips with no UI at all. Only ask
             // which account when we have no idea which one to use, or the user said to change it —
             // otherwise `select_account` makes every repeat sign-in a picker for their one account.
-            ...(lastEmail ? { login_hint: lastEmail } : { prompt: 'select_account' }),
+            ...(hint ? { login_hint: hint } : {}),
+            ...(!hint || opts?.switchAccount ? { prompt: 'select_account' } : {}),
             // Pin the lab tenant's domain so learners can't land on the generic consumer sign-in
             // screen. Must be the tenant that owns the app registration Supabase's Azure provider
             // uses.
@@ -283,9 +289,42 @@ export class AiLabAuth {
     }
   }
 
-  /** Opens Copilot Studio in a new tab, as the account just signed in. */
-  launchCopilot(): void {
-    this.window?.open(COPILOT_STUDIO_URL, '_blank', 'noopener,noreferrer');
+  /**
+   * Opens Copilot Studio in a new tab — the learner's own environment when known. Copilot Studio
+   * signs in by itself, as whichever Microsoft account last used it on this browser; nothing in the
+   * link can choose that account (see `AiLabAccount`).
+   */
+  launchCopilot(url?: string | null): void {
+    this.window?.open(url || COPILOT_STUDIO_URL, '_blank', 'noopener,noreferrer');
+  }
+
+  /** The lab session is `labEmail`'s. A session with no email can't show that, so it isn't. */
+  belongsTo(labEmail: string): boolean {
+    const signedInAs = this.identity()?.trim().toLowerCase();
+    return !!signedInAs && signedInAs === labEmail.trim().toLowerCase();
+  }
+
+  /**
+   * Drop a lab session that isn't the learner's own, and say whose it was. Local only: the other
+   * person stays signed in everywhere else, Microsoft included (`scope: 'local'`).
+   */
+  async dropForeignSession(labEmail: string): Promise<void> {
+    if (!this.isBrowser) return;
+    const signedInAs = this.identity() ?? 'another Microsoft account';
+    this.clearLocalSession();
+    if (this.client) {
+      // As in `signOut`: the SIGNED_OUT this emits is deliberate, not an expiry.
+      this.userSignedOut = true;
+      try {
+        await this.client.auth.signOut({ scope: 'local' });
+      } catch (err) {
+        this.logger.error('AiLabAuth: dropping a foreign session failed', err);
+        this.userSignedOut = false;
+      }
+    }
+    this.error.set(
+      `You're signed in to AI Labs as ${signedInAs}, but your AI Lab account is ${labEmail}. Sign in as ${labEmail}.`,
+    );
   }
 
   /** Whether this browser is holding a labs session at all. */
