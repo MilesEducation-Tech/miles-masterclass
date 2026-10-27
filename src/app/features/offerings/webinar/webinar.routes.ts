@@ -63,6 +63,9 @@ export const webinarRoutes: Routes = [
         // without a valid token regardless, so that one is for the redirect,
         // not the security.
         canMatch: [() => environment.WEBINAR.liveEnabled, authGuard],
+        data: {
+          layout: 'plain',
+        },
         // The room always runs in a document of its own, so the COOP/COEP
         // headers `vercel.json` sends for `/live` apply in it and nowhere else.
         // See `live-document-guard.ts`.
