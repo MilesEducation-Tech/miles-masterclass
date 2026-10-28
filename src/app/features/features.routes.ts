@@ -1,6 +1,9 @@
+import { inject } from '@angular/core';
 import { Route } from '@angular/router';
 import { DynamicLayout } from '@layout/dynamic-layout/dynamic-layout';
 import { authGuard } from '@core/guards/auth/auth-guard';
+import { guestHomeGuard } from '@core/guards/auth/guest-home-guard';
+import { AuthSession } from '@core/services/auth-session/auth-session';
 import { uaeCairaMatchGuard } from '@core/guards/uae-caira-match-guard';
 import { UaeCairaFacade } from '@features/uae-caira/services/uae-caira-facade';
 import { HomeFacade } from '@features/home/services/home-facade';
@@ -20,11 +23,12 @@ export const featuresRoutes: Route[] = [
     // would fork a route-scoped copy that those broadcasts never reach.
     children: [
       {
-        // ponytail: was `auth.isLoggedIn() ? 'masterclass' : 'home'`. With no
-        // session layer everyone lands on the marketing home.
+        // Home is the signed-out landing page; a signed-in learner starts on the
+        // masterclass page. `/`, the header logo and sign-in with no `redirect`
+        // all land here, so they skip the hop through `guestHomeGuard`.
         path: '',
         pathMatch: 'full',
-        redirectTo: 'home',
+        redirectTo: () => (inject(AuthSession).isAuthenticated() ? 'masterclass' : 'home'),
       },
       // UAE CAIRA marketing landing page — handles `home` only for the country
       // segments in `uaeCairaMatchGuard` (currently `ae`). When the guard
@@ -38,8 +42,11 @@ export const featuresRoutes: Route[] = [
         loadComponent: () =>
           import('@features/uae-caira/pages/uae-caira/uae-caira').then((m) => m.UaeCaira),
       },
+      // Signed out only: `guestHomeGuard` sends a signed-in learner on to the
+      // masterclass page. The UAE CAIRA page above stays open to them.
       {
         path: 'home',
+        canMatch: [guestHomeGuard],
         providers: [HomeFacade],
         loadComponent: () => import('@features/home/pages/home/home').then((m) => m.Home),
       },
