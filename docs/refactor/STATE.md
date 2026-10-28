@@ -7,6 +7,30 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🟡 **2026-10-27, NON-REFACTOR — MIL-147 (feature), the Coming Soon rail on the masterclass page. PLAN APPROVED,
+  DONE, GATES GREEN, UNCOMMITTED** (`prompts/masterclass-coming-soon.md`), on `feat/MIL-147-masterclass-coming-soon`
+  off `master` (`f07812db`).
+  - **Gates (local macOS):** lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 227.95 kB, only
+    `ai-labs.css`.
+  - **Verified (dev 4101, Playwright; signed in stubbed, with UAT's real `coming-soon/` row):**
+    - **Signed in:** one `coming-soon/?page_size=100` read. The rail is last (after My List and "Courses you've
+      mastered", before the FAQ), with the heading and the bell line.
+    - **The card:** the artwork loads with rank 1, and Trailer appears on hover and opens the video dialog.
+    - **Sidenav:** "Coming Soon" (rocket) appears.
+    - **Signed out:** no request, no rail, no sidenav entry.
+    - **Empty answer and a 500:** no rail and no sidenav entry. The 500 logs "coming soon load failed".
+    - **Layout:** no overflow at 375 / 768 / 1440. The placeholder (680 px) matches the rail (662–688 px).
+  - **Revision, the hover fade (the user's call):** hovering a card with a trailer fades the bottom of its artwork to
+    dark (the course cards' `bg-linear-to-t from-background …`), so Trailer reads over busy artwork. Verified at
+    1440 and 375: hidden at rest, shown on hover, and Trailer stays clickable above it.
+  - **Old bindings:** none left on the masterclass page.
+    - The `v2/dashboard/?filter=coming_soon` route and `app-coming-soon` stay for podcast and micro-learning.
+    - `core/config/feature.config.ts` is unused; deleting it is a separate chore.
+  - **Remind Me: not in this PR, waiting on the backend.** A Coming Soon id isn't a course, so the bookmark route may
+    not take it. The user is checking `POST bookmark/<coming-soon id>/` in Postman. If it answers 200, Remind Me is a
+    follow-up, stacked under Trailer (`flex-col`, full width) at every width. Side by side fits only at 1440, with
+    0 px to spare.
+
 - ⏸ **2026-10-27 — Zoom + environment stack: #200–#205 merged; #206 (MIL-145) is the last one open.** Each squash
   merge left the next PR conflicting with `master`: the STATE.md and prompt status lines, plus `course-library.ts` and
   the environment files for #205. Each was resolved by merging `origin/master` into the next branch; no rebases or

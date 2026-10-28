@@ -10,6 +10,8 @@ import { MasterclassBookmarks } from '@core/services/masterclass-bookmarks/maste
 import { Logger } from '@core/services/logger/logger';
 import {
   complimentaryHeading,
+  MASTERCLASS_COMING_SOON_PARAMS,
+  MASTERCLASS_COMING_SOON_URL,
   MASTERCLASS_COMPLETED_PARAMS,
   MASTERCLASS_COMPLETED_URL,
   MASTERCLASS_LIBRARY_PARAMS,
@@ -19,20 +21,23 @@ import {
   MASTERCLASS_RAILS_ABOVE_TRACKS,
 } from '@features/offerings/masterclass/constants/masterclass';
 import {
+  MasterclassComingSoonCourse,
   MasterclassLibrary,
   MasterclassRail,
+  parseComingSoon,
   parseCompletedSection,
   parseMasterclassLibrary,
 } from '@features/offerings/masterclass/models/masterclass-library.model';
 
 /**
  * The masterclass page's signed-in rails: Continue Watching, Recommended For
- * You, Complimentary and Because You Watched above the tracks, My List and the
- * completed courses below them. Route-scoped, like `MasterclassHighlightFacade`:
- * only `/masterclass` renders them.
+ * You, Complimentary and Because You Watched above the tracks, My List, the
+ * completed courses and Coming Soon below them. Route-scoped, like
+ * `MasterclassHighlightFacade`: only `/masterclass` renders them.
  *
- * Both reads run only signed in and only in the browser: the token lives
- * there, and signed out `library/` sends these rails empty. Signing in or out
+ * The reads run only signed in and only in the browser: the token lives
+ * there, and signed out `library/` sends these rails empty. `coming-soon/` is
+ * public, but the rail shows only signed in. Signing in or out
  * re-runs them by itself, off the session's boolean. A bookmark changed
  * anywhere re-reads `library/`, so My List follows it.
  */
@@ -60,6 +65,14 @@ export class MasterclassLibraryFacade {
         ? { url: apiUrl(MASTERCLASS_COMPLETED_URL), params: MASTERCLASS_COMPLETED_PARAMS }
         : undefined,
     { parse: parseCompletedSection },
+  );
+
+  private readonly comingSoonResource = httpResource<MasterclassComingSoonCourse[]>(
+    () =>
+      this.signedIn()
+        ? { url: apiUrl(MASTERCLASS_COMING_SOON_URL), params: MASTERCLASS_COMING_SOON_PARAMS }
+        : undefined,
+    { parse: parseComingSoon },
   );
 
   private readonly latestLibrary = computed(() =>
@@ -102,10 +115,17 @@ export class MasterclassLibraryFacade {
     return rails.filter((rail) => rail.courses.length > 0);
   });
 
-  /** The section ids on the page, for the sidenav's entries. */
-  readonly sectionIds = computed(
-    () => new Set([...this.railsAboveTracks(), ...this.railsBelowTracks()].map((rail) => rail.id)),
+  /** The Coming Soon rail, last on the page; empty until it loads, and on failure. */
+  readonly comingSoon = computed<MasterclassComingSoonCourse[]>(() =>
+    this.comingSoonResource.hasValue() ? this.comingSoonResource.value() : [],
   );
+
+  /** The section ids on the page, for the sidenav's entries. */
+  readonly sectionIds = computed(() => {
+    const ids = [...this.railsAboveTracks(), ...this.railsBelowTracks()].map((rail) => rail.id);
+    if (this.comingSoon().length) ids.push(MASTERCLASS_RAIL_SECTION_IDS.comingSoon);
+    return new Set(ids);
+  });
 
   // From a card or the course page. Route injectors outlive the page, so this
   // runs on the course page too and My List is current on the way back.
@@ -123,5 +143,10 @@ export class MasterclassLibraryFacade {
   private readonly completedErrorLog = effect(() => {
     const error = this.completed.error();
     if (error) this.logger.error('[MasterclassLibraryFacade] completed load failed', error);
+  });
+
+  private readonly comingSoonErrorLog = effect(() => {
+    const error = this.comingSoonResource.error();
+    if (error) this.logger.error('[MasterclassLibraryFacade] coming soon load failed', error);
   });
 }

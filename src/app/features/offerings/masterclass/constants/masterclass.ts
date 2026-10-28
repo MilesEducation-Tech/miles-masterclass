@@ -2,6 +2,7 @@ import { environment } from '@env/environment';
 import { MASTERCLASS_COURSE_TYPE } from '@core/constants/masterclass';
 import { RouteConfig } from '@core/models/http.model';
 import { VideoConfig } from '@core/models/video-player.model';
+import { PartnerContentItem } from '@shared/components/partner-content-list/partner-content-list';
 import { LibraryRailConfig } from '@features/offerings/masterclass/models/masterclass-library.model';
 import {
   RailFilterCreditBucket,
@@ -66,11 +67,33 @@ export const MASTERCLASS_COMPLETED_PARAMS = {
   'all_courses.page_size': RAIL_PAGE_SIZE,
 } as const;
 
+/**
+ * The Coming Soon teasers. Public, and the same answer for every caller; the
+ * page asks only signed in, as the rail shows only then. Postman
+ * `web-masterclass-coming-soon-v1`.
+ */
+export const MASTERCLASS_COMING_SOON_URL = `${environment.API.baseUrl}web-api/v1/masterclass/coming-soon/`;
+
+/** Its one list pages on the bare `page_size`; any other key is a 400. */
+export const MASTERCLASS_COMING_SOON_PARAMS = { page_size: RAIL_PAGE_SIZE } as const;
+
+/** The heading over the Coming Soon rail, styled as the micro-learning page's. */
+export const MASTERCLASS_COMING_SOON_HEADING: PartnerContentItem[] = [
+  {
+    subHeading: 'Coming Soon on Masterclasses',
+    paragraph: 'Hit the bell icon for updates and never miss a new CPE course drop!',
+    subHeadingClass: 'text-white md:text-5xl text-3xl font-bold',
+    itemClass: 'text-center py-4 md:w-2/3 w-full mx-auto leading-relaxed',
+    paragraphClass: 'text-white md:text-lg text-base font-normal mt-2',
+  },
+];
+
 /** Section ids of the signed-in rails the sidenav lists. */
 export const MASTERCLASS_RAIL_SECTION_IDS = {
   continueWatching: 'continue-watching',
   myList: 'my-list',
   completed: 'completed-courses',
+  comingSoon: 'masterclass-coming-soon',
 } as const;
 
 /** The signed-in rails above the tracks, in order. */

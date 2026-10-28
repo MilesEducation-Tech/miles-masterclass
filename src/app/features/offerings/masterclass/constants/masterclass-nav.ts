@@ -7,9 +7,8 @@ export const MASTERCLASS_TRACKS_SECTION_ID = 'masterclass-tracks';
 /**
  * The masterclass page's sidenav. Each `id` is an element the page renders —
  * `SectionNav` resolves them with `getElementById`, so an id with no element is
- * a dead link. The tracks and the signed-in rails start hidden and show once
- * their section has courses. Coming Soon is not bound yet; add its entry only
- * with the section it points at.
+ * a dead link. The tracks, the signed-in rails and Coming Soon start hidden
+ * and show once their section has courses.
  */
 export const MASTERCLASS_SECTION_NAV: readonly SectionNavItem[] = [
   { id: 'masterclass-home', label: 'Home', visible: true, icon: 'lucideHome' },
@@ -31,6 +30,12 @@ export const MASTERCLASS_SECTION_NAV: readonly SectionNavItem[] = [
     label: 'Completed Courses',
     visible: false,
     icon: 'lucideCheckCircle',
+  },
+  {
+    id: MASTERCLASS_RAIL_SECTION_IDS.comingSoon,
+    label: 'Coming Soon',
+    visible: false,
+    icon: 'lucideRocket',
   },
   { id: 'masterclass-faq', label: 'FAQ', visible: true, icon: 'lucideHelpCircle' },
 ];

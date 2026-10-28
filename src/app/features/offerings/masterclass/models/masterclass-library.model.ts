@@ -19,6 +19,8 @@ import {
  * - `GET web-api/v1/masterclass/completed-course-section/`
  *   (`web-masterclass-completed-course-section-v1`): the courses the learner
  *   has closed.
+ * - `GET web-api/v1/masterclass/coming-soon/` (`web-masterclass-coming-soon-v1`,
+ *   checked on UAT 2026-10-27): the teasers, which are not courses yet.
  *
  * These are the keys the page READS, not a mirror of the payload: `library/`
  * also carries `popular` and `latest` (the hero reads `highlight/` instead),
@@ -44,6 +46,19 @@ export interface MasterclassLibrary {
   /** The learner's firm, for the Complimentary heading; `null` when there is none. */
   companyName: string | null;
   rails: Readonly<Record<LibraryRailKey, LibraryCourse[]>>;
+}
+
+/**
+ * A `coming-soon/` row: a teaser, not a course yet (`course-detail/` answers
+ * 404 for its id), so it has no link and no bookmark. These are the keys the
+ * rail reads; it also sends `slug`, `priority` (the order it comes in) and
+ * `fields_of_study`.
+ */
+export interface MasterclassComingSoonCourse {
+  id: string;
+  name: string;
+  thumbnail_url: string | null;
+  trailer_url: string | null;
 }
 
 /** A rail above the tracks: the `library/` rail it reads, its section id and heading. */
@@ -79,6 +94,13 @@ export const trackRail = (track: MasterclassTrack): MasterclassRail => ({
 
 const isLibraryCourse = (v: unknown): v is LibraryCourse =>
   isMasterclassCourse(v) && isObject(v) && isStr(v['course_type']);
+
+const isComingSoonCourse = (v: unknown): v is MasterclassComingSoonCourse =>
+  isObject(v) &&
+  isStr(v['id']) &&
+  isStr(v['name']) &&
+  isStrOrNull(v['thumbnail_url']) &&
+  isStrOrNull(v['trailer_url']);
 
 /** A pagination block whose `results` all pass `guard`. */
 const blockOf =
@@ -116,4 +138,11 @@ export function parseCompletedSection(raw: unknown): MasterclassCourse[] {
   const block = isObject(data) ? data['all_courses'] : undefined;
   if (blockOf(isMasterclassCourse)(block)) return block.results;
   throw contractError('completed-course-section');
+}
+
+/** `parse` for `coming-soon/`: `data` is the one pagination block. */
+export function parseComingSoon(raw: unknown): MasterclassComingSoonCourse[] {
+  const data = isObject(raw) ? raw['data'] : undefined;
+  if (blockOf(isComingSoonCourse)(data)) return data.results;
+  throw contractError('coming-soon');
 }

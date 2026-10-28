@@ -70,6 +70,73 @@
       }
     </div>
   }
+  <!-- Signed in only, last: the teasers. Not courses yet, so no link, bookmark or filter. -->
+  @if (library.comingSoon().length) {
+    <section [id]="comingSoonSectionId" class="w-11/12 mx-auto md:mt-20 mt-10 scroll-mt-20">
+      @defer (on viewport; prefetch on idle) {
+        <div class="flex flex-col space-y-6">
+          <app-partner-content-list [content]="comingSoonHeading" />
+          <app-carousel
+            [cards]="library.comingSoon()"
+            [heading]="{ text: '', subText: '' }"
+            [swiperConfig]="swiperConfigComingSoon"
+            [filterConfig]="{ filterEnabled: false }"
+          >
+            <!-- The shared `app-coming-soon` design: the rank in outline, the artwork, Trailer on hover. -->
+            <ng-template let-course let-index="$index">
+              <div class="w-full group/card flex flex-col overflow-hidden relative">
+                <div class="flex justify-end h-full relative">
+                  <div
+                    class="flex items-end justify-start text-[16rem] leading-[280px] font-medium [-webkit-text-fill-color:transparent]! [-webkit-text-stroke:10px_#ffffff47]! tracking-tighter self-end m-0 absolute bottom-[-22px] start-0 w-2/5 h-full"
+                    aria-hidden="true"
+                  >
+                    {{ index + 1 }}
+                  </div>
+                  <div
+                    class="max-w-[280px] aspect-9/16 relative flex flex-col h-full w-[70%] p-4 justify-end z-20 rounded-xl overflow-hidden bg-secondary"
+                  >
+                    @if (course.thumbnail_url) {
+                      <img
+                        [ngSrc]="course.thumbnail_url"
+                        [alt]="course.name"
+                        fill
+                        class="object-cover object-top"
+                      />
+                    }
+                    @if (course.trailer_url) {
+                      <!-- The course cards' hover fade, so the button reads over busy artwork. -->
+                      <div
+                        class="absolute inset-0 bg-linear-to-t from-background from-20% via-background/70 via-30% to-50% to-transparent opacity-0 group-hover/card:opacity-100 group-focus-within/card:opacity-100 transition-opacity duration-300 pointer-events-none"
+                      ></div>
+                      <!-- `relative` paints it over the artwork and the fade; focus shows it, as hover does. -->
+                      <div
+                        class="relative flex justify-center w-full opacity-0 group-hover/card:opacity-100 focus-within:opacity-100 transition-opacity duration-300 ease-in-out"
+                      >
+                        <button
+                          app-button
+                          type="button"
+                          class="bg-white text-black rounded-md hover:bg-white hover:text-black gap-2"
+                          (click)="openComingSoonTrailer(course)"
+                        >
+                          <ng-icon [svg]="playIcon" class="size-4" />
+                          Trailer
+                        </button>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            </ng-template>
+          </app-carousel>
+        </div>
+      } @placeholder {
+        <!-- The rail's height at 375 / 768 / 1440 (662–688 px): heading plus one 9:16 card. -->
+        <div class="flex items-center justify-center h-170">
+          <div class="animate-pulse rounded-md bg-gray-200 w-full h-full"></div>
+        </div>
+      }
+    </section>
+  }
   <section id="masterclass-faq" class="scroll-mt-20">
     <app-faq [standalone]="false" />
   </section>
