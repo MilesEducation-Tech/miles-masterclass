@@ -1,6 +1,11 @@
-<app-dialog ariaLabel="Download certificate" panelClass="p-0 max-w-full">
+<!-- The card draws its own surface, so the panel shrinks to it: a bare `max-w-full` panel stays
+     `w-full` and shows its own background beside the card. -->
+<app-dialog
+  ariaLabel="Download certificate"
+  panelClass="p-0 w-auto max-w-full bg-transparent shadow-none"
+>
   <div
-    class="bg-[#1C1F26] text-white rounded-xl overflow-hidden w-full max-w-2xl max-sm:w-[90vw] border border-gray-800 shadow-2xl"
+    class="bg-[#1C1F26] text-white rounded-xl overflow-hidden w-[min(42rem,90vw)] border border-gray-800 shadow-2xl"
   >
     <!-- Header -->
     <div class="bg-[#2B3240] p-6 flex justify-between items-start relative overflow-hidden">
