@@ -7,6 +7,35 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🟡 **2026-10-29, NON-REFACTOR — MIL-132 (bug), the rail filter on the home page. PLAN APPROVED, DONE, GATES GREEN,
+  UNCOMMITTED** (`prompts/home-rail-filter.md`, PR 2), on `fix/MIL-132-home-rail-filter` off `master` (`7a5ab1b5`).
+  - **Change:**
+    - the home route lists `MasterclassRailFilter` beside `HomeFacade`, so home keeps its own selections for the
+      visit;
+    - `Home` narrows its tracks as the masterclass page does (`trackRails`), and each carousel renders `rail.shown`
+      with the same filter button, count and empty line;
+    - the first rail's image priority is picked by course (`priorityCourseIds`), not by position. By position, a
+      filter changed `priority` on a rendered image, NgOptimizedImage threw NG02953, and Clear All brought back 12 of
+      21 cards.
+  - **Gates (local macOS):** lint 0 errors (98 warnings); structure ✔; Prettier ✔; tsc 0; `build:prod` raw 979.45 kB
+    unchanged, only `ai-labs.css`. The lazy `features-routes` chunk grows 4 kB raw / ~1.3 kB gzip (the service);
+    `FilterDialog` stays in its own chunk.
+  - **Verified (dev 4101, Playwright, signed out against UAT), 20 checks:**
+    - every home rail has the icon; nothing reads `filter/` before a click, and the first open makes 4 reads;
+    - one instructor narrows the first rail 21 → 1 with a count of 1, and only that rail;
+    - reopening keeps the tick and reads nothing; Clear All brings back all 21; another rail reads nothing;
+    - an instructor plus a field of study their course lacks empties the rail and shows the empty line;
+    - a selection on home doesn't show on the masterclass page, and is still there back on home;
+    - 375 / 768 / 1440: the icon sits in the heading row, no horizontal scroll, and the rails measure the same as on
+      `master` (414 / 438 / 462 px);
+    - the first rail's three leading images still load with priority; the masterclass page's filter passes its 12
+      checks unchanged.
+  - **Seen, not caused here (both the same on `master`):**
+    - at 1440 the home rail placeholder is 503 px against a 462 px rail, so a rail scrolling in shifts what's below
+      it by 41 px;
+    - the AI Labs ring (`app-surround-carousel`) re-requests two S3 thumbnails with an `Origin` header, and S3
+      refuses localhost (CORS errors in the console).
+
 - 🟡 **2026-10-29, NON-REFACTOR — MIL-156 (refactor), the masterclass rail filter moved to shared code. PLAN
   APPROVED, PR 1 OF 2 DONE, GATES GREEN, UNCOMMITTED** (`prompts/home-rail-filter.md`), on
   `refactor/MIL-156-shared-rail-filter` off `master` (`46264d4f`). PR 2 is MIL-132, the filter on the home page.

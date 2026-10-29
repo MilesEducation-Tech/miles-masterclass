@@ -1,13 +1,17 @@
 import { Component, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { swiperConfigEven } from '@core/config/swiper.config';
+import { filterIcon } from '@core/constants/icon';
+import { RAIL_FILTER_EMPTY } from '@core/constants/masterclass';
 import {
   MasterclassCourse,
   MasterclassCourseInfoDialogData,
+  trackRail,
 } from '@core/models/masterclass-home.model';
 import { MASTERCLASS_COURSE_INFO_DIALOG } from '@core/services/dialog/feature-dialog-tokens';
 import { MasterclassBookmarks } from '@core/services/masterclass-bookmarks/masterclass-bookmarks';
 import { MasterclassHomeFacade } from '@core/services/masterclass-home-facade/masterclass-home-facade';
+import { NgIcon } from '@ng-icons/core';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { AppDownload } from '@shared/components/app-download/app-download';
 import { CairaLevelStack } from '@shared/components/caira-level-stack/caira-level-stack';
@@ -16,6 +20,7 @@ import { Carousel } from '@shared/components/carousel/carousel';
 import { Faq } from '@shared/components/faq/faq';
 import { SectionNav, SectionNavItem } from '@shared/components/section-nav/section-nav';
 import { SurroundCarousel } from '@shared/components/surround-carousel/surround-carousel';
+import { MasterclassRailFilter } from '@shared/services/masterclass-rail-filter';
 import { Utils } from '@shared/services/utils';
 import { Button } from '@shared/ui/button/button';
 import { HomeHero } from '../../components/home-hero/home-hero';
@@ -29,7 +34,8 @@ import { HomeFacade } from '../../services/home-facade';
  * the live-webinar ticket, the AI Labs ring, the CAIRA levels, the pricing card,
  * the app download and the FAQ.
  * The rails come from the root `MasterclassHomeFacade`, the same read `/masterclass`
- * renders, so moving between the two pages never refetches. The webinar ticket
+ * renders, so moving between the two pages never refetches. Each rail has the
+ * masterclass page's filter (`MasterclassRailFilter`). The webinar ticket
  * and the CAIRA levels come from `HomeFacade`, and each section (with its
  * sidenav entry) shows only once its read has rows.
  *
@@ -48,6 +54,7 @@ import { HomeFacade } from '../../services/home-facade';
     HomePricing,
     HomeWebinarTicket,
     MasterclassCourseCard,
+    NgIcon,
     SectionNav,
     SurroundCarousel,
   ],
@@ -62,9 +69,33 @@ export class Home {
   protected readonly home = inject(MasterclassHomeFacade);
   protected readonly facade = inject(HomeFacade);
   protected readonly bookmarks = inject(MasterclassBookmarks);
+  protected readonly railFilter = inject(MasterclassRailFilter);
 
   // Every rail is horizontal cards, so one swiper preset serves them all.
   protected readonly swiperConfigEven = swiperConfigEven;
+  protected readonly filterIcon = filterIcon;
+  protected readonly railFilterEmpty = RAIL_FILTER_EMPTY;
+
+  /** The tracks as rails, each with its filter applied. */
+  protected readonly trackRails = computed(() =>
+    this.railFilter.narrow(this.home.tracks().map(trackRail)),
+  );
+
+  /**
+   * The first rail's three leading courses, whose images take priority: on
+   * desktop one of them is the LCP element. Picked by course, not by position,
+   * so a filter that moves a card never changes its `priority` after it has
+   * rendered, which NgOptimizedImage throws on.
+   */
+  protected readonly priorityCourseIds = computed(
+    () =>
+      new Set(
+        this.home
+          .tracks()[0]
+          ?.courses.slice(0, 3)
+          .map((course) => course.id),
+      ),
+  );
 
   /** The sidenav; "Live Webinar" and "CAIRA" show only with a section to jump to. */
   protected readonly sectionNavItems = computed<SectionNavItem[]>(() => [
