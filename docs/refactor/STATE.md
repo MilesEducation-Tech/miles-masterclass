@@ -7,9 +7,40 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- ✅ **2026-10-28, NON-REFACTOR — MIL-148 (bug), signed-in learners kept off the home page. MERGED** as #211
+  (`46264d4f`) (`prompts/signed-in-home-redirect.md`).
+  - **Change:**
+    - new `core/guards/auth/guest-home-guard.ts` (`CanMatch`) on the standard `home` route sends a signed-in
+      learner to `/<country>/<profession>/masterclass`, read off the navigation's URL tree, with the query string
+      kept;
+    - the `''` redirect in `features.routes.ts` picks `masterclass` or `home` by `isAuthenticated()`;
+    - the UAE CAIRA `home` route is unchanged and stays open signed in (plan assumption 2).
+  - **Gates (local macOS):** lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 227.91 kB, only
+    `ai-labs.css`.
+  - **Verified:**
+    - **Before the fix (dev SSR, signed-in cookie):** `/us/accounting/home` answered 200 with `<app-home>`, and
+      `/us/accounting` answered 302 to home.
+    - **After, production SSR server (port 4000):**
+      - signed in, `/us/accounting/home` and `/us/accounting` answer 302 to `/us/accounting/masterclass`, and
+        `?utm_source=mail` is kept;
+      - signed out, home answers 200 and `/us/accounting` answers 302 to home;
+      - `/ae/accounting/home` answers 200 with the UAE CAIRA page either way;
+      - every answer carries `Cache-Control: no-cache`, so the CDN never shares the redirect.
+    - **After, dev 4101 in a browser:**
+      - signed in, a full load of home, the header logo, and an in-app navigation to
+        `/in/accounting/home?utm_source=mail` all end on masterclass in that country with the query kept, and home
+        never renders;
+      - `/ae/accounting/home` shows the UAE CAIRA page;
+      - signed out, all of them stay on home as before.
+  - **Not exercised:** a real OTP sign-in, which would send a real code. Its `navigateByUrl(redirect ?? '/')` is the
+    same in-app navigation as the checks above.
+  - **Seen, not caused here:** the UAE CAIRA page's Levels carousels read `v2/library/?caira_levels=…`, which answers
+    404 on UAT, signed in or out.
+
 - 🟡 **2026-10-27, NON-REFACTOR — MIL-147 (feature), the Coming Soon rail on the masterclass page. PLAN APPROVED,
-  DONE, GATES GREEN, UNCOMMITTED** (`prompts/masterclass-coming-soon.md`), on `feat/MIL-147-masterclass-coming-soon`
-  off `master` (`f07812db`).
+  DONE, GATES GREEN, COMMITTED** (`1ba4212a`, `prompts/masterclass-coming-soon.md`), on
+  `feat/MIL-147-masterclass-coming-soon` off `master` (`f07812db`). PR #210 is open as a draft. On 2026-10-29
+  `master` (with #211) was merged into it; only this file conflicted, and both entries were kept.
   - **Gates (local macOS):** lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 227.95 kB, only
     `ai-labs.css`.
   - **Verified (dev 4101, Playwright; signed in stubbed, with UAT's real `coming-soon/` row):**
