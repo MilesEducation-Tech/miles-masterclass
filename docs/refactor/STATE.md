@@ -8,9 +8,9 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 ## Now
 
 - 🟡 **2026-10-29, NON-REFACTOR — MIL-158 (refactor), one set of payload guards. PLAN APPROVED, DONE, GATES GREEN,
-  UNCOMMITTED** (`prompts/core-contract-guards.md`), on `refactor/MIL-158-core-contract-guards`, based on
-  `refactor/MIL-156-shared-rail-filter` (`3320e5b1`, #213). Its PR opens once #213 is merged, after updating the
-  branch from `master`.
+  COMMITTED** (`4edb9715`, `prompts/core-contract-guards.md`), on `refactor/MIL-158-core-contract-guards`. It started
+  on MIL-156's branch; once #213 merged (`7a5ab1b5`), `master` was merged in, and the three conflicts (the
+  `contract-guards.ts` doc, the CAIRA tracker's comment, this entry) kept this branch's side. Its PR is next.
   - **Change:** ten models import their payload guards from `core/utils/contract-guards.ts` and drop their copies:
     the core `commerce`, `course-resources` and `masterclass-home` models, and the payment `commerce`, home
     sections, course and instructor library, webinar, CAIRA tracker and CPE tracker models. Every copy matched the
@@ -28,8 +28,8 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
   - **Not exercised:** the CPE and CAIRA trackers and the cart. They need a real session, and their parsers only
     lost the copies; the type check binds them to the same signatures.
 
-- 🟡 **2026-10-29, NON-REFACTOR — MIL-156 (refactor), the masterclass rail filter moved to shared code. PLAN
-  APPROVED, PR 1 OF 2 DONE, GATES GREEN, UNCOMMITTED** (`prompts/home-rail-filter.md`), on
+- ✅ **2026-10-29, NON-REFACTOR — MIL-156 (refactor), the masterclass rail filter moved to shared code. MERGED** as
+  #213 (`7a5ab1b5`). PR 1 of 2 (`prompts/home-rail-filter.md`), on
   `refactor/MIL-156-shared-rail-filter` off `master` (`46264d4f`). PR 2 is MIL-132, the filter on the home page.
   - **Why:** the home page can't import the masterclass feature (AGENTS.md §3), so the filter moves below both.
   - **Moves (no behaviour change):**
