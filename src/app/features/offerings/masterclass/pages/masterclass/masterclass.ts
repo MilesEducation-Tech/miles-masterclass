@@ -6,9 +6,11 @@ import {
   swiperConfigOdd,
 } from '@core/config/swiper.config';
 import { filterIcon } from '@core/constants/icon';
+import { RAIL_FILTER_EMPTY } from '@core/constants/masterclass';
 import {
   MasterclassCourse,
   MasterclassCourseInfoDialogData,
+  trackRail,
 } from '@core/models/masterclass-home.model';
 import { MasterclassBookmarks } from '@core/services/masterclass-bookmarks/masterclass-bookmarks';
 import { MasterclassHomeFacade } from '@core/services/masterclass-home-facade/masterclass-home-facade';
@@ -23,24 +25,20 @@ import { SectionNav, SectionNavItem } from '@shared/components/section-nav/secti
 import { SliderSkeleton } from '@shared/components/skeleton/slider-skeleton/slider-skeleton';
 import { Slider } from '@shared/components/slider/slider';
 import { CourseAiKit } from '@shared/services/course-ai-kit';
+import { MasterclassRailFilter } from '@shared/services/masterclass-rail-filter';
 import { Utils } from '@shared/services/utils';
 import { Button } from '@shared/ui/button/button';
 import {
   MASTERCLASS_COMING_SOON_HEADING,
   MASTERCLASS_RAIL_SECTION_IDS,
-  RAIL_FILTER_EMPTY,
 } from '@features/offerings/masterclass/constants/masterclass';
 import {
   MASTERCLASS_SECTION_NAV,
   MASTERCLASS_TRACKS_SECTION_ID,
 } from '@features/offerings/masterclass/constants/masterclass-nav';
-import {
-  MasterclassComingSoonCourse,
-  trackRail,
-} from '@features/offerings/masterclass/models/masterclass-library.model';
+import { MasterclassComingSoonCourse } from '@features/offerings/masterclass/models/masterclass-library.model';
 import { MasterclassHighlightFacade } from '@features/offerings/masterclass/services/masterclass-highlight-facade';
 import { MasterclassLibraryFacade } from '@features/offerings/masterclass/services/masterclass-library-facade';
-import { MasterclassRailFilterFacade } from '@features/offerings/masterclass/services/masterclass-rail-filter-facade';
 
 /**
  * The masterclass landing page: the hero over the admin-pinned courses from
@@ -48,7 +46,7 @@ import { MasterclassRailFilterFacade } from '@features/offerings/masterclass/ser
  * from the root `MasterclassHomeFacade`, which the home page shares, so
  * navigating between the two does not refetch. Signed in, the learner's own
  * rails sit around the tracks (`MasterclassLibraryFacade`). Every rail, tracks
- * included, has a filter (`MasterclassRailFilterFacade`), and every card a
+ * included, has a filter (`MasterclassRailFilter`), and every card a
  * bookmark (`MasterclassBookmarks`). Signed in, Coming Soon closes the rails.
  */
 @Component({
@@ -76,7 +74,7 @@ export class Masterclass {
   protected readonly highlight = inject(MasterclassHighlightFacade);
   protected readonly home = inject(MasterclassHomeFacade);
   protected readonly library = inject(MasterclassLibraryFacade);
-  protected readonly railFilter = inject(MasterclassRailFilterFacade);
+  protected readonly railFilter = inject(MasterclassRailFilter);
   protected readonly bookmarks = inject(MasterclassBookmarks);
 
   constructor() {

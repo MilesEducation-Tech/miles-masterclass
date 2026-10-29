@@ -1,17 +1,8 @@
-import { MasterclassCourse } from '@core/models/masterclass-home.model';
-import {
-  contractError,
-  isBool,
-  isNum,
-  isObject,
-  isStr,
-  listOf,
-} from '@features/offerings/utils/contract-guards';
-import { MasterclassRail } from '@features/offerings/masterclass/models/masterclass-library.model';
+import { MasterclassCourse, MasterclassRail } from '@core/models/masterclass-home.model';
+import { contractError, isBool, isNum, isObject, isStr, listOf } from '@core/utils/contract-guards';
 
 /**
- * Types for the filter on the masterclass page's rails (checked on UAT
- * 2026-10-27).
+ * Types for the filter on the masterclass rails (checked on UAT 2026-10-27).
  *
  * Field of Study and Credit come from the cards. The cards carry no
  * instructors, additional categories or level, so those come from
@@ -91,7 +82,7 @@ export interface CourseFilterIndex {
 
 // ---- Trust boundary --------------------------------------------------------
 //
-// Like `masterclass-library.model.ts`: the keys read are checked, extra keys
+// Like `masterclass-home.model.ts`: the keys read are checked, extra keys
 // pass, and a missing or retyped one fails the whole answer.
 
 const isOption = (v: unknown): v is RailFilterOption =>

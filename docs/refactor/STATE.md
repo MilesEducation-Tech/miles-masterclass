@@ -7,6 +7,31 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- ✅ **2026-10-29, NON-REFACTOR — MIL-156 (refactor), the masterclass rail filter moved to shared code. MERGED** as
+  #213 (`7a5ab1b5`). PR 1 of 2 (`prompts/home-rail-filter.md`), on
+  `refactor/MIL-156-shared-rail-filter` off `master` (`46264d4f`). PR 2 is MIL-132, the filter on the home page.
+  - **Why:** the home page can't import the masterclass feature (AGENTS.md §3), so the filter moves below both.
+  - **Moves (no behaviour change):**
+    - `MasterclassRailFilterFacade` → `shared/services/masterclass-rail-filter.ts`, renamed `MasterclassRailFilter`
+      (nothing in `shared/` is a facade); still `autoProvided: false`, and its log tag follows the name;
+    - its utils → `shared/utils/masterclass-rail-filter.ts`;
+    - its model → `core/models/masterclass-rail-filter.model.ts`;
+    - `MasterclassRail` and `trackRail` → `core/models/masterclass-home.model.ts`, beside `MasterclassTrack`;
+    - the filter's constants and `RAIL_PAGE_SIZE` → `core/constants/masterclass.ts`;
+    - `features/offerings/utils/contract-guards.ts` → `core/utils/`, with its 8 other importers repointed.
+  - **The CAIRA tracker's model** keeps its own copy of the guards; only its comment changes, because it named the
+    old path. Several models keep such copies; moving them onto the core file is a separate cleanup.
+  - **Gates (local macOS):** lint 0 errors (98 warnings); structure ✔; Prettier ✔; tsc 0; `build:prod` 227.89 kB
+    (was 227.91), only `ai-labs.css`. The service and `FilterDialog` sit in lazy chunks, not the initial bundle.
+  - **Verified (dev 4101, Playwright, signed out against UAT):**
+    - every track has the icon, and nothing reads `filter/` before a click;
+    - the first open makes 4 reads (one page, three levels), and the dialog shows Instructor, Field of Study, CAIRA
+      Level and Credit;
+    - ticking one instructor narrows that rail 21 → 1 with a count of 1; the other rails keep every card;
+    - reopening keeps the tick and reads nothing, Clear All brings back all 21, and another rail reads nothing;
+    - with `filter/` answering 500: Field of Study and Credit only, the log says
+      `[MasterclassRailFilter] filter load failed`, and the next click reads `filter/` again.
+
 - ✅ **2026-10-28, NON-REFACTOR — MIL-148 (bug), signed-in learners kept off the home page. MERGED** as #211
   (`46264d4f`) (`prompts/signed-in-home-redirect.md`).
   - **Change:**

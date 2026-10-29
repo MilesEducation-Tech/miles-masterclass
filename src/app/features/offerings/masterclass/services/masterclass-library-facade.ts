@@ -3,7 +3,7 @@ import { httpResource } from '@angular/common/http';
 import { computed, effect, inject, PLATFORM_ID, Service } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MASTERCLASS_COURSE_TYPE } from '@core/constants/masterclass';
-import { MasterclassCourse } from '@core/models/masterclass-home.model';
+import { MasterclassCourse, MasterclassRail } from '@core/models/masterclass-home.model';
 import { apiUrl } from '@core/services/api-client/api-client';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { MasterclassBookmarks } from '@core/services/masterclass-bookmarks/masterclass-bookmarks';
@@ -23,7 +23,6 @@ import {
 import {
   MasterclassComingSoonCourse,
   MasterclassLibrary,
-  MasterclassRail,
   parseComingSoon,
   parseCompletedSection,
   parseMasterclassLibrary,

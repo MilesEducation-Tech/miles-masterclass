@@ -18,7 +18,7 @@ import {
   isStr,
   isStrOrNull,
   listOf,
-} from '@features/offerings/utils/contract-guards';
+} from '@core/utils/contract-guards';
 
 /** One option. `is_correct` and `explanation` stay `null` until its question is graded. */
 export interface ChapterQuizOption {

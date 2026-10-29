@@ -31,7 +31,7 @@ import {
   isStr,
   isStrOrNull,
   listOf,
-} from '@features/offerings/utils/contract-guards';
+} from '@core/utils/contract-guards';
 
 /**
  * The offerings `CourseDetailFacade` serves: those with a web `course-detail/`

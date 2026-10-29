@@ -1,13 +1,8 @@
 import { environment } from '@env/environment';
-import { MASTERCLASS_COURSE_TYPE } from '@core/constants/masterclass';
-import { RouteConfig } from '@core/models/http.model';
+import { MASTERCLASS_COURSE_TYPE, RAIL_PAGE_SIZE } from '@core/constants/masterclass';
 import { VideoConfig } from '@core/models/video-player.model';
 import { PartnerContentItem } from '@shared/components/partner-content-list/partner-content-list';
 import { LibraryRailConfig } from '@features/offerings/masterclass/models/masterclass-library.model';
-import {
-  RailFilterCreditBucket,
-  RailFilterGroupKey,
-} from '@features/offerings/masterclass/models/masterclass-rail-filter.model';
 
 /**
  * How long the course hero shows its poster before the trailer starts, as on
@@ -39,9 +34,6 @@ export const MASTERCLASS_LIBRARY_URL = `${environment.API.baseUrl}web-api/v1/mas
 
 /** The completed courses, per learner (a 401 without a token). Postman `web-masterclass-completed-course-section-v1`. */
 export const MASTERCLASS_COMPLETED_URL = `${environment.API.baseUrl}web-api/v1/masterclass/completed-course-section/`;
-
-/** Rows asked for per rail: every course in one read, as the track rails do (the API's ceiling). */
-const RAIL_PAGE_SIZE = 100;
 
 /**
  * `library/`'s params. Each rail pages on its own key; a bare `page_size` is a
@@ -120,43 +112,3 @@ export const MASTERCLASS_RAIL_HEADINGS = {
   myList: 'My List',
   completed: "Courses you've mastered",
 } as const;
-
-/**
- * The rails' filter read: each masterclass's instructors and additional
- * categories, which the cards lack, and the CAIRA levels. Public; it answers
- * `login_type` with a 400.
- */
-export const MASTERCLASS_FILTER_ROUTE = {
-  path: `${environment.API.baseUrl}web-api/v1/masterclass/filter/`,
-  method: 'GET',
-} as RouteConfig<
-  void,
-  unknown,
-  Record<string, string>,
-  { content_type: string; page_size: number; level?: string }
->;
-
-/** Every masterclass in one page (64 on UAT); add `level` for one level's. */
-export const MASTERCLASS_FILTER_PARAMS = {
-  content_type: 'masterclass_course',
-  page_size: RAIL_PAGE_SIZE,
-} as const;
-
-/** The filter dialog's groups, in order. */
-export const RAIL_FILTER_GROUPS: readonly RailFilterGroupKey[] = [
-  'instructors',
-  'fields_of_study',
-  'additional_categories',
-  'caira_levels',
-  'cpe_credits',
-];
-
-/** The Credit group, on the server's `cpe_credit` boundaries: `2_to_5` holds 2. */
-export const RAIL_FILTER_CREDIT_BUCKETS: readonly RailFilterCreditBucket[] = [
-  { id: 'lt_2', name: 'Less than 2 credits', test: (credits) => credits < 2 },
-  { id: '2_to_5', name: '2 to 5 credits', test: (credits) => credits >= 2 && credits <= 5 },
-  { id: 'gt_5', name: 'Greater than 5 credits', test: (credits) => credits > 5 },
-];
-
-/** In a rail's place when its filter matches none of its courses. */
-export const RAIL_FILTER_EMPTY = 'No courses match these filters.';
