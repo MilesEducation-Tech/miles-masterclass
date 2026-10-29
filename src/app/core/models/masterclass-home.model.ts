@@ -111,6 +111,29 @@ export interface MasterclassHomePage {
   tracks: MasterclassTrack[];
 }
 
+// ---- Rails -----------------------------------------------------------------
+
+/** One rail as a page renders it. */
+export interface MasterclassRail {
+  /**
+   * The section's element id, which the masterclass page's sidenav scrolls to.
+   * Also keys the rail's filter.
+   */
+  id: string;
+  heading: string;
+  /** The line under the heading; only tracks have one. */
+  subText?: string;
+  courses: MasterclassCourse[];
+}
+
+/** A track as a rail, so it renders and filters like the signed-in ones. */
+export const trackRail = (track: MasterclassTrack): MasterclassRail => ({
+  id: `masterclass-track-${track.slug}`,
+  heading: track.name,
+  subText: track.description ?? '',
+  courses: track.courses,
+});
+
 // ---- CAIRA levels ----------------------------------------------------------
 
 /**

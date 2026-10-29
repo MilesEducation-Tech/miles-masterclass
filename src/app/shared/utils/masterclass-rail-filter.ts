@@ -1,9 +1,5 @@
+import { RAIL_FILTER_CREDIT_BUCKETS, RAIL_FILTER_GROUPS } from '@core/constants/masterclass';
 import { MasterclassCourse } from '@core/models/masterclass-home.model';
-import { isObject, isStr } from '@features/offerings/utils/contract-guards';
-import {
-  RAIL_FILTER_CREDIT_BUCKETS,
-  RAIL_FILTER_GROUPS,
-} from '@features/offerings/masterclass/constants/masterclass';
 import {
   CourseFilterIndex,
   FilterPage,
@@ -12,7 +8,8 @@ import {
   RailFilterGroupKey,
   RailFilterOption,
   RailFilterSelection,
-} from '@features/offerings/masterclass/models/masterclass-rail-filter.model';
+} from '@core/models/masterclass-rail-filter.model';
+import { isObject, isStr } from '@core/utils/contract-guards';
 
 /**
  * The rails' filter, as plain functions over a rail's courses: the dialog's

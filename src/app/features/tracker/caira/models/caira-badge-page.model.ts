@@ -291,9 +291,8 @@ export function badgeCtaUi(row: BadgeRowBase): BadgeCtaUi {
  * retyped key fails the WHOLE response, once, in `parse`, so it lands in `error()` rather
  * than half-rendered on screen.
  *
- * These primitives are a local copy of `features/offerings/utils/contract-guards.ts` on
- * purpose: a feature may not import another feature (AGENTS.md §3), which is also why
- * `offerings/webinar` and `home` carry their own.
+ * These primitives are a local copy of `core/utils/contract-guards.ts`, like the ones in
+ * several other models; moving them onto that file is a separate cleanup.
  */
 type Json = Record<string, unknown>;
 

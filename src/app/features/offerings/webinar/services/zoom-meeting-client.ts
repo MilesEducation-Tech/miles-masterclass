@@ -1,7 +1,7 @@
 import { isPlatformBrowser } from '@angular/common';
 import { DestroyRef, inject, Service, PLATFORM_ID, signal } from '@angular/core';
 import { Logger } from '@core/services/logger/logger';
-import { isNum, isObject, isStr } from '@features/offerings/utils/contract-guards';
+import { isNum, isObject, isStr } from '@core/utils/contract-guards';
 import { ZOOM_ERROR_OUTCOMES } from '@features/offerings/webinar/constants/live-session';
 import {
   ConnectionChangePayload,
