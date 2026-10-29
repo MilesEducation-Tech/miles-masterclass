@@ -5,6 +5,7 @@ import { AiLabFeedback } from './ai-lab-feedback';
 import {
   AiLabFeedbackStoryState,
   MOCK_AI_LAB_DETAIL,
+  MOCK_AI_LAB_FEEDBACK_ANSWERS,
   MOCK_AI_LAB_FEEDBACK_QUESTIONS,
   provideStoryAiLabFeedback,
 } from '@testing/mocks/ai-labs.mock';
@@ -28,7 +29,7 @@ const withState = (state: AiLabFeedbackStoryState): Story => ({
 /** The form: four ratings (required) and one text question (optional). */
 export const Form = withState({ questions: MOCK_AI_LAB_FEEDBACK_QUESTIONS });
 
-/** The gate refused: the practical isn't graded yet. */
+/** The gate refused: the final assessment isn't passed yet. */
 export const NotYet = withState({
   notYet: 'Pass the final assessment first — feedback opens once you do.',
 });
@@ -55,4 +56,10 @@ export const RecordedNotClosed = withState({
     notice:
       'Your feedback was recorded, but this AI Lab cannot be completed yet - some requirements are still outstanding.',
   },
+});
+
+/** Already submitted: the answers read back from `course-feedback-responses/`, read-only. */
+export const AlreadySubmitted = withState({
+  alreadySubmitted: true,
+  submittedAnswers: MOCK_AI_LAB_FEEDBACK_ANSWERS,
 });

@@ -354,6 +354,23 @@ export interface AiLabPracticalAssignment {
   ai_lab_course_id?: string;
   ai_lab_course_name?: string;
   ai_lab_square_thumbnail_url?: string | null;
+  /**
+   * Our own counts (2026-10-28), on rows that match one of our labs — `attempts` above is AI Labs'
+   * figure. The landing facade reads the row's attempts and best score from here when it's sent.
+   */
+  practical_attempts?: AiLabPracticalAttempts;
+}
+
+/** `practical_attempts` on a practical-progress row: the same figures `assignment-status/` answers. */
+export interface AiLabPracticalAttempts {
+  max_attempts: number;
+  attempts_used: number;
+  attempts_left: number;
+  best_attempt_number: number | null;
+  /** Numbers here (`9.0` of `10.0`, `90.0`), unlike the row's decimal strings. */
+  best_score: number | null;
+  best_max_score: number | null;
+  best_percentage: number | null;
 }
 
 /**
@@ -519,6 +536,16 @@ export interface AiLabCourseDetail extends AiLabCourseListItem {
   masterclass_courses: AiLabParentCourse[];
   ai_kit: AiLabKit | null;
   chapter: AiLabChapter | null;
+  /**
+   * The final assessment's size and pass mark (2026-10-28), so the page can say them before the
+   * learner starts. `null` when the lab has no MCQ set up.
+   */
+  assessment_questions_to_show?: number | null;
+  assessment_pass_threshold_percent?: number | null;
+  /** The NASBA delivery method — the same value as progress's `nasba.delivery_method`. */
+  delivery_method?: string;
+  /** Per learner: when they passed the final assessment; `null` before. */
+  final_assessment_passed_at?: string | null;
   /** Per learner: `locked` until started. */
   final_assessment_status?: AiLabFinalAssessmentStatus;
 }
@@ -583,10 +610,16 @@ export interface AiLabCourseProgress {
   quiz_questions_to_show: number;
   assessment_required?: boolean;
   final_assessment_passed: boolean;
+  /** When the final assessment was passed (2026-10-28); `null` before. */
+  final_assessment_passed_at?: string | null;
   /** A latch from before the practical left the flow — set with no graded attempt behind it. Unread. */
   ai_assessment_completed: boolean;
   feedback_submitted: boolean;
-  cpe_awarded: boolean;
+  /**
+   * The CPE credited for this lab: a number since 2026-10-28 (`0.0` until it closes with credit),
+   * a boolean before. Both shapes until UAT runs the new build.
+   */
+  cpe_awarded: number | boolean;
   is_course_closed: boolean;
   next_step: AiLabNextStep;
   nasba: {
@@ -710,6 +743,8 @@ export interface AiLabAssignmentStatus {
   grade_card_pdf_url: string | null;
   grade_card_expires_at: string | null;
   grade_card_is_expired: boolean;
+  /** The best attempt's denominator (2026-10-28): `score` 8.0 of `max_score` 10.0. */
+  max_score?: number | null;
   /** The lab's allowance of graded attempts (admin "Max practical attempts"). */
   max_attempts: number;
   /** Graded attempts so far — one still grading, or one AI Labs failed to grade, doesn't count. */
@@ -769,8 +804,26 @@ export interface AiLabAssignmentBrief {
   sharepoint_links: AiLabLink[];
   sample_grade_card: AiLabSampleGradeCard | null;
   flow_chart: AiLabFile | null;
-  /** Whether AI Labs' "send me test e-mails" helper applies. No route sends them yet. */
+  /** Whether AI Labs' "send me test e-mails" helper applies (`assignment-trigger-email/`). */
   tools: { trigger_email: boolean } | null;
+}
+
+/**
+ * `data` of `POST assignment-trigger-email/<uuid>/` (2026-10-29): AI Labs accepted one batch of
+ * sample emails for the lab mailbox. They arrive minutes later; there is nothing to poll.
+ */
+export interface AiLabTestEmailRun {
+  status: 'ok';
+  ai_lab_course_id: string;
+  /** Written by AI Labs for the learner — it names the mailbox and warns about the delay. */
+  message: string | null;
+  run: {
+    /** For support only; never shown. */
+    id: string;
+    /** The lab mailbox (`…@mileslabs.ai`), never the learner's own address. */
+    recipient: string;
+    requested_at: string;
+  };
 }
 
 /**
@@ -996,13 +1049,66 @@ export interface AiLabExamResult {
   final_assessment_status?: AiLabFinalAssessmentStatus;
 }
 
-/** One question as the review lists it — the masterclass report's item, without "skipped". */
+/** One option of a report answer. The answer key's fields are absent when it is withheld. */
+export interface AiLabExamReportOption {
+  id: string;
+  /** May carry HTML. */
+  text: string;
+  was_selected: boolean;
+  is_correct?: boolean;
+  explanation?: string | null;
+}
+
+/** One question of the latest attempt, as `course-assessment-report/` returns it. */
+export interface AiLabExamReportAnswer {
+  question_id: string;
+  /** May carry HTML; "[Question no longer available]" with no options when it was deleted. */
+  question_text: string;
+  is_skipped: boolean;
+  /** `null` when the answer key is withheld. */
+  is_correct: boolean | null;
+  explanation: string | null;
+  selected_option_ids: string[];
+  correct_option_ids: string[];
+  options: AiLabExamReportOption[];
+}
+
+/**
+ * `data` of `GET web-api/v1/ai-labs/course-assessment-report/<uuid>/` (2026-10-28): the learner's
+ * latest final-assessment attempt, read back at any time. Always a 200 for a lab they can see.
+ *
+ * `feedback_withheld`: after a failed attempt the key is shown only when the paper is drawn from a
+ * question bank (NASBA 6.01.2(1)(ii)); otherwise the score and choices stay and the key goes.
+ */
+export interface AiLabExamReport {
+  ai_lab_course_id: string;
+  ai_lab_course_name: string;
+  has_final_assessment: boolean;
+  status: 'passed' | 'failed' | 'not_attempted' | (string & {});
+  attempt_count: number;
+  pass_threshold_percent: number | null;
+  questions_to_show: number | null;
+  attempt_id: string | null;
+  score_percent: number | null;
+  attempted_at: string | null;
+  passed_at: string | null;
+  total_questions: number;
+  correct_count: number;
+  skipped_count: number;
+  feedback_withheld: boolean;
+  answers: AiLabExamReportAnswer[];
+}
+
+/**
+ * One question as the review lists it — the masterclass report's item. `skipped` and `withheld`
+ * (the answer key hidden after a failed attempt) come only from a report read back.
+ */
 export interface AiLabExamReviewItem {
   id: string;
   /** Its position in the paper, from 1. */
   number: number;
   question: string;
-  status: 'correct' | 'incorrect';
+  status: 'correct' | 'incorrect' | 'skipped' | 'withheld';
   yourAnswer: string[];
   /** The correct options' texts, for a missed question. */
   correctAnswer: string[];
@@ -1035,6 +1141,31 @@ export function labExamReview(
       yourAnswer: (sent[question.id] ?? []).map(textOf),
       correctAnswer: answer?.is_correct ? [] : correct.map(textOf),
       explanation: answer?.explanation ?? correctExplanation,
+    };
+  });
+}
+
+/** The review of a report read back, in the order the questions were asked. */
+export function labReportReview(report: AiLabExamReport): AiLabExamReviewItem[] {
+  return report.answers.map((answer, i) => {
+    const textOf = (id: string) => answer.options.find((o) => o.id === id)?.text ?? '';
+    const status: AiLabExamReviewItem['status'] = answer.is_skipped
+      ? 'skipped'
+      : answer.is_correct === null
+        ? 'withheld'
+        : answer.is_correct
+          ? 'correct'
+          : 'incorrect';
+    return {
+      id: answer.question_id,
+      number: i + 1,
+      question: answer.question_text.replace(/<[^>]*>/g, '').trim(),
+      status,
+      yourAnswer: answer.selected_option_ids.map(textOf),
+      // The key, for a missed question — empty when it is withheld.
+      correctAnswer: answer.is_correct ? [] : answer.correct_option_ids.map(textOf),
+      explanation:
+        answer.explanation ?? answer.options.find((o) => o.is_correct)?.explanation ?? null,
     };
   });
 }
@@ -1073,6 +1204,31 @@ export interface AiLabFeedbackResponse {
   question_id: string;
   rating?: number;
   text_response?: string;
+}
+
+/** One stored answer of `course-feedback-responses/`. The unused field is `null` / `""`. */
+export interface AiLabFeedbackAnswer {
+  question_id: string;
+  question: string;
+  question_type: 'rating' | 'text' | (string & {});
+  question_order: number;
+  rating: number | null;
+  text_response: string;
+  submitted_at: string | null;
+}
+
+/**
+ * `data` of `GET web-api/v1/ai-labs/course-feedback-responses/<uuid>/` (2026-10-28): what the
+ * learner submitted. A question shared by every lab is stored once per learner, so `responses` can
+ * be shorter than the form while `submitted` is true — the gap is not "unsubmitted".
+ */
+export interface AiLabFeedbackAnswers {
+  ai_lab_course_id: string;
+  submitted: boolean;
+  submitted_at: string | null;
+  question_count: number;
+  answered_count: number;
+  responses: AiLabFeedbackAnswer[];
 }
 
 /** Body of `POST api/v1/ai-labs/course-feedback-submit/<uuid>/`. Strict: no other keys. */

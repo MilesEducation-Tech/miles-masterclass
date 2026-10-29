@@ -6,6 +6,8 @@ import {
   AiLabExamStoryState,
   MOCK_AI_LAB_DETAIL,
   MOCK_AI_LAB_EXAM_PAPER,
+  MOCK_AI_LAB_EXAM_REPORT,
+  MOCK_AI_LAB_EXAM_REPORT_WITHHELD,
   MOCK_AI_LAB_EXAM_RESULT,
   provideStoryAiLabExam,
 } from '@testing/mocks/ai-labs.mock';
@@ -58,4 +60,16 @@ export const PassedReview = withState({
 /** The read refused: inside the 30-minute cool-off after a failed attempt. */
 export const CoolOff = withState({
   loadError: 'You can retake the assessment after 4:40 PM.',
+});
+
+/** Opened after a pass (409 `already_passed`): the latest attempt read back, key shown. */
+export const PassedReport = withState({
+  loadError: 'You have already passed this assessment.',
+  report: MOCK_AI_LAB_EXAM_REPORT,
+});
+
+/** Opened inside the cool-off after a fail on a fixed paper: score and choices, key withheld. */
+export const WithheldReport = withState({
+  loadError: 'You can retake the assessment after 4:40 PM.',
+  report: MOCK_AI_LAB_EXAM_REPORT_WITHHELD,
 });

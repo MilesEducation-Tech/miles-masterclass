@@ -9,8 +9,12 @@ import { AI_LABS_API } from '@features/ai-labs/constants/ai-labs-api';
 import {
   AiLabExamAnswer,
   AiLabExamPaper,
+  AiLabExamReport,
   AiLabExamResult,
 } from '@features/ai-labs/models/ai-labs.model';
+
+/** Paper refusals that mean an attempt exists to read back: passed, or failed and waiting. */
+const REPORTED_REFUSALS = new Set(['already_passed', 'cool_off_active']);
 
 /** The masterclass assessment's copy, for the lab's. */
 export const LAB_EXAM_COPY = {
@@ -34,6 +38,8 @@ export const LAB_EXAM_COPY = {
     body: "We couldn't submit your answers. Please try again.",
   },
   coolOff: (time: string) => `You can retake the assessment after ${time}.`,
+  alreadyPassed: 'You have already passed this assessment.',
+  completed: 'Assessment Completed',
 } as const;
 
 /**
@@ -46,7 +52,8 @@ export const LAB_EXAM_COPY = {
  *
  * A refusal on the read (`cool_off_active`, `quiz_not_complete`, `video_not_complete`,
  * `already_passed`, `no_assessment_config`) becomes `loadError`, in the server's own words — the
- * cool-off with its end time.
+ * cool-off with its end time. After `already_passed` or `cool_off_active` the latest attempt is
+ * read back (`course-assessment-report/`, 2026-10-28), so the page shows it instead of an error.
  */
 @Service({ autoProvided: false })
 export class AiLabAssessmentFacade {
@@ -72,6 +79,45 @@ export class AiLabAssessmentFacade {
   );
 
   readonly paper = computed(() => (this.paperRes.hasValue() ? this.paperRes.value() : null));
+
+  /** Why the paper was refused, as the API's reason. */
+  private readonly refusal = computed(() => {
+    const error = this.paperRes.error();
+    const body =
+      error instanceof HttpErrorResponse ? (error.error as CommonResponse<unknown>) : null;
+    const reason = (body?.data as { reason?: unknown } | null | undefined)?.reason;
+    return typeof reason === 'string' ? reason : null;
+  });
+
+  /** The paper was refused because the assessment is passed — nothing to retry. */
+  readonly alreadyPassed = computed(() => this.refusal() === 'already_passed');
+
+  /** The latest attempt, read back once the paper is refused for having one. */
+  private readonly reportRes = httpResource<AiLabExamReport | null>(
+    () => {
+      const id = this.courseId();
+      return id && REPORTED_REFUSALS.has(this.refusal() ?? '')
+        ? {
+            url: apiUrl(`${AI_LABS_API.assessmentReport}${id}/`),
+            context: new HttpContext().set(SKIP_LOADING, true).set(SKIP_ERROR_NOTIFICATION, true),
+          }
+        : undefined;
+    },
+    {
+      defaultValue: null,
+      parse: (raw) => (raw as CommonResponse<AiLabExamReport> | null)?.data ?? null,
+    },
+  );
+
+  /**
+   * The report, when there is an attempt in it. Until the backend serves the route (it 404s before
+   * the 2026-10-28 deploy) this stays `null` and the page shows the refusal as before.
+   */
+  readonly report = computed(() => {
+    const report = this.reportRes.hasValue() ? this.reportRes.value() : null;
+    return report && report.status !== 'not_attempted' ? report : null;
+  });
+  readonly reportLoading = computed(() => this.reportRes.isLoading());
   readonly isLoading = computed(() => this.paperRes.isLoading());
 
   /** Why there is no paper, in the server's words — or `null`. */
@@ -81,6 +127,7 @@ export class AiLabAssessmentFacade {
     const body =
       error instanceof HttpErrorResponse ? (error.error as CommonResponse<unknown>) : null;
     const data = body?.data as { reason?: string; cool_off_ends_at?: string } | null | undefined;
+    if (data?.reason === 'already_passed') return LAB_EXAM_COPY.alreadyPassed;
     if (data?.reason === 'cool_off_active' && data.cool_off_ends_at) {
       // The cool-off is 30 minutes, so the time of day is enough to say when.
       return LAB_EXAM_COPY.coolOff(formatDate(data.cool_off_ends_at, 'shortTime', 'en-US'));

@@ -97,6 +97,9 @@ const briefFiles = (b: AiLabAssignmentBrief): AiLabFile[] => [
 /** AI Labs refused this login token: it predates the account, and only a fresh login fixes it. */
 const SESSION_REFUSED = new Set(['AI_LABS_ACCESS_DENIED', 'AI_LABS_TOKEN_REJECTED']);
 
+/** Test-email refusals that mean the row should not be offered at all. */
+const TEST_EMAILS_OFF = new Set(['AI_LABS_TRIGGER_EMAIL_DISABLED', 'AI_LABS_LMS_UNCONFIGURED']);
+
 /** What every practical read answers: `{status, is_provisioned, <key>}`. */
 type AiLabVendorBody<K extends string, T> = { is_provisioned: boolean } & Record<K, T>;
 
@@ -202,7 +205,7 @@ export class AiLabCourseFacade {
 
   /**
    * Watched share of the video, 0–100. The progress report's duration, then the chapter's — the
-   * length the 95% check measures against — then the lab's total.
+   * length the completion check measures against — then the lab's total.
    */
   readonly progressPercent = computed(() => {
     const watched = this.progress()?.video_watched_seconds ?? 0;
@@ -434,6 +437,10 @@ export class AiLabCourseFacade {
 
   readonly submitting = signal(false);
   readonly gradeCardBusy = signal(false);
+  /** `assignment-trigger-email/` is in flight — the row is disabled so one tap sends one batch. */
+  readonly sendingTestEmails = signal(false);
+  /** The route said this lab has no test emails here (disabled exercise, AI Labs switched off). */
+  readonly testEmailsOff = signal(false);
 
   // ---- Hints -------------------------------------------------------------------
 
@@ -495,6 +502,7 @@ export class AiLabCourseFacade {
     this.lastReported = 0;
     this.videoDuration.set(null);
     this.certificateWaitOver.set(false);
+    this.testEmailsOff.set(false);
     if (this.courseId() !== courseId) {
       this.courseId.set(courseId);
       return;
@@ -526,7 +534,8 @@ export class AiLabCourseFacade {
    * `course-start/`: creates the enrolment (idempotent), then re-reads `course-started/`, which
    * re-keys `course-progress/`, and the detail, which only carries `chapter.hls_video_link` once
    * started. A 409 is the parent course's lock — its message is the sentence to show, so it is
-   * relayed as-is.
+   * relayed as-is. Restarting a lab the learner already finished keeps it finished (2026-10-28):
+   * the re-read progress answers `next_step: done`, so the CTA goes straight to the certificate.
    */
   start(): void {
     const id = this.courseId();
@@ -558,7 +567,8 @@ export class AiLabCourseFacade {
   /**
    * Watched seconds, from the player's time updates. Sent every 15 s of playback and on `ended`
    * (`force`), never more often — completion is decided server-side, so precision buys nothing.
-   * When a report crosses the 95% line, progress is re-read so the CTA moves on.
+   * When a report crosses the completion line — the higher of 95% and the lab's own minimum, so
+   * never assumed here — progress is re-read so the CTA moves on.
    */
   reportVideoProgress(seconds: number, force = false): void {
     const id = this.courseId();
@@ -727,15 +737,57 @@ export class AiLabCourseFacade {
   }
 
   /**
-   * The Test emails row. ponytail: the brief carries `tools.trigger_email`, but our backend has no
-   * route to send them yet (upstream posts `v2/ai-lab/assignments/trigger-email/`) — bind it here
-   * when one lands; until then the click says so rather than pretend to send.
+   * The Test emails row: `POST assignment-trigger-email/<uuid>/`, which has AI Labs post sample
+   * emails into the lab mailbox. A success spends one of the exercise's sends, so it is never
+   * retried for the learner — a lost answer says to check the mailbox first. AI Labs' own sentence
+   * is shown as-is either way.
    */
   sendTestEmails(): void {
-    this.notification.info(
-      'Test emails',
-      "Sending test emails to your lab mailbox isn't available yet. Please check back soon.",
-    );
+    const id = this.courseId();
+    if (!id || this.sendingTestEmails()) return;
+    this.sendingTestEmails.set(true);
+    const route = AI_LABS_API.assignmentTriggerEmail;
+    this.api
+      .call({ ...route, path: route.path.replace(':id', id) }, undefined, { context: QUIET() })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          this.sendingTestEmails.set(false);
+          this.notification.success('Test emails sent', res.data?.message ?? res.message);
+        },
+        error: (err: unknown) => {
+          this.sendingTestEmails.set(false);
+          this.testEmailsRefused(err);
+        },
+      });
+  }
+
+  /** Says why test emails weren't sent; a reason meaning "never here" hides the row. */
+  private testEmailsRefused(err: unknown): void {
+    const reason = reasonOf(err) ?? '';
+    const status = err instanceof HttpErrorResponse ? err.status : 0;
+    if (TEST_EMAILS_OFF.has(reason)) this.testEmailsOff.set(true);
+    if (reason === 'AI_LABS_TRIGGER_EMAIL_LIMIT_REACHED') {
+      this.notification.info('No test emails left', messageOf(err));
+    } else if (reason === 'AI_LABS_NOT_PROVISIONED') {
+      this.notification.info(
+        'Lab not ready',
+        'Your AI Lab account is still being set up. Try again in a few minutes.',
+      );
+    } else if (SESSION_REFUSED.has(reason)) {
+      this.notification.error(
+        "Couldn't send test emails",
+        'AI Labs didn’t accept your session. Sign out and back in, then try again.',
+      );
+    } else if (status === 0 || status === 504) {
+      // No answer reached us, so the batch may have gone out — the guide says never resend blind.
+      this.notification.error(
+        "Couldn't confirm the test emails",
+        'They may still have been sent. Check your lab mailbox before sending again.',
+      );
+    } else {
+      this.notification.error("Couldn't send test emails", messageOf(err));
+    }
   }
 
   /**

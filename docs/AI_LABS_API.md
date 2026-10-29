@@ -1,7 +1,8 @@
 # AI Labs APIs - Frontend Guide
 
-Every AI Labs route the merged backend serves (45 routes), with the request, a full success response and
-the errors each one can answer. **Last updated 2026-10-27** against the backend at commit `01c7a4d`. App and web twins are documented together when they answer the same
+Every AI Labs route the merged backend serves (49 routes), with the request, a full success response and
+the errors each one can answer. **Last updated 2026-10-28** against the `ID_UK_Ongoing_Development_Branch` working
+tree (on top of `e6f2224`); the 2026-10-28 changes reach UAT with the next deploy. App and web twins are documented together when they answer the same
 body; where they differ, both are shown.
 
 |            |                                                                                                                                                              |
@@ -13,7 +14,23 @@ body; where they differ, both are shown.
 | Responses  | **real local capture** = taken from the backend; **sample data** = built from the code with invented values. Keys, nesting and types are the code's in both. |
 | Long lists | trimmed to 2 items; a `"_more"` entry says how many were cut                                                                                                 |
 
-### What changed since the 2026-10-20 edition (bind these first)
+### What changed on 2026-10-28 (bind these first)
+
+| #   | Route(s)                                                               | Change                                                                                                                                                                                                                     | Action for FE                                                                                                                                            |
+| --- | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A   | `GET {app,web}-api/v1/ai-labs/course-progress/<id>/`                   | **BREAKING:** `cpe_awarded` is now the **CPE amount** credited to the learner (a number: `0.0` until the lab closes with credit, then e.g. `1.5`). It was `true`/`false`.                                                  | Decode as a **number** (Swift `Double`, Kotlin `Double`, TS `number`). Show "1.5 CPE earned" when `> 0`. JS truthiness (`if (cpe_awarded)`) still works. |
+| B   | same                                                                   | New `final_assessment_passed_at` - when the learner passed the MCQ (UTC), `null` before.                                                                                                                                   | Optional: show "Passed on ...".                                                                                                                          |
+| C   | `GET .../course/<id>/` (lab detail)                                    | New `assessment_questions_to_show`, `assessment_pass_threshold_percent`, `delivery_method` and the learner's `final_assessment_passed_at`.                                                                                 | Show "N questions, pass mark X%" and the delivery method before the learner starts the MCQ.                                                              |
+| D   | **NEW** `GET {app,web}-api/v1/ai-labs/course-assessment-report/<id>/`  | The learner's latest MCQ attempt: status, score, pass mark, date and every question with the answers they chose.                                                                                                           | New "View my assessment" screen - section 6.                                                                                                             |
+| E   | **NEW** `GET {app,web}-api/v1/ai-labs/course-feedback-responses/<id>/` | The learner's own submitted feedback answers.                                                                                                                                                                              | New "View my feedback" screen - section 9.                                                                                                               |
+| F   | `GET .../assignment-status/<id>/`                                      | New `max_score` (the best attempt's denominator - `score` 8.0 of `max_score` 10.0). `assessment_status` now reads `not_started` when nothing was ever submitted or graded. Response is now `Cache-Control: no-store`.      | Show "8 / 10"; drive the empty state from `not_started`.                                                                                                 |
+| G   | `GET .../practical-progress/`                                          | Every row we recognise as one of our labs gains a `practical_attempts` block with OUR counts (`max_attempts`, `attempts_used`, `attempts_left`, `best_attempt_number`, `best_score`, `best_max_score`, `best_percentage`). | Read the counts from `practical_attempts`, not from AI Labs' own `attempts`.                                                                             |
+| H   | `POST api/v1/ai-labs/course-feedback-submit/<id>/`                     | The "already submitted" 200 now carries the real `cpe_awarded` amount (was always `0.0`).                                                                                                                                  | None.                                                                                                                                                    |
+| I   | `POST api/v1/ai-labs/course-start/<id>/`                               | Restarting a lab the learner already **finished** (window expired or released) keeps it finished: `is_course_closed: true` in the response and in every read after it.                                                     | After a restart, if `is_course_closed` is `true`, show the completed state, not "Continue".                                                              |
+| J   | `POST api/v1/ai-labs/course-video-progress/`                           | `video_completed` now flips at the **higher of 95% and the lab's own minimum watch percent** (some labs require 100%).                                                                                                     | Keep reporting progress until `video_completed` is `true`; never assume 95%.                                                                             |
+| K   | `course-progress` `lab_certificate_url`                                | Stays filled while staff re-render a certificate (it used to go `null`). The certificate PDF now prints the CPE amount actually credited.                                                                                  | None.                                                                                                                                                    |
+
+### Earlier changes (2026-10-20 to 2026-10-27)
 
 | #   | Route(s)                                                                                       | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Action for FE                                                                                                                                      |
 | --- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -42,9 +59,12 @@ Start ................ POST course-start/<id>/
 Watch video .......... POST course-video-progress/      (repeat)      GET course-progress/<id>/
 Quiz ................. GET  course-quiz-questions/<id>/  ->  POST course-quiz-submit/ (one per question)
 Final assessment ..... GET  course-assessment-questions/<id>/  ->  POST course-assessment-submit/<id>/
+                       GET  course-assessment-report/<id>/   (any time: re-read the latest attempt)   NEW
 Feedback ............. GET  course-feedback-gate/<id>/ -> course-feedback-questions/<id>/
                        POST course-feedback-submit/<id>/   (closes the lab, awards CPE)
+                       GET  course-feedback-responses/<id>/ (any time: what the learner answered)     NEW
 Certificate .......... GET  course-progress/<id>/  ->  lab_certificate_url (null until issued)
+CPE earned ........... GET  course-progress/<id>/  ->  cpe_awarded (a NUMBER since 2026-10-28)
 
 --- the practical: SEPARATE, opens once the MCQ is passed, gates nothing (no feedback / CPE / certificate) ---
 AI Labs account ...... GET  account-ensure/  ->  POST account-create/  (202, wait 2-3 min, learner re-logs in)
@@ -360,7 +380,9 @@ No body.
 - **Changed from legacy:** Path app-api/v1/ai-labs/course/<uuid>/ (was ai-labs/course/<uuid>/); keys snake_cased; exercise_files, glossary fields and cpe_credit/cpe_credit_label dropped; fields_of_study now objects plus total_cpe_credits; ai_lab_course_total_duration_seconds and child duration_seconds added; enveloped.
 - **Changed 2026-10-22/23:** `instructors` is a list of OBJECTS (was names); new `chapter` (the lab's single video, `null` while the lab is still being authored); `chapter.hls_video_link`, `transcript_url` and `transcript_text` are `null` until THIS learner has started the lab (the public preview is `ai_lab_course_trailer_url`); new `final_assessment_status` (section 1a). `lock_state` and `final_assessment_status` are per learner; the rest is shared.
 - **Changed 2026-10-26:** new `ai_lab_course_hints` - the Hints card (see "Hints card" below the response).
-- **Backend:** `AppAILabCourseDetailViewV1` (AILabs/views.py:3644)
+- **Changed 2026-10-28:** new `assessment_questions_to_show`, `assessment_pass_threshold_percent`,
+  `delivery_method` and `final_assessment_passed_at` (see "MCQ facts" below the response).
+- **Backend:** `AppAILabCourseDetailViewV1` (AILabs/views.py:3909)
 
 **Request**
 
@@ -464,6 +486,9 @@ No body.
       "transcript_text": null,
       "order": 1
     },
+    "assessment_questions_to_show": 5,
+    "assessment_pass_threshold_percent": 70.0,
+    "delivery_method": "QAS Self Study",
     "lock_state": {
       "locked": false,
       "lock_reason": null,
@@ -471,6 +496,7 @@ No body.
       "masterclass_course_id": "7158ee5b-5cff-442c-b217-9703379e2cf8",
       "credit_source": null
     },
+    "final_assessment_passed_at": null,
     "final_assessment_status": {
       "final_assessment_enum_values": "start",
       "final_assessment_cool_off_ends_at": null
@@ -478,6 +504,17 @@ No body.
   }
 }
 ```
+
+**MCQ facts** (new 2026-10-28)
+
+| Key                                 | Type                            | Meaning                                                                                                                                |
+| ----------------------------------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `assessment_questions_to_show`      | integer or `null`               | How many questions the final assessment serves. `null` when the lab has no MCQ set up (the lab cannot be completed - a content issue). |
+| `assessment_pass_threshold_percent` | number or `null`                | The pass mark, 0-100 (e.g. `70.0`). `null` as above.                                                                                   |
+| `delivery_method`                   | string                          | The NASBA delivery method, e.g. `"QAS Self Study"`. Same value as `nasba.delivery_method` on lab progress.                             |
+| `final_assessment_passed_at`        | string (UTC ISO-8601) or `null` | When THIS learner passed the MCQ; `null` until passed or when they have not started. Per learner.                                      |
+
+The first three are the same for every learner and reach the API within 30 seconds of an admin edit.
 
 **Hints card** (`ai_lab_course_hints`, new 2026-10-26)
 
@@ -529,7 +566,10 @@ No body.
 - **When:** The learner taps Start. Creates the enrolment.
 - **Replaces legacy:** `/ai-labs/course/<uuid:ai_lab_course_id>/start/`
 - **Changed from legacy:** Path moved from ai-labs/course/<uuid>/start/ to api/v1/ai-labs/course-start/<uuid>/; response wrapped in {success,message,data}; 409 reasons now credit_already_earned_via_course | started_via_masterclass_course (lock keyed on the PARENT course).
-- **Backend:** `AILabCourseStartViewV1` (AILabs/views.py:1009)
+- **Changed 2026-10-28:** restarting a lab whose window expired, or that staff released, keeps everything the
+  learner already did. A lab they had **finished** stays finished: `is_course_closed` is `true` in this response
+  and `next_step` stays `done` on lab progress. It used to come back `false` and the lab could never be completed again.
+- **Backend:** `AILabCourseStartViewV1` (AILabs/views.py:1038)
 
 **Request**
 
@@ -555,6 +595,14 @@ No body.
   }
 }
 ```
+
+**Which status code?**
+
+| Case                                               | Status | `enrollment_created` | `is_course_closed`                                       |
+| -------------------------------------------------- | ------ | -------------------- | -------------------------------------------------------- |
+| First start                                        | 201    | `true`               | `false`                                                  |
+| Already started and still inside the window        | 200    | `false`              | the row's value                                          |
+| Restart after the window expired / after a release | 201    | `false`              | `true` if the learner had finished the lab, else `false` |
 
 **Errors**
 
@@ -633,7 +681,9 @@ No body.
 - **Changed from legacy:** Path app-api/v1/ai-labs/course-progress/<uuid>/ (was ai-labs/course/<uuid>/progress/); same flow keys plus a new nasba block {eligible, delivery_method, outstanding:[{rule,code,message,required,actual}]}; enveloped.
 - **Changed 2026-10-23:** new `final_assessment_status` block as the last key.
 - **Changed 2026-10-27:** new `lab_certificate_url` - the issued lab certificate PDF, else `null`.
-- **Backend:** `AppAILabCourseProgressViewV1` (AILabs/views.py:3759)
+- **Changed 2026-10-28:** **`cpe_awarded` is a NUMBER** (the CPE amount credited), was a bool. New
+  `final_assessment_passed_at`.
+- **Backend:** `AppAILabCourseProgressViewV1` (AILabs/views.py:4013)
 
 **Request**
 
@@ -656,9 +706,10 @@ No body.
     "quiz_questions_to_show": 5,
     "assessment_required": true,
     "final_assessment_passed": true,
+    "final_assessment_passed_at": "2026-10-27T09:14:02.511000Z",
     "ai_assessment_completed": true,
     "feedback_submitted": false,
-    "cpe_awarded": false,
+    "cpe_awarded": 0.0,
     "is_course_closed": false,
     "next_step": "feedback",
     "nasba": {
@@ -678,11 +729,12 @@ No body.
 `next_step` is one of `video`, `quiz`, `final_assessment`, `feedback`, `done` (`ai_assessment` was removed 2026-10-27 - the practical no longer sits in this flow).
 `final_assessment_status` is section 1a.
 
-**Lab closed and certificate issued** - same body; the steps are done and the link is filled (sample data):
+**Lab closed and certificate issued** - same body; the steps are done, the CPE amount is filled and the link is
+filled (sample data):
 
 ```json
 "feedback_submitted": true,
-"cpe_awarded": true,
+"cpe_awarded": 1.5,
 "is_course_closed": true,
 "next_step": "done",
 "nasba": {
@@ -697,6 +749,28 @@ No body.
 }
 ```
 
+**Every key**
+
+| Key                          | Type                   | Meaning                                                                                                                                                                                                                         |
+| ---------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ai_lab_course_id`           | string (UUID)          | The lab.                                                                                                                                                                                                                        |
+| `video_watched_seconds`      | integer                | The furthest point reached in the video (never goes down).                                                                                                                                                                      |
+| `video_completed`            | bool                   | The video counts as watched (the higher of 95% and the lab's own minimum).                                                                                                                                                      |
+| `quiz_required`              | bool                   | The lab has a chapter quiz. When `false`, skip the quiz step.                                                                                                                                                                   |
+| `quiz_passed`                | bool                   | Quiz done (only meaningful when `quiz_required`).                                                                                                                                                                               |
+| `quiz_questions_to_show`     | integer or `null`      | Quiz size; `null` when there is no quiz.                                                                                                                                                                                        |
+| `assessment_required`        | bool                   | The lab has its MCQ final assessment set up. `false` = content issue: the lab cannot be completed.                                                                                                                              |
+| `final_assessment_passed`    | bool                   | MCQ passed.                                                                                                                                                                                                                     |
+| `final_assessment_passed_at` | string (UTC) or `null` | **New 2026-10-28.** When the MCQ was passed.                                                                                                                                                                                    |
+| `ai_assessment_completed`    | bool                   | The separate AI practical has been graded at least once. **Informational only - it gates nothing.**                                                                                                                             |
+| `feedback_submitted`         | bool                   | Feedback given.                                                                                                                                                                                                                 |
+| `cpe_awarded`                | **number**             | **Changed 2026-10-28.** CPE credited for this lab, e.g. `1.5`. `0.0` until the lab closes with credit, and stays `0.0` for a lab that carries no CPE. Read from the CPE ledger, so it is exactly what the learner was credited. |
+| `is_course_closed`           | bool                   | The lab is finished (feedback in, CPE and certificate handled).                                                                                                                                                                 |
+| `next_step`                  | string                 | `video` / `quiz` / `final_assessment` / `feedback` / `done`. Drive the main button from this.                                                                                                                                   |
+| `nasba`                      | object                 | `eligible` (bool), `delivery_method` (string), `outstanding` (list of the conditions still unmet at the current stage; `[]` once eligible).                                                                                     |
+| `lab_certificate_url`        | string or `null`       | See below.                                                                                                                                                                                                                      |
+| `final_assessment_status`    | object                 | Section 1a. Always the last key.                                                                                                                                                                                                |
+
 **`lab_certificate_url` (new 2026-10-27)**
 
 |              |                                                                                                                                                                                   |
@@ -707,6 +781,7 @@ No body.
 | Whose        | the signed-in learner's own certificate only                                                                                                                                      |
 | Button       | show "Download Certificate" when it is a URL; when `next_step` is `done` but it is still `null`, show "Certificate is being generated" and re-read this route after a few seconds |
 | Same name as | `lab_certificate_url` in the feedback-submit response, which is usually still `null` at that moment                                                                               |
+| Re-render    | if staff re-generate a certificate, the old link keeps working and is replaced by the new one when it is ready (2026-10-28)                                                       |
 
 **Errors**
 
@@ -724,7 +799,11 @@ No body.
 - **When:** Every few seconds while the video plays.
 - **Replaces legacy:** `/ai-labs/course/<uuid:ai_lab_course_id>/video-progress/`
 - **Changed from legacy:** Lab id moved from the URL path into the body (ai_lab_course_id); path api/v1/ai-labs/course-video-progress/; undeclared body keys now 400; enveloped.
-- **Backend:** `AILabCourseVideoProgressViewV1` (AILabs/views.py:1488)
+- **Completion rule (2026-10-28):** `video_completed` flips when `watched_duration_seconds` reaches the **higher of
+  95% and the lab's own "minimum watch percent"** of the video. Some labs require 100%, so keep reporting until
+  `video_completed` is `true` (or `just_completed` is `true` on this response) - do not stop at 95% client-side.
+  Send the furthest position reached (cumulative seconds); a lower number never reduces progress.
+- **Backend:** `AILabCourseVideoProgressViewV1` (AILabs/views.py:1526)
 
 **Request**
 
@@ -1232,6 +1311,165 @@ status is `cool_off` and carries when it ends; without one it is `retake`.
 
 ---
 
+### My assessment report (NEW 2026-10-28)
+
+- **App:** `GET /app-api/v1/ai-labs/course-assessment-report/<uuid:ai_lab_course_id>/`
+- **Web:** `GET /web-api/v1/ai-labs/course-assessment-report/<uuid:ai_lab_course_id>/`
+- **When:** "View my assessment" - the learner re-reads their latest MCQ attempt at any time (after a pass, after a
+  fail, or months later). Read-only; it never starts or changes an attempt.
+- **Replaces legacy:** none in MilesOne. The old web app's "assessment report" screen; the AI Lab twin of the
+  Masterclass `assessment/report/` route.
+- **Always answers 200** for a lab the learner can see: "never sat it" is `status: "not_attempted"`, not an error.
+- **Backend:** `AppAILabAssessmentReportViewV1` (AILabs/views.py:4273)
+
+**Request**
+
+`GET /app-api/v1/ai-labs/course-assessment-report/{ai_lab_course_id}/`
+
+No body, no query parameters.
+
+**Response 200 - passed** (sample data; shape taken from a real local capture)
+
+```json
+{
+  "success": true,
+  "message": "Data retrieved successfully.",
+  "data": {
+    "ai_lab_course_id": "47ecd850-08ff-4342-abf2-9a432ba43e6a",
+    "ai_lab_course_name": "Revenue Recognition Agent",
+    "has_final_assessment": true,
+    "status": "passed",
+    "attempt_count": 2,
+    "pass_threshold_percent": 70.0,
+    "questions_to_show": 5,
+    "attempt_id": "92f4e9e2-58e3-45a3-8f1c-71a0233426ef",
+    "score_percent": 80.0,
+    "attempted_at": "2026-10-15T10:41:07.601420Z",
+    "passed_at": "2026-10-15T10:41:07.611000Z",
+    "total_questions": 5,
+    "correct_count": 4,
+    "skipped_count": 0,
+    "feedback_withheld": false,
+    "answers": [
+      {
+        "question_id": "b4fcae42-a90a-445f-bb4c-611f380c3efe",
+        "question_text": "<p>Under ASC 606, when is revenue recognised for a performance obligation satisfied over time?</p>",
+        "is_skipped": false,
+        "is_correct": true,
+        "explanation": "Over-time obligations recognise revenue as progress is made, measured by an input or output method.",
+        "selected_option_ids": ["756fcf51-317e-4cd0-84ad-1803455e8a40"],
+        "correct_option_ids": ["756fcf51-317e-4cd0-84ad-1803455e8a40"],
+        "options": [
+          {
+            "id": "756fcf51-317e-4cd0-84ad-1803455e8a40",
+            "text": "<p>As progress toward completion is measured</p>",
+            "is_correct": true,
+            "explanation": "Correct.",
+            "was_selected": true
+          },
+          {
+            "id": "a01d062e-b9b7-4118-acf7-fa525efea6e6",
+            "text": "<p>Only when the contract is signed</p>",
+            "is_correct": false,
+            "explanation": "Signing creates the contract; it does not satisfy the obligation.",
+            "was_selected": false
+          }
+        ]
+      },
+      {
+        "_more": "4 more item(s) with the same shape"
+      }
+    ]
+  }
+}
+```
+
+**Response 200 - never attempted**
+
+```json
+{
+  "success": true,
+  "message": "Data retrieved successfully.",
+  "data": {
+    "ai_lab_course_id": "f6570df7-0ad9-4463-9a4d-75df10e14d59",
+    "ai_lab_course_name": "Lease Audit Agent",
+    "has_final_assessment": true,
+    "status": "not_attempted",
+    "attempt_count": 0,
+    "pass_threshold_percent": 70.0,
+    "questions_to_show": 5,
+    "attempt_id": null,
+    "score_percent": null,
+    "attempted_at": null,
+    "passed_at": null,
+    "total_questions": 0,
+    "correct_count": 0,
+    "skipped_count": 0,
+    "feedback_withheld": false,
+    "answers": []
+  }
+}
+```
+
+**Response 200 - failed, answer key withheld** (sample data). The score and the learner's own choices stay; which
+answers were right is removed.
+
+```json
+"status": "failed",
+"score_percent": 40.0,
+"feedback_withheld": true,
+"answers": [
+  {
+    "question_id": "c1b0...",
+    "question_text": "...",
+    "is_skipped": false,
+    "is_correct": null,
+    "explanation": null,
+    "selected_option_ids": ["o-5..."],
+    "correct_option_ids": [],
+    "options": [
+      {"id": "o-4...", "text": "4", "was_selected": false},
+      {"id": "o-5...", "text": "5", "was_selected": true}
+    ]
+  }
+]
+```
+
+**Every key**
+
+| Key                                                           | Type                        | Meaning                                                                                                                                           |
+| ------------------------------------------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `status`                                                      | string                      | `passed`, `failed` or `not_attempted` - the LATEST attempt's result. Draw the screen from this.                                                   |
+| `has_final_assessment`                                        | bool                        | `false` = the lab has no MCQ set up (content issue).                                                                                              |
+| `attempt_count`                                               | integer                     | Attempts the learner has made in the current enrolment (all of them, not just the latest).                                                        |
+| `pass_threshold_percent` / `questions_to_show`                | number / integer, or `null` | The lab's current MCQ settings. `null` without an MCQ.                                                                                            |
+| `attempt_id`                                                  | string or `null`            | The latest attempt.                                                                                                                               |
+| `score_percent`                                               | number or `null`            | The latest attempt's score, 0-100.                                                                                                                |
+| `attempted_at`                                                | string (UTC) or `null`      | When the latest attempt was submitted.                                                                                                            |
+| `passed_at`                                                   | string (UTC) or `null`      | When the learner passed (can differ from `attempted_at`).                                                                                         |
+| `total_questions` / `correct_count` / `skipped_count`         | integer                     | Counts for the latest attempt.                                                                                                                    |
+| `feedback_withheld`                                           | bool                        | `true` = the answer key is hidden (see below). Show "Correct answers are not shown for this attempt".                                             |
+| `answers[]`                                                   | list                        | One row per question the learner was ASKED in the latest attempt, in that order.                                                                  |
+| `answers[].question_text` / `options[].text`                  | string                      | May contain HTML (same as the questions route) - render it. A question deleted since shows `"[Question no longer available]"` with `options: []`. |
+| `answers[].selected_option_ids`                               | list of ids                 | What the learner picked. Always present.                                                                                                          |
+| `answers[].correct_option_ids` / `is_correct` / `explanation` | list / bool / string        | The answer key. Empty list / `null` when `feedback_withheld` is `true`.                                                                           |
+| `answers[].options[].was_selected`                            | bool                        | Tick the learner's choice. Always present.                                                                                                        |
+| `answers[].options[].is_correct` / `explanation`              | bool / string               | Present only when the key is shown. Check for the key, do not assume it.                                                                          |
+
+**When is the key withheld?** NASBA rule 6.01.2(1)(ii): after a **failed** attempt, the correct answers are shown
+only when the lab's MCQ is drawn from a question bank (each retake gets new questions). Otherwise a failed attempt
+keeps its score and choices but `feedback_withheld` is `true`. A passed attempt always shows the key.
+
+**Errors**
+
+| Status | `data.reason`          | What to show            |
+| ------ | ---------------------- | ----------------------- |
+| 404    | `ai_lab_not_found`     | Wrong / inactive lab id |
+| 401    | - (no / expired token) | Sign in again           |
+| 500    | - (unexpected error)   | Retry                   |
+
+---
+
 ## 7. AI Labs account (needed before the practical)
 
 ### Account state
@@ -1631,6 +1869,17 @@ No body, no query parameters.
 | `attempts[].submitted_at` / `graded_at`                            | UTC ISO-8601.                                                                                                                         |
 | `attempts[].grade_card_url`                                        | Signed PDF link (refreshed on each read for AI Labs' recent attempts) or `null`.                                                      |
 
+**Which attempts are listed?** Every graded attempt we have stored for the learner's current enrolment - if they
+did 3, all 3 come back. Three cases to know:
+
+1. A run that AI Labs **failed to grade** is never listed and does not use up an attempt.
+2. Attempts are stored when this route or `assignment-status` reads them from AI Labs with the learner's login.
+   The status poll during grading does that, so poll `assignment-status` after every submit until it says
+   `completed` - then the attempt is guaranteed to be stored before the next submit.
+3. After a lab is released and restarted, only the attempts of the current enrolment are listed.
+
+**Cache-Control:** `no-store` on every 200, including the "no AI Labs account yet" one (2026-10-28).
+
 **Response 200 - no graded attempt yet** (show "No attempts yet"):
 
 ```json
@@ -1889,8 +2138,8 @@ Body:
 - **When:** Poll after submitting until graded; then stop.
 - **Replaces legacy:** `/api/ai-lab/assignments/status/`
 - **Changed from legacy:** UUID path (app-api/v1/ai-labs/assignment-status/<uuid>/) instead of ?course_id=<int>; result keys gain grade_card_expires_at, grade_card_is_expired, can_resubmit, artefact_kind, submitted_at and a reconciled flag; no-enrollment is 404 rather than lab_status 'not_started'.
-- **Backend:** `AppAILabAssignmentStatusViewV1` (AILabs/views_practical.py:1697)
-- **Notes:** `assessment_status` is `not_started`, `in_progress`, `completed` or `error`. While it is `in_progress` this read also asks AI Labs once (so a missed result heals itself) - poll every ~10 s and stop at `completed`. Once completed, each read fetches a FRESH grade-card link (`grade_card_pdf_url` + `grade_card_expires_at`), so re-read rather than reusing an old link. **Since 2026-10-27** `score` / `percentage` / comments / grade card are the **best** attempt's, the response carries `max_attempts` / `attempts_used` / `attempts_left`, and `can_resubmit` is `true` when the MCQ is passed, nothing is grading and `attempts_left > 0`. Unlike brief and attempts this response is not marked `no-store`, but do not cache it either.
+- **Backend:** `AppAILabAssignmentStatusViewV1` (AILabs/views_practical.py:1832)
+- **Notes:** `assessment_status` is `not_started`, `in_progress`, `completed` or `error`. While it is `in_progress` this read also asks AI Labs once (so a missed result heals itself) - poll every ~10 s and stop at `completed`. Once completed, each read fetches a FRESH grade-card link (`grade_card_pdf_url` + `grade_card_expires_at`), so re-read rather than reusing an old link. **Since 2026-10-27** `score` / `percentage` / comments / grade card are the **best** attempt's, the response carries `max_attempts` / `attempts_used` / `attempts_left`, and `can_resubmit` is `true` when the MCQ is passed, nothing is grading and `attempts_left > 0`. **Since 2026-10-28** the response carries `max_score` (the best attempt's denominator), reads `not_started` when nothing was ever submitted or graded, and is sent with `Cache-Control: no-store` (the grade-card link is signed).
 
 **Request**
 
@@ -1914,8 +2163,9 @@ No body.
     "submission_id": "3d7e9b42-6c1a-4f85-9e2b-7a4c1d8f0e63",
     "artefact_kind": "agent",
     "submitted_at": "2026-10-20T10:12:04.318265Z",
-    "score": 39.25,
-    "percentage": 78.5,
+    "score": 8.0,
+    "max_score": 10.0,
+    "percentage": 80.0,
     "master_comment": "Solid sampling agent with a clear selection rationale.",
     "minor_comment": "Stratification was correct; the agent should cite the policy threshold it applied for each high-value item.",
     "grade_card_pdf_url": "https://ai-labs-grade-cards.s3.amazonaws.com/submissions/3d7e9b42-6c1a-4f85-9e2b-7a4c1d8f0e63/grade-card.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAEXAMPLEKEY%2F20261020%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20261020T101530Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=5f2c9a1e7d3b8f4a6c0e2d9b1f7a3c5e8d0b4f6a2c9e1d7b3f5a8c0e4d6b2f9a",
@@ -1929,6 +2179,19 @@ No body.
   }
 }
 ```
+
+**`assessment_status` - what to draw**
+
+| Value         | When                                                                                                                                                                                                          | Screen                                                                                    |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `not_started` | No graded attempt stored, nothing ever submitted (2026-10-28: this also covers a row staff marked complete by hand with no real submission - `ai_assessment_completed` may still say `true` there; ignore it) | "Submit your agent" (if `can_resubmit`)                                                   |
+| `in_progress` | A submission is being graded                                                                                                                                                                                  | Spinner; poll every ~10 s                                                                 |
+| `completed`   | At least one attempt graded                                                                                                                                                                                   | Best score (`score` / `max_score`), grade card, comments; "Try again" when `can_resubmit` |
+| `error`       | The last run failed at AI Labs                                                                                                                                                                                | "Grading failed - submit again" when `can_resubmit`                                       |
+
+**Score fields:** `score`, `max_score` and `percentage` are JSON **numbers** here (e.g. `8.0` / `10.0` / `80.0`),
+all from the best attempt; `null` before any grade. The attempts route sends the same values as decimal
+**strings** (`"8.00"`) - parse accordingly.
 
 **Errors**
 
@@ -1991,7 +2254,9 @@ No body.
 - **When:** The learner's AI Labs progress screen.
 - **Replaces legacy:** `/api/ai-lab/progress/`
 - **Changed from legacy:** Ported from Legacy Miles Masterclass api/ai-lab/progress/, renamed practical-progress; passes their progress body through (snake-cased) and stamps ai_lab_course_id/name/thumbnail per row instead of embedding a NanoLearning course object and recomputing summary totals.
-- **Backend:** `AppAILabPracticalProgressViewV1` (AILabs/views_practical.py:1968)
+- **Changed 2026-10-28:** every row we recognise as one of our labs carries a `practical_attempts` block with our
+  own counts - the same figures `assignment-status` answers. AI Labs' own row keys are passed through unchanged.
+- **Backend:** `AppAILabPracticalProgressViewV1` (AILabs/views_practical.py:2127)
 
 **Request**
 
@@ -2024,7 +2289,16 @@ No body.
           "latest_submission_id": "3d7e9b42-6c1a-4f85-9e2b-7a4c1d8f0e63",
           "ai_lab_course_id": "f6570df7-0ad9-4463-9a4d-75df10e14d59",
           "ai_lab_course_name": "AI for Auditors Lab",
-          "ai_lab_square_thumbnail_url": "https://example-assets.s3.ap-south-1.amazonaws.com/AILabs/Course_Thumbnails/Square/ai-for-auditors-lab-square.png"
+          "ai_lab_square_thumbnail_url": "https://example-assets.s3.ap-south-1.amazonaws.com/AILabs/Course_Thumbnails/Square/ai-for-auditors-lab-square.png",
+          "practical_attempts": {
+            "max_attempts": 3,
+            "attempts_used": 2,
+            "attempts_left": 1,
+            "best_attempt_number": 2,
+            "best_score": 9.0,
+            "best_max_score": 10.0,
+            "best_percentage": 90.0
+          }
         },
         {
           "assignment_id": "7c2f9e14-58ab-4d3c-b6e0-1f4a8d92c375",
@@ -2040,6 +2314,18 @@ No body.
   }
 }
 ```
+
+The second row has no `ai_lab_course_id` and no `practical_attempts`: AI Labs knows an assignment that is not one of
+our labs. Show it from AI Labs' own keys, or hide it.
+
+**`practical_attempts` (new 2026-10-28)** - only on rows that carry `ai_lab_course_id`
+
+| Key                                                 | Type              | Meaning                                                                     |
+| --------------------------------------------------- | ----------------- | --------------------------------------------------------------------------- |
+| `max_attempts`                                      | integer           | The lab's allowance (admin "Max practical attempts").                       |
+| `attempts_used` / `attempts_left`                   | integer           | Graded attempts stored / remaining. **Use these, not AI Labs' `attempts`.** |
+| `best_attempt_number`                               | integer or `null` | The attempt that is the learner's result.                                   |
+| `best_score` / `best_max_score` / `best_percentage` | number or `null`  | The best attempt's figures (numbers, e.g. `9.0` of `10.0`, `90.0`).         |
 
 **Errors**
 
@@ -2336,7 +2622,10 @@ No body.
 - **When:** Last step of the lab.
 - **Replaces legacy:** `/ai-labs/course/<uuid:ai_lab_course_id>/feedback/submit/`
 - **Changed from legacy:** Path api/v1/ai-labs/course-feedback-submit/<uuid>/; feedback questions/answers now live in BadgeCertificateCPE (AILabFeedbackQuestionModule ids, not CAIRA_Masterclass_Feedback_Question ids); new 409 nasba_conditions_unmet; enveloped.
-- **Backend:** `AILabFeedbackSubmitViewV1` (AILabs/views.py:3194)
+- **Backend:** `AILabFeedbackSubmitViewV1` (AILabs/views.py:3420)
+- **`cpe_awarded`** is the CPE amount credited by this submit (a number, `0.0` for a lab with no credit). On the rare
+  "already submitted" 200 (a double tap) it is the amount credited the first time (2026-10-28; it used to be
+  `0.0`). For the screen, read it from lab progress.
 - **The certificate:** submitting feedback REQUESTS the lab certificate (`lab_certificate_triggered: true` when the lab has a certificate template). The PDF is generated a moment later, so `lab_certificate_url` here is usually `null`; read it from **Lab progress** (`course-progress/<id>/`, section 4), where it fills once issued.
 
 **Request**
@@ -2394,40 +2683,122 @@ Body:
 
 ---
 
+### My feedback answers (NEW 2026-10-28)
+
+- **App:** `GET /app-api/v1/ai-labs/course-feedback-responses/<uuid:ai_lab_course_id>/`
+- **Web:** `GET /web-api/v1/ai-labs/course-feedback-responses/<uuid:ai_lab_course_id>/`
+- **When:** "View my feedback" - the learner reads back what they submitted. Read-only.
+- **Replaces legacy:** none in MilesOne; the AI Lab twin of the Masterclass `feedback/responses/` route. Note the
+  lab id is in the PATH here (the Masterclass one takes `?course_id=`).
+- **Always answers 200** for a lab the learner can see: `submitted: false` and `responses: []` when they never filled
+  the form.
+- **Backend:** `AppAILabFeedbackResponsesViewV1` (AILabs/views.py:4325)
+
+**Request**
+
+`GET /app-api/v1/ai-labs/course-feedback-responses/{ai_lab_course_id}/`
+
+No body, no query parameters.
+
+**Response 200** (sample data)
+
+```json
+{
+  "success": true,
+  "message": "Data retrieved successfully.",
+  "data": {
+    "ai_lab_course_id": "f6570df7-0ad9-4463-9a4d-75df10e14d59",
+    "submitted": true,
+    "submitted_at": "2026-10-27T09:20:11.204000Z",
+    "question_count": 2,
+    "answered_count": 2,
+    "responses": [
+      {
+        "question_id": "4fbf1eb1-fecc-4ea5-b721-b341c1034768",
+        "question": "How would you rate the overall quality of this AI Lab?",
+        "question_type": "rating",
+        "question_order": 1,
+        "rating": 5,
+        "text_response": "",
+        "submitted_at": "2026-10-27T09:20:11.204000Z"
+      },
+      {
+        "question_id": "b9de7783-f6a6-4c3a-b240-29c67d1cf713",
+        "question": "What one change would make this lab more useful in your accounting work?",
+        "question_type": "text",
+        "question_order": 2,
+        "rating": null,
+        "text_response": "More sample leases.",
+        "submitted_at": "2026-10-27T09:20:11.204000Z"
+      }
+    ]
+  }
+}
+```
+
+**Every key**
+
+| Key                                    | Type                       | Meaning                                                                                                      |
+| -------------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `submitted`                            | bool                       | The learner submitted this lab's feedback. **Use this** for "submitted / not submitted".                     |
+| `submitted_at`                         | string (UTC) or `null`     | When they submitted.                                                                                         |
+| `question_count`                       | integer                    | Questions on the lab's form today.                                                                           |
+| `answered_count`                       | integer                    | Answers stored for THIS lab. Can be lower than `question_count` even when `submitted` is `true` - see below. |
+| `responses[]`                          | list                       | One per stored answer, in form order.                                                                        |
+| `responses[].question_type`            | string                     | `rating` (read `rating`, 1-5) or `text` (read `text_response`).                                              |
+| `responses[].rating` / `text_response` | integer or `null` / string | The answer. The unused one is `null` / `""`.                                                                 |
+
+**Fewer answers than questions?** A question shared by every lab ("global" question) is answered once per learner.
+If the learner already answered it on another lab, it is not stored again here, so it is missing from this list
+even though `submitted` is `true`. Show the answers you get; do not treat the gap as "not submitted".
+
+The optional free-text comment (`optional_feedback_text` in the submit body) is not stored for AI Labs today, so it
+never appears here.
+
+**Errors**
+
+| Status | `data.reason`          | What to show            |
+| ------ | ---------------------- | ----------------------- |
+| 404    | `ai_lab_not_found`     | Wrong / inactive lab id |
+| 401    | - (no / expired token) | Sign in again           |
+| 500    | - (unexpected error)   | Retry                   |
+
+---
+
 ## 10. Reason code dictionary
 
-| `data.reason`                                                                                                                                                        | Route(s)                                                                | Meaning                                                                        |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `video_not_complete`                                                                                                                                                 | quiz / assessment questions + submit                                    | Finish the video first                                                         |
-| `quiz_not_complete`                                                                                                                                                  | assessment questions + submit                                           | Finish the quiz first                                                          |
-| `no_quiz_config` / `no_assessment_config`                                                                                                                            | quiz / assessment                                                       | The lab has no quiz / assessment set up (content issue)                        |
-| `already_answered` / `already_completed`                                                                                                                             | quiz                                                                    | That question / the whole quiz is already done                                 |
-| `already_passed`                                                                                                                                                     | assessment                                                              | Final assessment already passed - move on                                      |
-| `cool_off_active`                                                                                                                                                    | assessment                                                              | Failed recently - wait for the cool-off before retrying                        |
-| `answer_count_mismatch` / `invalid_question_id` / `invalid_question`                                                                                                 | quiz / assessment / feedback                                            | The answers sent do not match the questions                                    |
-| `final_assessment_not_passed`                                                                                                                                        | feedback, assignment submit                                             | Pass the final assessment first (it opens both feedback and the practical)     |
-| `feedback_already_submitted`                                                                                                                                         | feedback                                                                | Already given - the lab is done                                                |
-| `nasba_conditions_unmet`                                                                                                                                             | feedback submit (409)                                                   | CPE rules not met - the lab stays open                                         |
-| `credit_already_earned_via_course` / `started_via_masterclass_course`                                                                                                | course start (409)                                                      | The parent Masterclass course already covers this credit / was started instead |
-| `ai_lab_assignment_not_configured`                                                                                                                                   | brief, submit (409)                                                     | The lab has no AI Labs assignment set (content issue)                          |
-| `tokens_request_open`                                                                                                                                                | tokens request (409)                                                    | A credits request is already pending                                           |
-| `enrollment_not_found`                                                                                                                                               | release                                                                 | Nothing to release                                                             |
-| `ai_lab_not_found`                                                                                                                                                   | detail, start, brief, attempts, submit                                  | Wrong / inactive lab id                                                        |
-| `no_ai_lab_enrollment`                                                                                                                                               | progress, quiz, assessment, brief, attempts, status, feedback           | Learner has not started this lab                                               |
-| `caira_access_required`                                                                                                                                              | start, practical routes                                                 | No CAIRA access - upsell                                                       |
-| `practical_attempts_exhausted`                                                                                                                                       | assignment submit (409)                                                 | Every attempt of the lab's `max_attempts` is graded - no more submits          |
-| `no_sso_handle`                                                                                                                                                      | agents, flows, practical-progress, tokens, submit, tokens request (400) | Account not linked to Miles SSO - support issue                                |
-| `AI_LABS_NOT_PROVISIONED`                                                                                                                                            | practical routes (200 with `is_provisioned: false`; 400 on submit)      | No AI Labs account - show "Create AI Labs account"                             |
-| `AI_LABS_ACCESS_DENIED` / `AI_LABS_TOKEN_REJECTED`                                                                                                                   | learner-token practical routes (403)                                    | Sign out and back in                                                           |
-| `AI_LABS_ALREADY_IN_PROGRESS`                                                                                                                                        | assignment submit (409)                                                 | Already being graded - poll status                                             |
-| `AI_LABS_VALIDATION_REJECTED`                                                                                                                                        | assignment submit (400)                                                 | AI Labs refused the submission; `message` is theirs                            |
-| `AI_LABS_RATE_LIMITED`                                                                                                                                               | practical routes (429)                                                  | Busy - retry shortly                                                           |
-| `AI_LABS_CALL_FAILED` / `AI_LABS_RESPONSE_UNREADABLE`                                                                                                                | practical routes (502)                                                  | AI Labs unreachable - retry                                                    |
-| `AI_LABS_ASSIGNMENT_MISMATCH`                                                                                                                                        | assignment submit (502)                                                 | Practical misconfigured on our side                                            |
-| `AI_LABS_CONFIGURATION_REJECTED`                                                                                                                                     | brief (502)                                                             | **New.** Our platform key refused - backend config                             |
-| `AI_LABS_STORAGE_UNAVAILABLE`                                                                                                                                        | brief, attempts (503)                                                   | **New.** File / grade-card links could not be signed - retry                   |
-| `AI_LABS_LMS_UNCONFIGURED` / `AI_LABS_DISABLED`                                                                                                                      | practical routes / account routes (503)                                 | AI Labs is off in this environment                                             |
-| `PROVISIONING_STARTED` / `PROVISIONING_IN_PROGRESS` / `ACCOUNT_EXISTS` / `ACCOUNT_NOT_CREATED` / `MISSING_REQUIRED_FIELDS` / `NO_CAIRA_ENROLLMENT` / `RESET_EMAIL_*` | account routes                                                          | See section 7                                                                  |
+| `data.reason`                                                                                                                                                        | Route(s)                                                                      | Meaning                                                                        |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `video_not_complete`                                                                                                                                                 | quiz / assessment questions + submit                                          | Finish the video first                                                         |
+| `quiz_not_complete`                                                                                                                                                  | assessment questions + submit                                                 | Finish the quiz first                                                          |
+| `no_quiz_config` / `no_assessment_config`                                                                                                                            | quiz / assessment                                                             | The lab has no quiz / assessment set up (content issue)                        |
+| `already_answered` / `already_completed`                                                                                                                             | quiz                                                                          | That question / the whole quiz is already done                                 |
+| `already_passed`                                                                                                                                                     | assessment                                                                    | Final assessment already passed - move on                                      |
+| `cool_off_active`                                                                                                                                                    | assessment                                                                    | Failed recently - wait for the cool-off before retrying                        |
+| `answer_count_mismatch` / `invalid_question_id` / `invalid_question`                                                                                                 | quiz / assessment / feedback                                                  | The answers sent do not match the questions                                    |
+| `final_assessment_not_passed`                                                                                                                                        | feedback, assignment submit                                                   | Pass the final assessment first (it opens both feedback and the practical)     |
+| `feedback_already_submitted`                                                                                                                                         | feedback                                                                      | Already given - the lab is done                                                |
+| `nasba_conditions_unmet`                                                                                                                                             | feedback submit (409)                                                         | CPE rules not met - the lab stays open                                         |
+| `credit_already_earned_via_course` / `started_via_masterclass_course`                                                                                                | course start (409)                                                            | The parent Masterclass course already covers this credit / was started instead |
+| `ai_lab_assignment_not_configured`                                                                                                                                   | brief, submit (409)                                                           | The lab has no AI Labs assignment set (content issue)                          |
+| `tokens_request_open`                                                                                                                                                | tokens request (409)                                                          | A credits request is already pending                                           |
+| `enrollment_not_found`                                                                                                                                               | release                                                                       | Nothing to release                                                             |
+| `ai_lab_not_found`                                                                                                                                                   | detail, start, brief, attempts, submit, assessment report, feedback responses | Wrong / inactive lab id                                                        |
+| `no_ai_lab_enrollment`                                                                                                                                               | progress, quiz, assessment, brief, attempts, status, feedback                 | Learner has not started this lab                                               |
+| `caira_access_required`                                                                                                                                              | start, practical routes                                                       | No CAIRA access - upsell                                                       |
+| `practical_attempts_exhausted`                                                                                                                                       | assignment submit (409)                                                       | Every attempt of the lab's `max_attempts` is graded - no more submits          |
+| `no_sso_handle`                                                                                                                                                      | agents, flows, practical-progress, tokens, submit, tokens request (400)       | Account not linked to Miles SSO - support issue                                |
+| `AI_LABS_NOT_PROVISIONED`                                                                                                                                            | practical routes (200 with `is_provisioned: false`; 400 on submit)            | No AI Labs account - show "Create AI Labs account"                             |
+| `AI_LABS_ACCESS_DENIED` / `AI_LABS_TOKEN_REJECTED`                                                                                                                   | learner-token practical routes (403)                                          | Sign out and back in                                                           |
+| `AI_LABS_ALREADY_IN_PROGRESS`                                                                                                                                        | assignment submit (409)                                                       | Already being graded - poll status                                             |
+| `AI_LABS_VALIDATION_REJECTED`                                                                                                                                        | assignment submit (400)                                                       | AI Labs refused the submission; `message` is theirs                            |
+| `AI_LABS_RATE_LIMITED`                                                                                                                                               | practical routes (429)                                                        | Busy - retry shortly                                                           |
+| `AI_LABS_CALL_FAILED` / `AI_LABS_RESPONSE_UNREADABLE`                                                                                                                | practical routes (502)                                                        | AI Labs unreachable - retry                                                    |
+| `AI_LABS_ASSIGNMENT_MISMATCH`                                                                                                                                        | assignment submit (502)                                                       | Practical misconfigured on our side                                            |
+| `AI_LABS_CONFIGURATION_REJECTED`                                                                                                                                     | brief (502)                                                                   | **New.** Our platform key refused - backend config                             |
+| `AI_LABS_STORAGE_UNAVAILABLE`                                                                                                                                        | brief, attempts (503)                                                         | **New.** File / grade-card links could not be signed - retry                   |
+| `AI_LABS_LMS_UNCONFIGURED` / `AI_LABS_DISABLED`                                                                                                                      | practical routes / account routes (503)                                       | AI Labs is off in this environment                                             |
+| `PROVISIONING_STARTED` / `PROVISIONING_IN_PROGRESS` / `ACCOUNT_EXISTS` / `ACCOUNT_NOT_CREATED` / `MISSING_REQUIRED_FIELDS` / `NO_CAIRA_ENROLLMENT` / `RESET_EMAIL_*` | account routes                                                                | See section 7                                                                  |
 
 `final_assessment_status.final_assessment_enum_values`: `locked`, `start`, `cool_off`, `retake`, `passed`, `ended`
 (section 1a).
@@ -2439,7 +2810,12 @@ Body:
 - `GET /web-api/v1/masterclass/ai-labs/?login_type=pre_login|post_login&page=&page_size=` - the AI Labs rail on the
   web Masterclass home page. It lists the **Masterclass courses that have an AI Lab**, as standard course cards
   (paginated block under `data`, slug `masterclass_ai_labs_courses_web`, default 6). Served by the Masterclass app
-  (`WebMasterclassAILabsViewV1`), not counted in the 45 above.
+  (`WebMasterclassAILabsViewV1`), not counted in the 49 above.
+
+_Updated 2026-10-28: `cpe_awarded` became the CPE amount (breaking), new MCQ report and feedback read-back routes,
+MCQ facts on the lab detail, `max_score` / `not_started` / no-store on assignment-status, `practical_attempts` on
+practical-progress, a finished lab stays finished on restart, the video rule follows the lab's minimum. The MCQ
+report capture is real local data; the other new samples are code-derived._
 
 _Updated 2026-10-27: the practical split from CPE (feedback after the MCQ) and multiple graded attempts with `max_attempts`; earlier the same day at `01c7a4d`: lab progress `lab_certificate_url`; 2026-10-26 at `6a5c42d`: lab detail `ai_lab_course_hints` (Hints card); earlier the same day at `21a0042`: new attempts route, re-cut brief, lab detail `chapter` /
 instructor objects, `final_assessment_status`, the two new vendor codes and current backend line numbers;

@@ -6,6 +6,7 @@ import {
   AiLabFeedbackBody,
   AiLabQuizAnswerBody,
   AiLabSubmitBody,
+  AiLabTestEmailRun,
   AiLabTokenRequestBody,
   AiLabVideoProgressBody,
 } from '@features/ai-labs/models/ai-labs.model';
@@ -128,6 +129,17 @@ export const AI_LABS_API = {
     method: 'POST',
   } as RouteConfig<void, CommonResponse<unknown>>,
 
+  /**
+   * `IsAuthenticated`, NO body (any body is 400 `invalid_body`): AI Labs posts the exercise's sample
+   * emails into the lab mailbox. NOT idempotent — every success sends a batch and spends one of a
+   * rolling 24-hour allowance (429 `AI_LABS_TRIGGER_EMAIL_LIMIT_REACHED`), so never retry it
+   * automatically. Can take up to ~25 s. Only offered when the brief's `tools.trigger_email` holds.
+   */
+  assignmentTriggerEmail: {
+    path: `${ROOT}api/v1/ai-labs/assignment-trigger-email/:id/`,
+    method: 'POST',
+  } as RouteConfig<void, CommonResponse<AiLabTestEmailRun>>,
+
   /** `IsAuthenticated`: `{status, is_provisioned, tokens}` — the Copilot Credits balance. */
   tokens: `${ROOT}web-api/v1/ai-labs/tokens/`,
 
@@ -169,6 +181,12 @@ export const AI_LABS_API = {
   assessmentQuestions: `${ROOT}web-api/v1/ai-labs/course-assessment-questions/`,
 
   /**
+   * `IsAuthenticated`: the latest final-assessment attempt, read back (2026-10-28). Append
+   * `<uuid>/`. Always a 200 — `status: not_attempted` when there is none.
+   */
+  assessmentReport: `${ROOT}web-api/v1/ai-labs/course-assessment-report/`,
+
+  /**
    * `IsAuthenticated`, strict body `{answers: [{question_id, selected_option_ids}]}` — every answer
    * with a selection. 200 carries the score and the per-answer review; a pass moves `next_step`
    * on to `feedback`.
@@ -183,6 +201,9 @@ export const AI_LABS_API = {
 
   /** `IsAuthenticated`: the lab's feedback form — `rating` and `text` questions. */
   feedbackQuestions: `${ROOT}web-api/v1/ai-labs/course-feedback-questions/`,
+
+  /** `IsAuthenticated`: the learner's submitted feedback answers (2026-10-28). Append `<uuid>/`. */
+  feedbackResponses: `${ROOT}web-api/v1/ai-labs/course-feedback-responses/`,
 
   /**
    * `IsAuthenticated`, strict body: records the feedback and CLOSES the lab — CPE, the lab's

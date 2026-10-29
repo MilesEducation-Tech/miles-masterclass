@@ -4,13 +4,25 @@
 <div class="flex w-full min-h-svh flex-col md:px-11 md:pt-8 p-5 space-y-4 text-white">
   <app-backward [label]="copy.backToLab" fallback="/" [routePath]="labPath" />
 
-  @if (facade.result(); as result) {
-    <!-- ============================== REVIEW ============================== -->
+  @if (summary(); as sum) {
+    <!-- ============================== REVIEW ==============================
+         This visit's submit, or the latest attempt read back when the paper is
+         refused for having one (passed, or failed inside the cool-off). -->
     <div class="flex flex-col gap-6">
       <header class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <h1 class="text-3xl font-bold">{{ reviewCopy.title }}</h1>
+        <div class="flex flex-col gap-1">
+          <h1 class="text-3xl font-bold">{{ reviewCopy.title }}</h1>
+          @if (sum.at; as at) {
+            <p class="text-sm text-gray-400">
+              {{ reviewCopy.completedOn }} {{ at | date: 'd MMM y, h:mm a' }}
+            </p>
+          }
+          @if (!sum.live && facade.loadError(); as note) {
+            <p class="text-sm text-gray-400" role="status">{{ note }}</p>
+          }
+        </div>
         <div class="flex flex-col gap-3 sm:flex-row">
-          @if (!result.passed) {
+          @if (sum.live && !sum.passed) {
             <!-- A cool-off shuts the retake until it ends; the button says until when. -->
             <button
               app-button
@@ -47,17 +59,17 @@
           </dt>
           <dd
             class="text-2xl font-bold"
-            [class.text-success]="result.passed"
-            [class.text-destructive]="!result.passed"
+            [class.text-success]="sum.passed"
+            [class.text-destructive]="!sum.passed"
           >
-            {{ result.score_percent | number: '1.0-1' }}%
+            {{ sum.score | number: '1.0-1' }}%
           </dd>
           <dd>
             <span
               class="rounded-full px-3 py-0.5 text-xs font-semibold"
-              [class]="result.passed ? statuses.correct.badge : statuses.incorrect.badge"
+              [class]="sum.passed ? statuses.correct.badge : statuses.incorrect.badge"
             >
-              {{ result.passed ? reviewCopy.passed : reviewCopy.failed }}
+              {{ sum.passed ? reviewCopy.passed : reviewCopy.failed }}
             </span>
           </dd>
         </div>
@@ -65,23 +77,34 @@
           <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">
             {{ reviewCopy.correctAnswers }}
           </dt>
-          <dd class="text-2xl font-bold">{{ correctCount() }}/{{ review().length }}</dd>
+          <dd class="text-2xl font-bold">{{ sum.correct }}/{{ sum.total }}</dd>
         </div>
         <div class="flex flex-col gap-1">
           <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">
             {{ reviewCopy.passMark }}
           </dt>
-          <dd class="text-2xl font-bold">{{ result.pass_threshold_percent | number: '1.0-1' }}%</dd>
+          <dd class="text-2xl font-bold">
+            @if (sum.passMark !== null) {
+              {{ sum.passMark | number: '1.0-1' }}%
+            } @else {
+              –
+            }
+          </dd>
         </div>
       </dl>
 
       <section class="flex flex-col gap-4" aria-labelledby="exam-questions">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <h2 id="exam-questions" class="text-xl font-semibold">{{ reviewCopy.questions }}</h2>
-          <app-field class="flex-row items-center gap-3">
-            <span ngpLabel class="text-sm text-gray-400">{{ reviewCopy.wrongOnly }}</span>
-            <app-switch [checked]="wrongOnly()" (checkedChange)="wrongOnly.set($event)" />
-          </app-field>
+          @if (sum.withheld) {
+            <!-- NASBA 6.01.2(1)(ii): no key after a failed attempt on a fixed paper. -->
+            <p class="text-sm text-gray-400">{{ reviewCopy.withheld }}</p>
+          } @else {
+            <app-field class="flex-row items-center gap-3">
+              <span ngpLabel class="text-sm text-gray-400">{{ reviewCopy.wrongOnly }}</span>
+              <app-switch [checked]="wrongOnly()" (checkedChange)="wrongOnly.set($event)" />
+            </app-field>
+          }
         </div>
 
         @if (items().length) {
@@ -134,14 +157,20 @@
         }
       </section>
     </div>
-  } @else if (facade.loadError(); as message) {
+  } @else if (!facade.reportLoading() && facade.loadError(); as message) {
+    <!-- Passed already with no report to show (the route answers 404 before the 2026-10-28
+         deploy): v3's "Assessment Completed", with nothing to retry. -->
     <div role="alert" class="mx-auto flex max-w-md flex-col items-center gap-4 py-24 text-center">
-      <h2 class="text-2xl font-semibold text-white">{{ copy.loadFailed.title }}</h2>
+      <h2 class="text-2xl font-semibold text-white">
+        {{ facade.alreadyPassed() ? copy.completed : copy.loadFailed.title }}
+      </h2>
       <p class="text-muted-foreground">{{ message }}</p>
       <div class="flex flex-col gap-3 sm:flex-row">
-        <button app-button type="button" variant="outline" (click)="facade.retake()">
-          Try again
-        </button>
+        @if (!facade.alreadyPassed()) {
+          <button app-button type="button" variant="outline" (click)="facade.retake()">
+            Try again
+          </button>
+        }
         <button app-button type="button" variant="outline" (click)="backToLab()">
           {{ copy.backToLab }}
         </button>

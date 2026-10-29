@@ -431,7 +431,12 @@
                       <ng-icon [name]="view.icon" class="text-xl" aria-hidden="true" />
                     </span>
                     <div class="min-w-0">
-                      <p class="text-[16px] font-semibold text-foreground">{{ view.title }}</p>
+                      <p class="text-[16px] font-semibold text-foreground">
+                        {{ view.title }}
+                        @if (examPassed() && passedAt(); as at) {
+                          on {{ at | date: 'd MMM y' }}
+                        }
+                      </p>
                       <p
                         class="mt-1 max-w-[52ch] text-[12.5px] leading-relaxed text-muted-foreground"
                       >
@@ -490,12 +495,48 @@
                         Opens on its own page
                       </p>
                     }
+                    @if (reportOpen()) {
+                      <button
+                        type="button"
+                        class="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-accent underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+                        (click)="openReport()"
+                      >
+                        View report
+                        <ng-icon
+                          name="lucideArrowUpRight"
+                          class="text-[13px] rtl:-scale-x-100"
+                          aria-hidden="true"
+                        />
+                      </button>
+                    }
                   </div>
                 </div>
 
-                <!-- Facts, one quiet line. Question count and pass mark live on the
-                     assessment read, which only the exam screen makes. -->
+                <!-- Facts, one quiet line. Question count and pass mark come with the
+                     detail (2026-10-28); until a lab sends them they stay off. -->
                 <dl class="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-[12.5px]">
+                  @if (examQuestions(); as count) {
+                    <div class="flex items-center gap-1.5">
+                      <ng-icon
+                        name="lucideClipboardList"
+                        class="text-[14px] text-accent"
+                        aria-hidden="true"
+                      />
+                      <dt class="text-muted-foreground">Questions</dt>
+                      <dd class="font-semibold text-foreground">{{ count }}</dd>
+                    </div>
+                  }
+                  @if (examPassMark(); as mark) {
+                    <div class="flex items-center gap-1.5">
+                      <ng-icon
+                        name="lucideFlag"
+                        class="text-[14px] text-accent"
+                        aria-hidden="true"
+                      />
+                      <dt class="text-muted-foreground">Pass mark</dt>
+                      <dd class="font-semibold text-foreground">{{ mark | number: '1.0-1' }}%</dd>
+                    </div>
+                  }
                   @if (credits) {
                     <div class="flex items-center gap-1.5">
                       <ng-icon
@@ -1095,8 +1136,10 @@
                          icon says what it does. -->
                     <button
                       type="button"
-                      class="group flex w-full items-center gap-3 px-5 py-2.5 text-start transition-colors outline-none hover:bg-white/[0.03] focus-visible:bg-white/[0.03] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset lg:px-6"
+                      class="group flex w-full items-center gap-3 px-5 py-2.5 text-start transition-colors outline-none enabled:hover:bg-white/[0.03] focus-visible:bg-white/[0.03] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset disabled:cursor-wait lg:px-6"
                       aria-label="Send test emails to your lab mailbox"
+                      [disabled]="sendingTestEmails()"
+                      [attr.aria-busy]="sendingTestEmails()"
                       (click)="sendTestEmails()"
                     >
                       <span
@@ -1109,12 +1152,16 @@
                           Test emails
                         </span>
                         <span class="mt-0.5 block text-[11.5px] leading-snug text-muted-foreground">
-                          Sends sample emails with attachments to your lab mailbox (Outlook). They
-                          can take a few minutes to arrive.
+                          @if (sendingTestEmails()) {
+                            Sending… this can take up to half a minute.
+                          } @else {
+                            Sends sample emails with attachments to your lab mailbox (Outlook). They
+                            can take a few minutes to arrive.
+                          }
                         </span>
                       </span>
                       <span
-                        class="grid size-9 shrink-0 place-items-center rounded-xl border border-border bg-black/30 text-muted-foreground transition-all duration-300 group-hover:-translate-y-0.5 group-hover:border-accent/50 group-hover:text-foreground motion-reduce:transition-none"
+                        class="grid size-9 shrink-0 place-items-center rounded-xl border border-border bg-black/30 text-muted-foreground transition-all duration-300 group-enabled:group-hover:-translate-y-0.5 group-enabled:group-hover:border-accent/50 group-enabled:group-hover:text-foreground group-disabled:animate-pulse motion-reduce:transition-none"
                         aria-hidden="true"
                       >
                         <ng-icon name="lucideSend" class="text-base rtl:-scale-x-100" />
@@ -1792,10 +1839,21 @@
                       <div
                         class="flex size-[116px] flex-col items-center justify-center rounded-full bg-card text-center"
                       >
-                        <p class="font-serif text-[36px] leading-none font-semibold">
-                          {{ result.percentage | number: '1.0-0' }}%
-                        </p>
-                        <p class="mt-1 text-[11px] text-muted-foreground">latest score</p>
+                        <!-- The best attempt's mark; "8 / 10" once the status sends its
+                             denominator (2026-10-28), else the percentage. -->
+                        @if (result.score !== null && result.max_score) {
+                          <p class="font-serif text-[36px] leading-none font-semibold">
+                            {{ result.score | number: '1.0-2' }}
+                          </p>
+                          <p class="mt-1 text-[11px] text-muted-foreground">
+                            out of {{ result.max_score | number: '1.0-0' }}
+                          </p>
+                        } @else {
+                          <p class="font-serif text-[36px] leading-none font-semibold">
+                            {{ result.percentage | number: '1.0-0' }}%
+                          </p>
+                          <p class="mt-1 text-[11px] text-muted-foreground">best score</p>
+                        }
                       </div>
                     </div>
                     <div class="min-w-0 flex-1">

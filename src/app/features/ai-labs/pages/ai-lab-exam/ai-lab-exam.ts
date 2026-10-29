@@ -1,4 +1,4 @@
-import { DecimalPipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, effect, inject, input, linkedSignal, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -24,6 +24,7 @@ import {
   AiLabExamPaper,
   AiLabExamQuestion,
   labExamReview,
+  labReportReview,
 } from '@features/ai-labs/models/ai-labs.model';
 import {
   AiLabAssessmentFacade,
@@ -48,6 +49,8 @@ const REVIEW_COPY = {
   yourAnswer: 'Your answer',
   correctAnswer: 'Correct answer',
   explanation: 'Explanation',
+  completedOn: 'Exam Completed on:',
+  withheld: 'Correct answers are not shown for this attempt.',
 } as const;
 
 const REVIEW_STATUS = {
@@ -57,6 +60,9 @@ const REVIEW_STATUS = {
     badge: 'bg-destructive/15 text-destructive',
     answer: 'text-destructive',
   },
+  skipped: { label: 'Skipped', badge: 'bg-white/10 text-gray-300', answer: 'text-gray-300' },
+  // A failed attempt's key withheld: the learner's choice, with no verdict.
+  withheld: { label: 'Answered', badge: 'bg-white/10 text-gray-300', answer: 'text-gray-200' },
 } as const;
 
 /**
@@ -76,6 +82,7 @@ const REVIEW_STATUS = {
     Backward,
     Button,
     Checkbox,
+    DatePipe,
     DecimalPipe,
     Field,
     NgpLabel,
@@ -126,18 +133,47 @@ export class AiLabExam implements CanDeactivateComponent {
 
   protected readonly wrongOnly = signal(false);
 
+  /** The submit just made, or — with no paper to sit — the latest attempt read back. */
   protected readonly review = computed(() => {
     const paper = this.facade.paper();
     const result = this.facade.result();
-    return paper && result ? labExamReview(paper, this.facade.sent(), result) : [];
+    if (paper && result) return labExamReview(paper, this.facade.sent(), result);
+    const report = this.facade.report();
+    return report ? labReportReview(report) : [];
+  });
+
+  /** The review's header line, from whichever of the two it is. `live` is this visit's submit. */
+  protected readonly summary = computed(() => {
+    const result = this.facade.result();
+    if (result) {
+      return {
+        live: true,
+        passed: result.passed,
+        score: result.score_percent,
+        passMark: result.pass_threshold_percent as number | null,
+        correct: this.review().filter((item) => item.status === 'correct').length,
+        total: this.review().length,
+        at: null as string | null,
+        withheld: false,
+      };
+    }
+    const report = this.facade.report();
+    return report
+      ? {
+          live: false,
+          passed: report.status === 'passed',
+          score: report.score_percent ?? 0,
+          passMark: report.pass_threshold_percent,
+          correct: report.correct_count,
+          total: report.total_questions,
+          at: report.attempted_at,
+          withheld: report.feedback_withheld,
+        }
+      : null;
   });
 
   protected readonly items = computed(() =>
     this.wrongOnly() ? this.review().filter((item) => item.status !== 'correct') : this.review(),
-  );
-
-  protected readonly correctCount = computed(
-    () => this.review().filter((item) => item.status === 'correct').length,
   );
 
   constructor() {

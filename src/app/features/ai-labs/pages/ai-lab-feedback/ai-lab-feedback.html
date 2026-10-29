@@ -41,15 +41,41 @@
       </button>
     </div>
   } @else if (facade.alreadySubmitted()) {
-    <div class="mx-auto flex max-w-md flex-col items-center gap-4 py-24 text-center">
+    <div class="mx-auto flex w-full max-w-3xl flex-col items-center gap-4 py-16 text-center">
       <div
         class="w-16 h-16 rounded-full bg-success/15 text-success flex items-center justify-center"
       >
         <ng-icon name="heroCheck" size="2rem" aria-hidden="true" />
       </div>
       <h1 class="text-2xl font-semibold">{{ copy.submitted.title }}</h1>
-      <p class="text-muted-foreground">{{ copy.submitted.body }}</p>
-      <button app-button type="button" variant="outline" (click)="backToLab()">
+      <p class="text-muted-foreground">
+        {{ copy.submitted.body }}
+        @if (facade.submittedAt(); as at) {
+          ({{ at | date: 'd MMM y' }})
+        }
+      </p>
+      <!-- Read back, as upstream shows the form read-only. A question every lab shares is stored
+           once per learner, so a gap here is not an unanswered one. -->
+      @if (facade.submittedAnswers().length) {
+        <dl
+          class="mt-4 w-full divide-y divide-quiz-line rounded-xl border border-quiz-line bg-quiz-panel text-start"
+        >
+          @for (answer of facade.submittedAnswers(); track answer.question_id) {
+            <div class="flex flex-col gap-1 p-4 sm:flex-row sm:items-start sm:justify-between">
+              <dt class="text-sm text-gray-300 sm:max-w-[70%]">{{ answer.question }}</dt>
+              <dd class="text-sm font-semibold text-white">
+                @if (answer.question_type === 'rating' && answer.rating) {
+                  {{ copy.scale[answer.rating - 1] ?? answer.rating }}
+                  <span class="font-normal text-gray-400">({{ answer.rating }}/5)</span>
+                } @else {
+                  {{ answer.text_response || '—' }}
+                }
+              </dd>
+            </div>
+          }
+        </dl>
+      }
+      <button app-button type="button" variant="outline" class="mt-4" (click)="backToLab()">
         {{ copy.backToLab }}
       </button>
     </div>

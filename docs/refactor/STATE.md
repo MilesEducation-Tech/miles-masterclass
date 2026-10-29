@@ -7,6 +7,32 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-29, NON-REFACTOR, MIL-117: test emails bound, UNCOMMITTED** (`prompts/ai-labs-test-emails.md`,
+  guide `docs/AI_LABS_TRIGGER_EMAIL_API.md`, reaches UAT with the backend's next deploy).
+  - The Test emails row posts `api/v1/ai-labs/assignment-trigger-email/<id>/` (no body) and shows AI
+    Labs' own `message`. The route is not idempotent, so there is no automatic retry, and the row is
+    disabled while the request is in flight ("Sending…").
+  - `TRIGGER_EMAIL_DISABLED` / `LMS_UNCONFIGURED` hide the row. A lost answer (0/504) says to check
+    the mailbox before sending again.
+  - **Checks:** CDP 4 scenarios (ok: one POST for a double tap, limit, disabled, lost). Lint 0
+    errors, structure ✔, build:prod ✔.
+- 🔧 **2026-10-28, NON-REFACTOR, MIL-117: backend guide 2026-10-28 bound, UNCOMMITTED**
+  (`prompts/ai-labs-api-2026-10-28.md`). The guide changes reach UAT with the backend's next deploy, so
+  every new field is optional and `cpe_awarded` is `number | boolean`.
+  - **Step 01:** "Passed on {date}", Questions / Pass mark facts and a "View report" link. The
+    delivery method shows before the start.
+  - **Course page:** the hero says "N CPE earned" once the lab closes, and the status-only grade card
+    shows "8 out of 10".
+  - **Exam page:** reads back the latest attempt (`course-assessment-report/`) when the paper is
+    refused for `already_passed` or `cool_off_active`, with the answer key withheld when the
+    backend withholds it. Without the route it shows "Assessment Completed" with no retry.
+  - **Feedback page:** reads back the submitted answers (`course-feedback-responses/`), and its
+    header names instructors instead of printing "[object Object]".
+  - **Landing panel:** uses `practical_attempts`.
+  - **Comments only:** the video-completion rule and restart-keeps-finished needed no code.
+  - **Checks:** CDP-verified 7 scenarios plus usaid's live data. Lint 0 errors, structure ✔,
+    build:prod ✔, storybook ✔.
+  - **Still uncommitted from 2026-10-28:** the dialog-panel fix (below).
 - 🔧 **2026-10-27, NON-REFACTOR, MIL-117: practical split + picker/set-up fixes, UNCOMMITTED**
   (`prompts/ai-labs-practical-split.md`). Backend guide items 12–13 (live on UAT, checked with
   usaid's token): feedback follows the MCQ, the `AI_LAB` stage is gone, and attempts read
@@ -24,6 +50,9 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     committed as `50d2b31`.
   - **Open with backend:** the list in chat 2026-10-27 (pre-split latch, null certificate on a
     done lab, `labs_account` extra fields, report route…).
+  - **2026-10-28:** the certificate, top-up and agreement dialogs showed a full-width grey panel
+    beside their card. The panel now shrinks to the card. Same pattern, untouched: select-cpe-mode,
+    share, course-info, webinar-details.
 - 🔧 **2026-10-27, NON-REFACTOR, MIL-117: lab identity, committed `50d2b31`** (`prompts/ai-labs-lab-identity.md`).
   Launch opened Copilot Studio as another Microsoft account (charitha) while the lab sign-in was
   usaid's. **Copilot Studio picks its own account** — its shell reads no `login_hint`/tenant from
@@ -6097,6 +6126,10 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-10-29 · NON-REFACTOR · **MIL-117 test emails** (uncommitted): row posts `assignment-trigger-email/`, busy while in flight, no auto-retry, disabled/unconfigured hide the row · CDP 4 scenarios · lint 0 errors, structure ✔, build:prod ✔
+- 2026-10-28 · NON-REFACTOR · **MIL-117 guide 2026-10-28** (uncommitted): MCQ facts + pass date + View report, exam report read-back (withheld key), feedback read-back, `cpe_awarded` amount, `max_score`, `practical_attempts` · CDP 7 scenarios + live-shape regression · lint 0 errors, structure ✔, build:prod ✔, storybook ✔
+- 2026-10-28 · NON-REFACTOR · **MIL-117 dialog panels**: certificate, credits top-up and participant-agreement dialogs drew a full-width grey panel beside their fixed-width card (`panelClass="p-0 max-w-full"` keeps the panel `w-full`); panel now `w-auto bg-transparent shadow-none` · CDP panel = card at 1440 / 375 · lint 0 errors, structure ✔, build:prod ✔ · same pattern still on select-cpe-mode, share, course-info, webinar-details (not touched)
+- 2026-10-27 · NON-REFACTOR · **MIL-117 practical split + picker/set-up fixes** (uncommitted, `prompts/ai-labs-practical-split.md`) · CDP 14 scenarios · lint 0 errors, structure ✔, build:prod ✔, storybook ✔
 - 2026-10-27 · NON-REFACTOR · **MIL-117 flow bugs 0–4 + `lab_certificate_url`** (uncommitted): graded-first, v3 thank-you, viewer tab, explicit back link, certificate pop-up + pending poll; facades re-read on re-open · CDP 4 scenarios on dev 4101 · lint 0 errors, structure ✔, build:prod ✔, storybook ✔
 
 - 2026-10-26 · NON-REFACTOR · **MIL-117 hints bound (guide rev 3, `6a5c42d`)**, uncommitted on top of `9133259`: `ai_lab_course_hints` → `AiLabCourseFacade.hints` (numbered by place); no hints (and no flow chart) hides step 04 from page + navigator and renumbers (05 → 04); `docs/AI_LABS_API.md` → rev 3 · verified in Storybook + dev 4101 (with hints: 5 steps, "Hint 1 of 3"; `[]`: 4 steps) · lint 0 errors, structure ✔, build:prod ✔ (227.65 kB)

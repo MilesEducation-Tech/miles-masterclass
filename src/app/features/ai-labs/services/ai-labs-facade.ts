@@ -18,6 +18,7 @@ import {
   AiLabAgentCard,
   AiLabCatalogueSection,
   AiLabCourseListItem,
+  AiLabPracticalAssignment,
   AiLabPracticalProgress,
   AiLabWebPage,
 } from '@features/ai-labs/models/ai-labs.model';
@@ -190,7 +191,9 @@ export class AiLabsFacade {
    * it has no page and no Start, and is dropped. The counts are re-taken from the rows that remain
    * so "N of M labs" matches the list — `graded` is what AI Labs counts as completed.
    * `average_percentage` stays as sent: it is a server-owned score, not a count. Graded labs lead
-   * the list; the rest keep AI Labs' order behind them (the sort is stable).
+   * the list; the rest keep AI Labs' order behind them (the sort is stable). A row's attempts and
+   * best score come from our own `practical_attempts` when it is sent (2026-10-28) — AI Labs'
+   * `attempts` counts runs our allowance doesn't.
    */
   readonly practicalProgress = computed<AiLabPracticalProgress | null>(() => {
     const progress = this.practicalProgressRes.hasValue()
@@ -200,6 +203,7 @@ export class AiLabsFacade {
     const graded = (row: { status: string }) => (row.status === 'graded' ? 0 : 1);
     const assignments = progress.assignments
       .filter((row) => !!row.ai_lab_course_id)
+      .map(withOurCounts)
       .sort((a, b) => graded(a) - graded(b));
     return {
       ...progress,
@@ -397,6 +401,18 @@ function labCard(lab: AiLabCourseListItem, slug: string): AiLabAgentCard {
     thumbnailAlt: lab.ai_lab_course_name,
     duration: lab.ai_lab_course_total_duration,
     route: ['ai-labs', lab.id, slug],
+  };
+}
+
+/** A row with our own attempt count and best score in place of AI Labs', when they're sent. */
+function withOurCounts(row: AiLabPracticalAssignment): AiLabPracticalAssignment {
+  const ours = row.practical_attempts;
+  if (!ours) return row;
+  return {
+    ...row,
+    attempts: ours.attempts_used,
+    // The row's percentages are decimal strings; ours are numbers.
+    best_percentage: ours.best_percentage === null ? null : ours.best_percentage.toFixed(2),
   };
 }
 

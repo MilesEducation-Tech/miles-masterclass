@@ -9,6 +9,7 @@ import { NotificationService } from '@core/services/notification/notification';
 import { AI_LABS_API } from '@features/ai-labs/constants/ai-labs-api';
 import {
   AiLabCourseDetail,
+  AiLabFeedbackAnswers,
   AiLabFeedbackBody,
   AiLabFeedbackGate,
   AiLabFeedbackQuestion,
@@ -110,6 +111,26 @@ export class AiLabFeedbackFacade {
 
   readonly alreadySubmitted = computed(() => !!this.gate()?.already_submitted);
 
+  /**
+   * What the learner answered, read back once the gate says they already submitted (2026-10-28) —
+   * upstream shows the form read-only there. Before the deploy the route 404s and the plain "your
+   * feedback is in" panel stays.
+   */
+  private readonly answersRes = httpResource<AiLabFeedbackAnswers | null>(
+    () => (this.alreadySubmitted() ? this.labRequest(AI_LABS_API.feedbackResponses) : undefined),
+    { defaultValue: null, parse: unwrap<AiLabFeedbackAnswers>() },
+  );
+
+  /** The stored answers in form order; empty when none came back. */
+  readonly submittedAnswers = computed(() => {
+    const answers = this.answersRes.hasValue() ? this.answersRes.value() : null;
+    return [...(answers?.responses ?? [])].sort((a, b) => a.question_order - b.question_order);
+  });
+
+  readonly submittedAt = computed(() =>
+    this.answersRes.hasValue() ? (this.answersRes.value()?.submitted_at ?? null) : null,
+  );
+
   /** Not open yet — the gate's `remark` says why. `null` while open, or before the gate answers. */
   readonly notYet = computed(() => {
     const gate = this.gate();
@@ -145,6 +166,7 @@ export class AiLabFeedbackFacade {
   reload(): void {
     this.gateRes.reload();
     this.questionsRes.reload();
+    this.answersRes.reload();
   }
 
   /** `POST course-feedback-submit/<uuid>/`. Resolves once the thank-you view (or a toast) is set. */

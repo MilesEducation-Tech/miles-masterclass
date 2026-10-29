@@ -591,10 +591,17 @@ export class AiLabCourse {
   /** The lab's exercise files — the first one, the lab's zip, is the row upstream shows. */
   protected readonly exerciseZip = computed(() => this.facade.exerciseFiles()[0] ?? null);
 
-  /** The brief turns AI Labs' test-email helper on, and the lab is open. */
+  /**
+   * The brief turns AI Labs' test-email helper on, the lab is open, and the send route hasn't said
+   * this exercise has none.
+   */
   protected readonly triggerEmailEnabled = computed(
-    () => this.labUnlocked() && this.brief()?.tools?.trigger_email === true,
+    () =>
+      this.labUnlocked() &&
+      this.brief()?.tools?.trigger_email === true &&
+      !this.facade.testEmailsOff(),
   );
+  protected readonly sendingTestEmails = this.facade.sendingTestEmails;
 
   protected sendTestEmails(): void {
     this.facade.sendTestEmails();
@@ -725,10 +732,40 @@ export class AiLabCourse {
       .filter(Boolean),
   );
 
-  /** Shown once started: the delivery method lives on the progress read's NASBA block. */
+  /** The progress read's NASBA block once started; the detail carries it before (2026-10-28). */
   protected readonly deliveryMethod = computed(
-    () => this.facade.progress()?.nasba?.delivery_method ?? null,
+    () => this.facade.progress()?.nasba?.delivery_method ?? this.course()?.delivery_method ?? null,
   );
+
+  /** When the final assessment was passed — progress once started, else the detail's. */
+  protected readonly passedAt = computed(
+    () =>
+      this.facade.progress()?.final_assessment_passed_at ??
+      this.course()?.final_assessment_passed_at ??
+      null,
+  );
+
+  /** Step 01's facts off the detail (2026-10-28); `null` until the lab sends them. */
+  protected readonly examQuestions = computed(
+    () => this.course()?.assessment_questions_to_show ?? null,
+  );
+  protected readonly examPassMark = computed(
+    () => this.course()?.assessment_pass_threshold_percent ?? null,
+  );
+
+  /**
+   * An attempt exists to read back: passed, or failed and waiting on a retake. The report opens on
+   * the exam page, which shows it when the paper is refused for either reason.
+   */
+  protected readonly reportOpen = computed(
+    () => this.examPassed() || this.ctaStage() === 'RETAKE_EXAM' || this.ctaStage() === 'COOL_OFF',
+  );
+
+  /** The CPE credited, once the lab closes — a number since 2026-10-28, a boolean before. */
+  private readonly cpeEarned = computed(() => {
+    const awarded = this.facade.progress()?.cpe_awarded;
+    return typeof awarded === 'number' && awarded > 0 ? awarded : null;
+  });
 
   /** The learner's own access window, once enrolled. */
   protected readonly accessEndsAt = computed(
@@ -819,7 +856,8 @@ export class AiLabCourse {
     });
 
     // At the video's end the quiz opens by itself, as the v3 lab and micro-learning do — once the
-    // final progress report has moved the CTA on to it (completion is the server's call, at 95%).
+    // final progress report has moved the CTA on to it (completion is the server's call: the higher of
+    // 95% and the lab's own minimum).
     effect(() => {
       if (!this.quizAfterVideo() || this.ctaStage() !== 'TAKE_QUIZ') return;
       untracked(() => {
@@ -1252,6 +1290,11 @@ export class AiLabCourse {
   /** Step 01's surface, status tile and title, off its journey state. */
   protected readonly finalView = computed(() => FINAL_VIEW[this.journey().final.state]);
 
+  /** "View report": the exam page reads the latest attempt back when the paper is refused. */
+  protected openReport(): void {
+    void this.router.navigate(['final-assessment'], { relativeTo: this.route });
+  }
+
   /** Step 01's exam rules, folded behind a toggle in the card's footer row. */
   protected readonly rulesOpen = signal(false);
 
@@ -1344,9 +1387,11 @@ export class AiLabCourse {
     if (!this.feedbackDone()) {
       return "Assessment passed — leave feedback to get your certificate. The AI Lab is open below whenever you're ready.";
     }
+    const earned = this.cpeEarned();
+    const done = earned ? `Course complete — ${earned} CPE earned` : 'Course complete';
     return this.ctaStage() === 'DOWNLOAD'
-      ? 'Course complete — download your certificate. The AI Lab stays open below.'
-      : 'Course complete — your certificate appears here once it is issued.';
+      ? `${done}. Download your certificate; the AI Lab stays open below.`
+      : `${done}. Your certificate appears here once it is issued.`;
   });
 
   /** Feedback is in: the lab is closed for CPE, and only the certificate is left. */

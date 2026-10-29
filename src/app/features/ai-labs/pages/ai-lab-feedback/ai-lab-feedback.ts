@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import { Component, computed, effect, inject, input, linkedSignal, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
@@ -28,7 +29,7 @@ import {
  */
 @Component({
   selector: 'app-ai-lab-feedback',
-  imports: [NgIcon, RatingStar, Button, ErrorState, Field, PageLoading, Textarea],
+  imports: [DatePipe, NgIcon, RatingStar, Button, ErrorState, Field, PageLoading, Textarea],
   templateUrl: './ai-lab-feedback.html',
   viewProviders: [provideIcons({ heroBookOpen, heroCheck })],
 })
@@ -70,7 +71,11 @@ export class AiLabFeedback {
   });
 
   protected readonly instructorNames = computed(
-    () => this.facade.lab()?.instructors.join(', ') ?? '',
+    () =>
+      this.facade
+        .lab()
+        ?.instructors.map((instructor) => instructor.name)
+        .join(', ') ?? '',
   );
 
   constructor() {

@@ -9,8 +9,10 @@ import {
   AiLabCourseStarted,
   AiLabCtaStage,
   AiLabExamPaper,
+  AiLabExamReport,
   AiLabExamResult,
   AiLabFeedbackQuestion,
+  AiLabFeedbackAnswer,
   AiLabFeedbackResult,
   AiLabFlow,
   AiLabPracticalProgress,
@@ -629,6 +631,8 @@ export function provideStoryAiLabCourse(state: AiLabCourseStoryState): Provider[
     statusLoading: signal(false),
     submitting: signal(false),
     gradeCardBusy: signal(state.gradeCardBusy ?? false),
+    sendingTestEmails: signal(false),
+    testEmailsOff: signal(false),
     labProvisioned: signal(true),
     hints: signal((state.lab?.ai_lab_course_hints ?? []).map((hint, i) => ({ id: i + 1, hint }))),
     requirements: signal(state.brief?.requirements ?? []),
@@ -794,12 +798,71 @@ export const MOCK_AI_LAB_EXAM_RESULT: AiLabExamResult = {
   ],
 };
 
+/**
+ * `course-assessment-report/` for a passed attempt: two questions, both right, the key shown.
+ * Option texts carry HTML, as on the questions route.
+ */
+export const MOCK_AI_LAB_EXAM_REPORT: AiLabExamReport = {
+  ai_lab_course_id: MOCK_AI_LAB_DETAIL.id,
+  ai_lab_course_name: MOCK_AI_LAB_DETAIL.ai_lab_course_name,
+  has_final_assessment: true,
+  status: 'passed',
+  attempt_count: 2,
+  pass_threshold_percent: 70,
+  questions_to_show: 2,
+  attempt_id: '92f4e9e2-58e3-45a3-8f1c-71a0233426ef',
+  score_percent: 100,
+  attempted_at: '2026-10-27T10:41:07Z',
+  passed_at: '2026-10-27T10:41:07Z',
+  total_questions: 2,
+  correct_count: 2,
+  skipped_count: 0,
+  feedback_withheld: false,
+  answers: MOCK_AI_LAB_EXAM_PAPER.questions.map((question, i) => {
+    const right = MOCK_AI_LAB_EXAM_RESULT.answers[i].correct_option_ids;
+    return {
+      question_id: question.id,
+      question_text: question.question_text,
+      is_skipped: false,
+      is_correct: true,
+      explanation: MOCK_AI_LAB_EXAM_RESULT.answers[i].explanation,
+      selected_option_ids: right,
+      correct_option_ids: right,
+      options: question.options.map((option) => ({
+        id: option.id,
+        text: option.text,
+        was_selected: right.includes(option.id),
+        is_correct: right.includes(option.id),
+        explanation: null,
+      })),
+    };
+  }),
+};
+
+/** A failed attempt on a fixed paper: the score and the choices, with the answer key withheld. */
+export const MOCK_AI_LAB_EXAM_REPORT_WITHHELD: AiLabExamReport = {
+  ...MOCK_AI_LAB_EXAM_REPORT,
+  status: 'failed',
+  score_percent: 50,
+  passed_at: null,
+  correct_count: 1,
+  feedback_withheld: true,
+  answers: MOCK_AI_LAB_EXAM_REPORT.answers.map((answer) => ({
+    ...answer,
+    is_correct: null,
+    explanation: null,
+    correct_option_ids: [],
+    options: answer.options.map(({ id, text, was_selected }) => ({ id, text, was_selected })),
+  })),
+};
+
 /** What the exam page's stories set on the stand-in facade. */
 export interface AiLabExamStoryState {
   paper?: AiLabExamPaper | null;
   result?: AiLabExamResult | null;
   sent?: Record<string, string[]>;
   loadError?: string | null;
+  report?: AiLabExamReport | null;
 }
 
 /** Provides a stand-in `AiLabAssessmentFacade` holding fixed state. Its actions do nothing. */
@@ -810,6 +873,9 @@ export function provideStoryAiLabExam(state: AiLabExamStoryState): Provider {
     loadError: signal(state.loadError ?? null),
     result: signal(state.result ?? null),
     sent: signal(state.sent ?? {}),
+    report: signal(state.report ?? null),
+    reportLoading: signal(false),
+    alreadyPassed: signal(false),
     open: () => undefined,
     retake: () => undefined,
     submit: () => Promise.resolve(null),
@@ -846,8 +912,22 @@ export interface AiLabFeedbackStoryState {
   questions?: AiLabFeedbackQuestion[];
   notYet?: string | null;
   alreadySubmitted?: boolean;
+  /** What `course-feedback-responses/` read back for an already-submitted learner. */
+  submittedAnswers?: AiLabFeedbackAnswer[];
   done?: { result: AiLabFeedbackResult | null; notice: string | null } | null;
 }
+
+/** `course-feedback-responses/` — four ratings and the text answer, as submitted. */
+export const MOCK_AI_LAB_FEEDBACK_ANSWERS: AiLabFeedbackAnswer[] =
+  MOCK_AI_LAB_FEEDBACK_QUESTIONS.map((question, i) => ({
+    question_id: question.id,
+    question: question.feedback_question,
+    question_type: question.feedback_question_type,
+    question_order: question.feedback_question_order,
+    rating: question.feedback_question_type === 'rating' ? 5 - (i % 2) : null,
+    text_response: question.feedback_question_type === 'text' ? 'More sample leases.' : '',
+    submitted_at: '2026-10-27T09:20:11Z',
+  }));
 
 /** Provides a stand-in `AiLabFeedbackFacade` holding fixed state. Its actions do nothing. */
 export function provideStoryAiLabFeedback(state: AiLabFeedbackStoryState): Provider {
@@ -856,6 +936,8 @@ export function provideStoryAiLabFeedback(state: AiLabFeedbackStoryState): Provi
     learnerName: signal('Priya Sharma'),
     questions: signal(state.questions ?? []),
     alreadySubmitted: signal(state.alreadySubmitted ?? false),
+    submittedAnswers: signal(state.submittedAnswers ?? []),
+    submittedAt: signal(state.submittedAnswers?.length ? '2026-10-27T09:20:11Z' : null),
     notYet: signal(state.notYet ?? null),
     isLoading: signal(false),
     loadError: signal(null),
