@@ -4,11 +4,8 @@ import { NgpDialogManager } from 'ng-primitives/dialog';
 import { forkJoin, map, Observable, of, switchMap, take } from 'rxjs';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
-import {
-  MASTERCLASS_FILTER_PARAMS,
-  MASTERCLASS_FILTER_ROUTE,
-} from '@features/offerings/masterclass/constants/masterclass';
-import { MasterclassRail } from '@features/offerings/masterclass/models/masterclass-library.model';
+import { MASTERCLASS_FILTER_PARAMS, MASTERCLASS_FILTER_ROUTE } from '@core/constants/masterclass';
+import { MasterclassRail } from '@core/models/masterclass-home.model';
 import {
   CourseFilterIndex,
   FilteredRail,
@@ -17,19 +14,19 @@ import {
   parseFilterPage,
   RailFilterDialogData,
   RailFilterSelection,
-} from '@features/offerings/masterclass/models/masterclass-rail-filter.model';
+} from '@core/models/masterclass-rail-filter.model';
 import {
   buildFilterIndex,
   matchesSelection,
   railFilterOptions,
   selectedCount,
   selectionFromDialog,
-} from '@features/offerings/masterclass/utils/masterclass-rail-filter';
+} from '@shared/utils/masterclass-rail-filter';
 
 /**
- * The filter icon on the masterclass page's rails, the signed-in ones and the
- * tracks. Route-scoped, like the page's other facades, so each rail's
- * selection lasts the visit.
+ * The filter icon on the masterclass rails. Route-scoped: a page lists it in
+ * its route's `providers`, so each page keeps its own selections and each
+ * rail's lasts the visit.
  *
  * The cards carry fields of study and credits but no instructors, additional
  * categories or level. The first open reads those from `filter/`, once for
@@ -37,7 +34,7 @@ import {
  * visitor who never filters makes none of these reads.
  */
 @Service({ autoProvided: false })
-export class MasterclassRailFilterFacade {
+export class MasterclassRailFilter {
   private readonly api = inject(ApiClient);
   private readonly dialogs = inject(NgpDialogManager);
   private readonly logger = inject(Logger);
@@ -99,7 +96,7 @@ export class MasterclassRailFilterFacade {
   // the only place it shows.
   private readonly indexErrorLog = effect(() => {
     const error = this.index.error();
-    if (error) this.logger.error('[MasterclassRailFilterFacade] filter load failed', error);
+    if (error) this.logger.error('[MasterclassRailFilter] filter load failed', error);
   });
 
   private async showDialog(rail: MasterclassRail): Promise<void> {
@@ -128,7 +125,7 @@ export class MasterclassRailFilterFacade {
       switchMap((page) => {
         if (page.hasNext) {
           this.logger.warn(
-            '[MasterclassRailFilterFacade] over one page of masterclasses; the rest have no instructor or level',
+            '[MasterclassRailFilter] over one page of masterclasses; the rest have no instructor or level',
           );
         }
         const levels = page.levels.map((level) =>

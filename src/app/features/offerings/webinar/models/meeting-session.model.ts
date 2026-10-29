@@ -1,13 +1,7 @@
 // Type-only: erased at build, so nothing static reaches into the SDK package and
 // it stays in its own lazy chunk (see `ZoomMeetingClient`).
 import type ZoomMtgEmbedded from '@zoom/meetingsdk/embedded';
-import {
-  contractError,
-  isNum,
-  isObject,
-  isStr,
-  isStrOrNull,
-} from '@features/offerings/utils/contract-guards';
+import { contractError, isNum, isObject, isStr, isStrOrNull } from '@core/utils/contract-guards';
 
 /**
  * Types for the embedded-SDK surface: the signature mint, the single-session

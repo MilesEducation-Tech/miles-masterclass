@@ -1,15 +1,5 @@
-import {
-  isMasterclassCourse,
-  MasterclassCourse,
-  MasterclassTrack,
-} from '@core/models/masterclass-home.model';
-import {
-  contractError,
-  isObject,
-  isStr,
-  isStrOrNull,
-  listOf,
-} from '@features/offerings/utils/contract-guards';
+import { isMasterclassCourse, MasterclassCourse } from '@core/models/masterclass-home.model';
+import { contractError, isObject, isStr, isStrOrNull, listOf } from '@core/utils/contract-guards';
 
 /**
  * Types for the masterclass page's signed-in rails (Postman, checked on UAT
@@ -52,24 +42,6 @@ export interface LibraryRailConfig {
   id: string;
   heading: string;
 }
-
-/** One rail as the page renders it. */
-export interface MasterclassRail {
-  /** The section's element id, which the sidenav scrolls to. Also keys the rail's filter. */
-  id: string;
-  heading: string;
-  /** The line under the heading; only tracks have one. */
-  subText?: string;
-  courses: MasterclassCourse[];
-}
-
-/** A track as a rail, so it renders and filters like the signed-in ones. */
-export const trackRail = (track: MasterclassTrack): MasterclassRail => ({
-  id: `masterclass-track-${track.slug}`,
-  heading: track.name,
-  subText: track.description ?? '',
-  courses: track.courses,
-});
 
 // ---- Trust boundary --------------------------------------------------------
 //

@@ -4,7 +4,7 @@ import { DestroyRef, inject, Service, PLATFORM_ID, signal } from '@angular/core'
 import { firstValueFrom, map } from 'rxjs';
 import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
-import { isObject } from '@features/offerings/utils/contract-guards';
+import { isObject } from '@core/utils/contract-guards';
 import {
   HEARTBEAT_MAX_SECONDS,
   HEARTBEAT_MIN_SECONDS,

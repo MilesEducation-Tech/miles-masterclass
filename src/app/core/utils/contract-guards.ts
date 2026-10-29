@@ -1,6 +1,6 @@
 /**
- * The trust boundary for the offerings' web API (`web-api/v1/<offering>/`),
- * shared by the offerings' models.
+ * The trust boundary for the web API (`web-api/v1/`), shared by the offerings'
+ * models and the masterclass rails' filter.
  *
  * Hand-written, like the webinar model's: a renamed key would otherwise render
  * as `undefined` with no signal. Every key a page reads is checked; EXTRA keys
