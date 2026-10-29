@@ -82,7 +82,7 @@
             [swiperConfig]="swiperConfigComingSoon"
             [filterConfig]="{ filterEnabled: false }"
           >
-            <!-- The shared `app-coming-soon` design: the rank in outline, the artwork, Trailer on hover. -->
+            <!-- The shared `app-coming-soon` design: the rank in outline, the artwork, Trailer and Remind Me on hover. -->
             <ng-template let-course let-index="$index">
               <div class="w-full group/card flex flex-col overflow-hidden relative">
                 <div class="flex justify-end h-full relative">
@@ -103,26 +103,38 @@
                         class="object-cover object-top"
                       />
                     }
-                    @if (course.trailer_url) {
-                      <!-- The course cards' hover fade, so the button reads over busy artwork. -->
-                      <div
-                        class="absolute inset-0 bg-linear-to-t from-background from-20% via-background/70 via-30% to-50% to-transparent opacity-0 group-hover/card:opacity-100 group-focus-within/card:opacity-100 transition-opacity duration-300 pointer-events-none"
-                      ></div>
-                      <!-- `relative` paints it over the artwork and the fade; focus shows it, as hover does. -->
-                      <div
-                        class="relative flex justify-center w-full opacity-0 group-hover/card:opacity-100 focus-within:opacity-100 transition-opacity duration-300 ease-in-out"
-                      >
+                    <!-- The course cards' hover fade, so the buttons read over busy artwork. -->
+                    <div
+                      class="absolute inset-0 bg-linear-to-t from-background from-20% via-background/70 via-30% to-50% to-transparent opacity-0 group-hover/card:opacity-100 group-focus-within/card:opacity-100 transition-opacity duration-300 pointer-events-none"
+                    ></div>
+                    <!-- `relative` paints them over the artwork and the fade; focus shows them, as hover
+                         does. Trailer only when there is one; Remind Me on every card. -->
+                    <div
+                      class="relative flex flex-col gap-2 w-full opacity-0 group-hover/card:opacity-100 focus-within:opacity-100 transition-opacity duration-300 ease-in-out"
+                    >
+                      @if (course.trailer_url) {
                         <button
                           app-button
                           type="button"
-                          class="bg-white text-black rounded-md hover:bg-white hover:text-black gap-2"
+                          class="w-full bg-white text-black rounded-md hover:bg-white hover:text-black gap-2"
                           (click)="openComingSoonTrailer(course)"
                         >
                           <ng-icon [svg]="playIcon" class="size-4" />
                           Trailer
                         </button>
-                      </div>
-                    }
+                      }
+                      <button
+                        app-button
+                        type="button"
+                        class="w-full bg-white text-black rounded-md hover:bg-white hover:text-black gap-2 disabled:cursor-wait"
+                        [attr.aria-pressed]="course.notify_me"
+                        [disabled]="library.remindersInFlight().has(course.id)"
+                        (click)="library.toggleReminder(course)"
+                      >
+                        <ng-icon [svg]="course.notify_me ? checkIcon : bellIcon" class="size-4" />
+                        {{ course.notify_me ? 'Reminded' : 'Remind Me' }}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

@@ -66,6 +66,40 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
   DONE, GATES GREEN, COMMITTED** (`1ba4212a`, `prompts/masterclass-coming-soon.md`), on
   `feat/MIL-147-masterclass-coming-soon` off `master` (`f07812db`). PR #210 is open as a draft. On 2026-10-29
   `master` (with #211) was merged into it; only this file conflicted, and both entries were kept.
+  - **Second `master` merge, 2026-10-29 (#213, the filter moved to shared code):** the page and the library facade
+    conflicted on imports only. `RAIL_FILTER_EMPTY`, `trackRail` and `MasterclassRail` now come from core, and the page
+    and its doc name `MasterclassRailFilter`; the Coming Soon imports stay. The constants and the library model merged
+    on their own (`RAIL_PAGE_SIZE` from core). tsc 0, lint 0 errors (98 warnings), structure ✔, `build:prod` 979.64 kB
+    raw, only `ai-labs.css`. In the browser, signed in (stub): Coming Soon is last before the FAQ with its heading,
+    card, sidenav entry and Trailer, one `coming-soon/` read; every other rail has the filter, and filtering
+    Recommended narrows it 3 → 1 with a count of 1; no console errors.
+  - **2026-10-29, `course_type=course` on the rail's request (the user's call), UNCOMMITTED.** Since 2026-10-28
+    `coming-soon/` also sends podcast and micro-learning teasers unless narrowed. UAT: `course` gives the one teaser,
+    `podcast` none, a bad value is a 400. In the browser the request reads `course_type=course&page_size=100` and the
+    rail renders.
+  - **Remind Me, in this PR (the user's call). PLAN APPROVED, DONE, GATES GREEN, UNCOMMITTED**
+    (`prompts/masterclass-coming-soon.md`, "Remind Me").
+    - **Change:**
+      - each row carries `notify_me`;
+      - `MasterclassLibraryFacade.toggleReminder` posts `{"notify_me": bool}` to
+        `api/v1/masterclass/coming-soon/<id>/notify-me/` with `SKIP_LOADING`, flips the button at once, keeps the
+        server's answer, and toasts;
+      - a 409 (launched) or 404 (unlisted) re-reads the rail, so the teaser leaves; any other failure flips back;
+      - on the card, Remind Me sits under Trailer, both full width, on hover and focus, with `aria-pressed`, and is
+        disabled while in flight.
+    - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 979.64 kB
+      raw, unchanged, only `ai-labs.css`.
+    - **Verified (dev 4101, Playwright, stub session and a stub notify-me server), 16 checks:**
+      - hover shows Trailer and Remind Me, stacked at one width;
+      - a click shows "Reminded" at once, disables the button in flight, shows no loading bar, sends one POST
+        `{"notify_me": true}` and toasts "We'll remind you"; `aria-pressed` follows;
+      - a reload keeps "Reminded"; a double click turns it off with one POST `{"notify_me": false}` and
+        "Reminder removed";
+      - a 500 puts it back with "Reminder not saved";
+      - a 409 and a 404 toast and re-read the rail, and the teaser leaves;
+      - 375 / 768 / 1440: no horizontal scroll, and hover doesn't change the rail's height (662 / 688 / 682 px).
+    - **Not exercised:** the real POST against UAT, which needs a real session. Without a token it answers 401, so the
+      route exists; its answers are from the Postman collection.
   - **Gates (local macOS):** lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 227.95 kB, only
     `ai-labs.css`.
   - **Verified (dev 4101, Playwright; signed in stubbed, with UAT's real `coming-soon/` row):**

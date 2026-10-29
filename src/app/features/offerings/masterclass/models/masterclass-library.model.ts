@@ -1,5 +1,12 @@
 import { isMasterclassCourse, MasterclassCourse } from '@core/models/masterclass-home.model';
-import { contractError, isObject, isStr, isStrOrNull, listOf } from '@core/utils/contract-guards';
+import {
+  contractError,
+  isBool,
+  isObject,
+  isStr,
+  isStrOrNull,
+  listOf,
+} from '@core/utils/contract-guards';
 
 /**
  * Types for the masterclass page's signed-in rails (Postman, checked on UAT
@@ -10,7 +17,10 @@ import { contractError, isObject, isStr, isStrOrNull, listOf } from '@core/utils
  *   (`web-masterclass-completed-course-section-v1`): the courses the learner
  *   has closed.
  * - `GET web-api/v1/masterclass/coming-soon/` (`web-masterclass-coming-soon-v1`,
- *   checked on UAT 2026-10-27): the teasers, which are not courses yet.
+ *   checked on UAT 2026-10-27): the teasers, which are not courses yet. Each
+ *   row carries the learner's `notify_me` since 2026-10-28.
+ * - `POST api/v1/masterclass/coming-soon/<id>/notify-me/`
+ *   (`masterclass-coming-soon-notify-me-v1`): a card's Remind Me.
  *
  * These are the keys the page READS, not a mirror of the payload: `library/`
  * also carries `popular` and `latest` (the hero reads `highlight/` instead),
@@ -49,6 +59,8 @@ export interface MasterclassComingSoonCourse {
   name: string;
   thumbnail_url: string | null;
   trailer_url: string | null;
+  /** The learner's reminder for it; `false` signed out. */
+  notify_me: boolean;
 }
 
 /** A rail above the tracks: the `library/` rail it reads, its section id and heading. */
@@ -72,7 +84,8 @@ const isComingSoonCourse = (v: unknown): v is MasterclassComingSoonCourse =>
   isStr(v['id']) &&
   isStr(v['name']) &&
   isStrOrNull(v['thumbnail_url']) &&
-  isStrOrNull(v['trailer_url']);
+  isStrOrNull(v['trailer_url']) &&
+  isBool(v['notify_me']);
 
 /** A pagination block whose `results` all pass `guard`. */
 const blockOf =
@@ -117,4 +130,12 @@ export function parseComingSoon(raw: unknown): MasterclassComingSoonCourse[] {
   const data = isObject(raw) ? raw['data'] : undefined;
   if (blockOf(isComingSoonCourse)(data)) return data.results;
   throw contractError('coming-soon');
+}
+
+/** The notify-me answer: where the reminder landed, `data.notify_me` (200 and 201 alike). */
+export function parseNotifyMe(raw: unknown): boolean {
+  const data = isObject(raw) ? raw['data'] : undefined;
+  const notifyMe = isObject(data) ? data['notify_me'] : undefined;
+  if (isBool(notifyMe)) return notifyMe;
+  throw contractError('coming-soon notify-me');
 }

@@ -15,7 +15,7 @@ import {
 import { MasterclassBookmarks } from '@core/services/masterclass-bookmarks/masterclass-bookmarks';
 import { MasterclassHomeFacade } from '@core/services/masterclass-home-facade/masterclass-home-facade';
 import { NgIcon } from '@ng-icons/core';
-import { faSolidPlay } from '@ng-icons/font-awesome/solid';
+import { faSolidBell, faSolidCheck, faSolidPlay } from '@ng-icons/font-awesome/solid';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Carousel } from '@shared/components/carousel/carousel';
 import { MasterclassCourseCard } from '@shared/components/cards/masterclass-course-card/masterclass-course-card';
@@ -90,6 +90,8 @@ export class Masterclass {
   protected readonly comingSoonHeading = MASTERCLASS_COMING_SOON_HEADING;
   protected readonly comingSoonSectionId = MASTERCLASS_RAIL_SECTION_IDS.comingSoon;
   protected readonly playIcon = faSolidPlay;
+  protected readonly bellIcon = faSolidBell;
+  protected readonly checkIcon = faSolidCheck;
   protected readonly filterIcon = filterIcon;
   protected readonly railFilterEmpty = RAIL_FILTER_EMPTY;
 
