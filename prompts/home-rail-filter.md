@@ -108,6 +108,12 @@ Move the filter below the features:
     Home and masterclass loaded the service already. Providing it on `Home` instead would keep it off the other
     pages, but its selections would reset on every return to home.
 
+13. **The rails' placeholders at 1440 px and up (added to MIL-132 at the user's request).** `swiperConfigEven` shows 3.3
+    slides per view from 1440, and the placeholders modelled only 1.1 / 2 / 2.8, so each was 41 px too tall and the
+    page jumped as rails scrolled in. Both pages' placeholders and home's `skeletonClass` gain
+    `min-[90rem]:basis-[calc((100%-69px)/3.3)]` (in `rem`, so Tailwind orders it after `lg:`), and the placeholder
+    heading is `h-[46px]`, the real mobile heading row.
+
 ## Endpoint map
 
 | Call                                                          | Verb | When                                             |

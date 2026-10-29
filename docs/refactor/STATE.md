@@ -7,8 +7,9 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- 🟡 **2026-10-29, NON-REFACTOR — MIL-132 (bug), the rail filter on the home page. PLAN APPROVED, DONE, GATES GREEN,
-  UNCOMMITTED** (`prompts/home-rail-filter.md`, PR 2), on `fix/MIL-132-home-rail-filter` off `master` (`7a5ab1b5`).
+- 🟡 **2026-10-29, NON-REFACTOR — MIL-132 (bug), the rail filter on the home page. PLAN APPROVED, DONE, GATES GREEN**
+  (`prompts/home-rail-filter.md`, PR 2), on `fix/MIL-132-home-rail-filter` off `master` (`7a5ab1b5`). The filter is
+  committed (`a07538fe`); the placeholder fix below is UNCOMMITTED, in the same PR (the user's call).
   - **Change:**
     - the home route lists `MasterclassRailFilter` beside `HomeFacade`, so home keeps its own selections for the
       visit;
@@ -30,11 +31,21 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
       `master` (414 / 438 / 462 px);
     - the first rail's three leading images still load with priority; the masterclass page's filter passes its 12
       checks unchanged.
-  - **Seen, not caused here (both the same on `master`):**
-    - at 1440 the home rail placeholder is 503 px against a 462 px rail, so a rail scrolling in shifts what's below
-      it by 41 px;
-    - the AI Labs ring (`app-surround-carousel`) re-requests two S3 thumbnails with an `Origin` header, and S3
-      refuses localhost (CORS errors in the console).
+  - **Placeholder fix, added to this PR:** from 1440 px the track rails' placeholders were 41 px too tall on home
+    (503 against 462) and 39 px on the masterclass page, so each rail that scrolled in moved the page below it.
+    - Cause: `swiperConfigEven` shows 3.3 slides per view from 1440, and the placeholders modelled only 1.1 / 2 / 2.8.
+    - Fix: `min-[90rem]:basis-[calc((100%-69px)/3.3)]` beside each `lg:` basis (both pages' `@placeholder` and
+      `@empty` skeletons, and home's `skeletonClass`), and the placeholder heading `h-11` → `h-[46px]`, the real
+      mobile heading row.
+    - `90rem`, not `1440px`: Tailwind v4 can't order a `px` breakpoint against the theme's `rem` ones and emitted it
+      before `lg:`, which then won. Checked in the dev and the production CSS.
+    - Verified at 375 / 768 / 1024 / 1280 / 1439 / 1440 / 1536: home's placeholder equals the rail at every width;
+      the masterclass page's is within 2 px (one card with the AI Kit button stands 2 px taller, which a placeholder
+      can't know). Home's carousel skeleton is 378 px wide at 1440, like a real slide.
+    - Gates: lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 979.57 kB raw (+0.12 kB, the new
+      rule), only `ai-labs.css`.
+  - **Seen, not caused here:** the AI Labs ring (`app-surround-carousel`) re-requests two S3 thumbnails with an
+    `Origin` header, and S3 refuses localhost (CORS errors in the console). The same on `master`.
 
 - 🟡 **2026-10-29, NON-REFACTOR — MIL-156 (refactor), the masterclass rail filter moved to shared code. PLAN
   APPROVED, PR 1 OF 2 DONE, GATES GREEN, UNCOMMITTED** (`prompts/home-rail-filter.md`), on
