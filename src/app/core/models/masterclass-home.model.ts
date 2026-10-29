@@ -1,3 +1,13 @@
+import {
+  isBool,
+  isNum,
+  isNumOrNull,
+  isObject,
+  isStr,
+  isStrOrNull,
+  listOf,
+} from '@core/utils/contract-guards';
+
 /**
  * Types for the web masterclass API (`web-api/v1/masterclass/`): `tracks-page/`
  * (read by `MasterclassHomeFacade` for the home page and the masterclass page),
@@ -179,23 +189,8 @@ type ApiTrack = Omit<MasterclassTrack, 'courses'> & { courses: ApiPage<Mastercla
 // retyped key fails the whole response, once, in the resource's `parse`, so it
 // lands in `error()` rather than half-rendered on screen.
 
-type Json = Record<string, unknown>;
-
-const isObject = (v: unknown): v is Json =>
-  typeof v === 'object' && v !== null && !Array.isArray(v);
-const isStr = (v: unknown): v is string => typeof v === 'string';
-const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
-const isBool = (v: unknown): v is boolean => typeof v === 'boolean';
-const isStrOrNull = (v: unknown): v is string | null => v === null || isStr(v);
-const isNumOrNull = (v: unknown): v is number | null => v === null || isNum(v);
-
 const LOGIN_TYPES: readonly unknown[] = ['pre_login', 'post_login'];
 const isLoginType = (v: unknown): v is MasterclassLoginType => LOGIN_TYPES.includes(v);
-
-const listOf =
-  <T>(guard: (v: unknown) => v is T) =>
-  (v: unknown): v is T[] =>
-    Array.isArray(v) && v.every(guard);
 
 /** A paginated block whose `results` all pass `guard`. A bare array is not one. */
 const pageOf =

@@ -1,3 +1,5 @@
+import { isObject, isStr, isStrOrNull } from '@core/utils/contract-guards';
+
 /**
  * The data the home page's presentational sections render. The webinar ticket
  * reads `highlight-webinars/` (`HomeFacade`); the pricing card is still
@@ -51,17 +53,9 @@ export interface HomeWebinar {
 //
 // Hand-written guards, like every model on the new API: a renamed key would
 // otherwise render as `undefined` with no signal. Only the keys the ticket
-// reads are checked; extra keys pass. The webinar feature's own guards cannot
-// be imported here (features never import each other), and this row is not
-// that card anyway: it carries no `fields_of_study`, `total_cpe_credits` or
+// reads are checked; extra keys pass. This row is not the webinar feature's
+// card: it carries no `fields_of_study`, `total_cpe_credits` or
 // `registration` (checked live on UAT 2026-10-11, signed out and in).
-
-type Json = Record<string, unknown>;
-
-const isObject = (v: unknown): v is Json =>
-  typeof v === 'object' && v !== null && !Array.isArray(v);
-const isStr = (v: unknown): v is string => typeof v === 'string';
-const isStrOrNull = (v: unknown): v is string | null => v === null || isStr(v);
 
 /** The keys of one `highlight_webinars` row that the ticket renders. */
 interface HighlightWebinarRow {

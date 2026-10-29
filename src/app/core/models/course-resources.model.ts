@@ -1,3 +1,5 @@
+import { isNum, isObject, isStr, isStrOrNull } from '@core/utils/contract-guards';
+
 /**
  * The card AI Kit button's read, `GET web-api/v1/masterclass/course-detail/{id}/`:
  * only `data.course_details.miscellaneous_data`. In core because two features
@@ -19,14 +21,6 @@ export interface CourseResources {
 }
 
 // ---- Trust boundary --------------------------------------------------------
-
-type Json = Record<string, unknown>;
-
-const isObject = (v: unknown): v is Json =>
-  typeof v === 'object' && v !== null && !Array.isArray(v);
-const isStr = (v: unknown): v is string => typeof v === 'string';
-const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
-const isStrOrNull = (v: unknown): v is string | null => v === null || isStr(v);
 
 /** `ai_kit {id, name, description, icon_url, url}`; a kit with no url has nothing to open. */
 function toKit(v: unknown): CourseResource | null | undefined {
