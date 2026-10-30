@@ -9,8 +9,8 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 - 🟡 **2026-10-29, NON-REFACTOR — MIL-132 (bug), the rail filter on the home page. PLAN APPROVED, DONE, GATES GREEN,
   COMMITTED** (`a07538fe` the filter, `52399fd5` the placeholders; `prompts/home-rail-filter.md`, PR 2), on
-  `fix/MIL-132-home-rail-filter` off `master` (`7a5ab1b5`). PR #215 is open. On 2026-10-30 `master` (with #210) was
-  merged in; only this file conflicted.
+  `fix/MIL-132-home-rail-filter` off `master` (`7a5ab1b5`). PR #215 is open. On 2026-10-30 `master` was merged in
+  twice, for #210 and then #214; only this file conflicted each time.
   - **Change:**
     - the home route lists `MasterclassRailFilter` beside `HomeFacade`, so home keeps its own selections for the
       visit;
@@ -47,6 +47,25 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
       rule), only `ai-labs.css`.
   - **Seen, not caused here:** the AI Labs ring (`app-surround-carousel`) re-requests two S3 thumbnails with an
     `Origin` header, and S3 refuses localhost (CORS errors in the console). The same on `master`.
+
+- ✅ **2026-10-29, NON-REFACTOR — MIL-158 (refactor), one set of payload guards. MERGED** as #214 (`5256fb1a`)
+  (`prompts/core-contract-guards.md`).
+  - **Change:** ten models import their payload guards from `core/utils/contract-guards.ts` and drop their copies:
+    the core `commerce`, `course-resources` and `masterclass-home` models, and the payment `commerce`, home
+    sections, course and instructor library, webinar, CAIRA tracker and CPE tracker models. Every copy matched the
+    core guard exactly.
+  - **Kept local:** each model's own `contractError` (the `[masterclass]`, `[webinar]`, `[caira-tracker]` and
+    `[cpe-tracker]` log lines are unchanged), and the one-owner guards `pageOf`, `isLoginType`, `isStrList` and
+    `isLevelOrNull`. The comments that explained the copies lose that part.
+  - **Gates (local macOS):** lint 0 errors (98 warnings); structure ✔; Prettier ✔; tsc 0; `build:prod` raw
+    979.45 kB unchanged, 227.95 kB gzip (227.89 before), only `ai-labs.css`.
+  - **Verified (dev 4101, Playwright, signed out against UAT):** home's tracks (68 cards); the masterclass tracks and
+    the AI Kit dialog; the course library (64 cards); an instructor page; the webinar list, reached in-app so the
+    browser parses the feed. No contract errors and no 5xx.
+    - UAT has no highlight webinar and no signed-out webinars today (`count: 0`), so home shows no ticket and the
+      webinar page its empty state. Both answers parsed.
+  - **Not exercised:** the CPE and CAIRA trackers and the cart. They need a real session, and their parsers only
+    lost the copies; the type check binds them to the same signatures.
 
 - ✅ **2026-10-29, NON-REFACTOR — MIL-156 (refactor), the masterclass rail filter moved to shared code. MERGED** as
   #213 (`7a5ab1b5`). PR 1 of 2 (`prompts/home-rail-filter.md`), on

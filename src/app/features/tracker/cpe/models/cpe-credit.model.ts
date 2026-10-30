@@ -1,4 +1,14 @@
 import { CategoryListItem } from '@core/models/course.model';
+import {
+  isBool,
+  isNum,
+  isNumOrNull,
+  isObject,
+  isStr,
+  isStrOrNull,
+  Json,
+  listOf,
+} from '@core/utils/contract-guards';
 
 /**
  * Wire types for the two reads behind "Your CPE Portfolio":
@@ -283,25 +293,7 @@ export const CPE_LEDGER_OPTIONS: readonly CpeOption<CpeLedger>[] = [
  * already renamed one. Every key a template reads is checked; EXTRA keys pass, because the API adds
  * keys without notice. A missing or retyped key fails the WHOLE response, once, so it lands in
  * `error()` rather than half-rendered.
- *
- * These primitives are a local copy of the CAIRA tracker's on purpose — a feature may not import
- * another feature's internals, and `tracker/cpe` and `tracker/caira` are separate trees under
- * AGENTS.md §3.
  */
-type Json = Record<string, unknown>;
-
-const isObject = (v: unknown): v is Json =>
-  typeof v === 'object' && v !== null && !Array.isArray(v);
-const isStr = (v: unknown): v is string => typeof v === 'string';
-const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
-const isBool = (v: unknown): v is boolean => typeof v === 'boolean';
-const isStrOrNull = (v: unknown): v is string | null => v === null || isStr(v);
-const isNumOrNull = (v: unknown): v is number | null => v === null || isNum(v);
-
-const listOf =
-  <T>(guard: (v: unknown) => v is T) =>
-  (v: unknown): v is T[] =>
-    Array.isArray(v) && v.every(guard);
 
 /** Thrown from a `parse`; the message names the route so the log says where. */
 function contractError(part: string): Error {

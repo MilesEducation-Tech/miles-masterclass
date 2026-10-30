@@ -1,6 +1,6 @@
 /**
- * The trust boundary for the web API (`web-api/v1/`), shared by the offerings'
- * models and the masterclass rails' filter.
+ * The trust boundary for the web API (`web-api/v1/`), shared by every model that
+ * checks an answer.
  *
  * Hand-written, like the webinar model's: a renamed key would otherwise render
  * as `undefined` with no signal. Every key a page reads is checked; EXTRA keys
@@ -25,7 +25,11 @@ export const listOf =
   (v: unknown): v is T[] =>
     Array.isArray(v) && v.every(guard);
 
-/** Thrown from `parse`; the message names the route so the log says where. */
+/**
+ * Thrown from `parse`; the message names the route so the log says where. A
+ * model whose log names another area (`[masterclass]`, `[webinar]`, the
+ * trackers) keeps its own.
+ */
 export function contractError(route: string): Error {
   return new Error(`[offerings] ${route} response does not match the contract.`);
 }
