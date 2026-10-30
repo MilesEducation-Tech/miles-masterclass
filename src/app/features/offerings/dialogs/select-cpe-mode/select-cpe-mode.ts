@@ -4,8 +4,6 @@ import { NgpRadioGroup, NgpRadioIndicator, NgpRadioItem } from 'ng-primitives/ra
 
 import { Button } from '@shared/ui/button/button';
 import { Dialog } from '@shared/ui/dialog/dialog';
-import { NgIcon, provideIcons } from '@ng-icons/core';
-import { heroXMark } from '@ng-icons/heroicons/outline';
 
 /** Data passed to the SelectCpeMode dialog */
 export interface SelectCpeModeData {
@@ -22,8 +20,7 @@ export interface SelectCpeModeResult {
 
 @Component({
   selector: 'app-select-cpe-mode',
-  imports: [Button, NgpRadioGroup, NgpRadioIndicator, NgpRadioItem, Dialog, NgIcon],
-  providers: [provideIcons({ heroXMark })],
+  imports: [Button, NgpRadioGroup, NgpRadioIndicator, NgpRadioItem, Dialog],
   templateUrl: './select-cpe-mode.html',
   host: {
     class: 'block',

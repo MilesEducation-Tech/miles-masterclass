@@ -10,12 +10,11 @@ import { PageLoading } from '@shared/ui/page-loading/page-loading';
 import { ErrorState } from '@shared/ui/error-state/error-state';
 import { Button } from '@shared/ui/button/button';
 import { Dialog } from '@shared/ui/dialog/dialog';
-import { heroXMark } from '@ng-icons/heroicons/outline';
 
 @Component({
   selector: 'app-subscription-dialog',
   imports: [PlanSelectionCard, PageLoading, ErrorState, Button, NgIcon, Dialog],
-  providers: [provideIcons({ lucideCheck, heroXMark })],
+  providers: [provideIcons({ lucideCheck })],
   templateUrl: './subscription-dialog.html',
   host: { class: 'block' },
 })

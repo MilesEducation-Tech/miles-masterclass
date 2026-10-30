@@ -7,14 +7,13 @@ import { Button } from '@shared/ui/button/button';
 import { CourseAbout } from '@shared/components/course-about/course-about';
 import { ContentAbout } from '@core/models/course.model';
 import { Dialog } from '@shared/ui/dialog/dialog';
-import { heroXMark } from '@ng-icons/heroicons/outline';
 
 @Component({
   selector: 'app-micro-learning-about-panel',
   imports: [NgIcon, Button, CourseAbout, Dialog],
   templateUrl: './micro-learning-about-panel.html',
   host: { class: 'block h-full' },
-  viewProviders: [provideIcons({ matInfoRound, heroXMark })],
+  viewProviders: [provideIcons({ matInfoRound })],
 })
 export class MicroLearningAboutPanel {
   private readonly dialogRef = injectDialogRef<ContentAbout>();

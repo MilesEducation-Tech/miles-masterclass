@@ -1,15 +1,12 @@
 import { Component, computed, OnInit, signal } from '@angular/core';
 import { injectDialogRef } from 'ng-primitives/dialog';
 
-import { Button } from '../../ui/button/button';
+import { Button } from '@shared/ui/button/button';
 import { Dialog } from '@shared/ui/dialog/dialog';
-import { NgIcon, provideIcons } from '@ng-icons/core';
-import { heroXMark } from '@ng-icons/heroicons/outline';
 
 @Component({
   selector: 'app-filter-dialog',
-  imports: [Button, Dialog, NgIcon],
-  providers: [provideIcons({ heroXMark })],
+  imports: [Button, Dialog],
   templateUrl: './filter-dialog.html',
 })
 export class FilterDialog implements OnInit {

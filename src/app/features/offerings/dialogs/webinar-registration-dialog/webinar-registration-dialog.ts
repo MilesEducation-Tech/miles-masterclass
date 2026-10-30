@@ -9,8 +9,6 @@ import {
   WebinarRegistrationFormValue,
 } from '@shared/components/webinar-registration-form/webinar-registration-form';
 import { Dialog } from '@shared/ui/dialog/dialog';
-import { NgIcon, provideIcons } from '@ng-icons/core';
-import { heroXMark } from '@ng-icons/heroicons/outline';
 
 export interface WebinarRegistrationDialogData {
   webinar: UpcomingPremiere;
@@ -35,8 +33,7 @@ export interface WebinarRegistrationDialogData {
  */
 @Component({
   selector: 'app-webinar-registration-dialog',
-  imports: [Button, WebinarRegistrationForm, Dialog, NgIcon],
-  providers: [provideIcons({ heroXMark })],
+  imports: [Button, WebinarRegistrationForm, Dialog],
   templateUrl: './webinar-registration-dialog.html',
   host: { class: 'block' },
 })
