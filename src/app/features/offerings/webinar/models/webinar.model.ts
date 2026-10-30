@@ -1,4 +1,12 @@
 import { environment } from '@env/environment';
+import {
+  isNum,
+  isNumOrNull,
+  isObject,
+  isStr,
+  isStrOrNull,
+  listOf,
+} from '@core/utils/contract-guards';
 import type { WebinarErrorCode } from '@features/offerings/webinar/utils/webinar-error';
 
 /**
@@ -457,14 +465,6 @@ export interface WebinarDetailsResponse {
 // without notice. A missing or retyped key fails the whole response, once, in
 // the resource's `parse`, so it lands in `error()` rather than on screen.
 
-type Json = Record<string, unknown>;
-
-const isObject = (v: unknown): v is Json =>
-  typeof v === 'object' && v !== null && !Array.isArray(v);
-const isStr = (v: unknown): v is string => typeof v === 'string';
-const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
-const isStrOrNull = (v: unknown): v is string | null => v === null || isStr(v);
-const isNumOrNull = (v: unknown): v is number | null => v === null || isNum(v);
 const isStrList = (v: unknown): v is string[] => Array.isArray(v) && v.every(isStr);
 
 const WEBINAR_TYPES: readonly unknown[] = ['webinar', 'offline', 'orientation', 'premier'];
@@ -541,11 +541,6 @@ function isUpcomingCard(v: unknown): v is UpcomingWebinarCard {
 function isCompletedCard(v: unknown): v is CompletedWebinarCard {
   return isWebinarCard(v) && 'eligible' in v && typeof v.eligible === 'boolean';
 }
-
-const listOf =
-  <T>(guard: (v: unknown) => v is T) =>
-  (v: unknown): v is T[] =>
-    Array.isArray(v) && v.every(guard);
 
 /** Thrown from `parse`; the message names the resource so the log says where. */
 function contractError(resource: string): Error {

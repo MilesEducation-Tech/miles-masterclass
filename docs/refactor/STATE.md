@@ -7,6 +7,27 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🟡 **2026-10-29, NON-REFACTOR — MIL-158 (refactor), one set of payload guards. PLAN APPROVED, DONE, GATES GREEN,
+  COMMITTED** (`4edb9715`, `prompts/core-contract-guards.md`), on `refactor/MIL-158-core-contract-guards`. It started
+  on MIL-156's branch; once #213 merged (`7a5ab1b5`), `master` was merged in, and the three conflicts (the
+  `contract-guards.ts` doc, the CAIRA tracker's comment, this entry) kept this branch's side. Its PR is next.
+  - **Change:** ten models import their payload guards from `core/utils/contract-guards.ts` and drop their copies:
+    the core `commerce`, `course-resources` and `masterclass-home` models, and the payment `commerce`, home
+    sections, course and instructor library, webinar, CAIRA tracker and CPE tracker models. Every copy matched the
+    core guard exactly.
+  - **Kept local:** each model's own `contractError` (the `[masterclass]`, `[webinar]`, `[caira-tracker]` and
+    `[cpe-tracker]` log lines are unchanged), and the one-owner guards `pageOf`, `isLoginType`, `isStrList` and
+    `isLevelOrNull`. The comments that explained the copies lose that part.
+  - **Gates (local macOS):** lint 0 errors (98 warnings); structure ✔; Prettier ✔; tsc 0; `build:prod` raw
+    979.45 kB unchanged, 227.95 kB gzip (227.89 before), only `ai-labs.css`.
+  - **Verified (dev 4101, Playwright, signed out against UAT):** home's tracks (68 cards); the masterclass tracks and
+    the AI Kit dialog; the course library (64 cards); an instructor page; the webinar list, reached in-app so the
+    browser parses the feed. No contract errors and no 5xx.
+    - UAT has no highlight webinar and no signed-out webinars today (`count: 0`), so home shows no ticket and the
+      webinar page its empty state. Both answers parsed.
+  - **Not exercised:** the CPE and CAIRA trackers and the cart. They need a real session, and their parsers only
+    lost the copies; the type check binds them to the same signatures.
+
 - ✅ **2026-10-29, NON-REFACTOR — MIL-156 (refactor), the masterclass rail filter moved to shared code. MERGED** as
   #213 (`7a5ab1b5`). PR 1 of 2 (`prompts/home-rail-filter.md`), on
   `refactor/MIL-156-shared-rail-filter` off `master` (`46264d4f`). PR 2 is MIL-132, the filter on the home page.
@@ -62,9 +83,9 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
   - **Seen, not caused here:** the UAE CAIRA page's Levels carousels read `v2/library/?caira_levels=…`, which answers
     404 on UAT, signed in or out.
 
-- 🟡 **2026-10-27, NON-REFACTOR — MIL-147 (feature), the Coming Soon rail on the masterclass page. PLAN APPROVED,
-  DONE, GATES GREEN, COMMITTED** (`1ba4212a`, `prompts/masterclass-coming-soon.md`), on
-  `feat/MIL-147-masterclass-coming-soon` off `master` (`f07812db`). PR #210 is open as a draft. On 2026-10-29
+- ✅ **2026-10-27, NON-REFACTOR — MIL-147 (feature), the Coming Soon rail on the masterclass page. MERGED** as #210
+  (`341d5150`), with Remind Me and `course_type=course` (`prompts/masterclass-coming-soon.md`); it was on
+  `feat/MIL-147-masterclass-coming-soon` off `master` (`f07812db`). On 2026-10-29
   `master` (with #211) was merged into it; only this file conflicted, and both entries were kept.
   - **Second `master` merge, 2026-10-29 (#213, the filter moved to shared code):** the page and the library facade
     conflicted on imports only. `RAIL_FILTER_EMPTY`, `trackRail` and `MasterclassRail` now come from core, and the page
