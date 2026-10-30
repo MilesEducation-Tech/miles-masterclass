@@ -1,6 +1,8 @@
 import { environment } from '@env/environment';
 import { MASTERCLASS_COURSE_TYPE, RAIL_PAGE_SIZE } from '@core/constants/masterclass';
+import { RouteConfig } from '@core/models/http.model';
 import { VideoConfig } from '@core/models/video-player.model';
+import { PartnerContentItem } from '@shared/components/partner-content-list/partner-content-list';
 import { LibraryRailConfig } from '@features/offerings/masterclass/models/masterclass-library.model';
 
 /**
@@ -58,11 +60,62 @@ export const MASTERCLASS_COMPLETED_PARAMS = {
   'all_courses.page_size': RAIL_PAGE_SIZE,
 } as const;
 
+/**
+ * The Coming Soon teasers. Public; each row's `notify_me` is the caller's own
+ * reminder (`false` signed out). The page asks only signed in, as the rail
+ * shows only then. Postman `web-masterclass-coming-soon-v1`.
+ */
+export const MASTERCLASS_COMING_SOON_URL = `${environment.API.baseUrl}web-api/v1/masterclass/coming-soon/`;
+
+/**
+ * Its one list pages on the bare `page_size`. Without `course_type` it also
+ * sends the podcast and micro-learning teasers (since 2026-10-28); any other
+ * key is a 400.
+ */
+export const MASTERCLASS_COMING_SOON_PARAMS = {
+  course_type: MASTERCLASS_COURSE_TYPE,
+  page_size: RAIL_PAGE_SIZE,
+} as const;
+
+/**
+ * `IsAuthenticated`: a learner's reminder for one teaser (`:id` is its UUID).
+ * `{ notify_me: true }` turns it on, `false` off, and the answer says where it
+ * landed (`data.notify_me`). One POST for both: a DELETE was refused by the
+ * browser's preflight. 404 for a teaser no longer listed, 409 for one that has
+ * launched. On `api/v1/`, shared with the app; there is no `web-api` twin.
+ * Postman `masterclass-coming-soon-notify-me-v1`.
+ */
+export const MASTERCLASS_COMING_SOON_NOTIFY_ROUTE = {
+  path: `${environment.API.baseUrl}api/v1/masterclass/coming-soon/:id/notify-me/`,
+  method: 'POST',
+} as RouteConfig<{ notify_me: boolean }, unknown>;
+
+/** The toasts after a Remind Me click; the message is the course name. */
+export const MASTERCLASS_REMINDER_TOASTS = {
+  on: "We'll remind you",
+  off: 'Reminder removed',
+  launched: 'This course is now available',
+  gone: 'This course is no longer listed',
+  failed: { title: 'Reminder not saved', message: 'Please try again.' },
+} as const;
+
+/** The heading over the Coming Soon rail, styled as the micro-learning page's. */
+export const MASTERCLASS_COMING_SOON_HEADING: PartnerContentItem[] = [
+  {
+    subHeading: 'Coming Soon on Masterclasses',
+    paragraph: 'Hit the bell icon for updates and never miss a new CPE course drop!',
+    subHeadingClass: 'text-white md:text-5xl text-3xl font-bold',
+    itemClass: 'text-center py-4 md:w-2/3 w-full mx-auto leading-relaxed',
+    paragraphClass: 'text-white md:text-lg text-base font-normal mt-2',
+  },
+];
+
 /** Section ids of the signed-in rails the sidenav lists. */
 export const MASTERCLASS_RAIL_SECTION_IDS = {
   continueWatching: 'continue-watching',
   myList: 'my-list',
   completed: 'completed-courses',
+  comingSoon: 'masterclass-coming-soon',
 } as const;
 
 /** The signed-in rails above the tracks, in order. */

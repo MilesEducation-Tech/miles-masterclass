@@ -7,9 +7,10 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- 🟡 **2026-10-29, NON-REFACTOR — MIL-132 (bug), the rail filter on the home page. PLAN APPROVED, DONE, GATES GREEN**
-  (`prompts/home-rail-filter.md`, PR 2), on `fix/MIL-132-home-rail-filter` off `master` (`7a5ab1b5`). The filter is
-  committed (`a07538fe`); the placeholder fix below is UNCOMMITTED, in the same PR (the user's call).
+- 🟡 **2026-10-29, NON-REFACTOR — MIL-132 (bug), the rail filter on the home page. PLAN APPROVED, DONE, GATES GREEN,
+  COMMITTED** (`a07538fe` the filter, `52399fd5` the placeholders; `prompts/home-rail-filter.md`, PR 2), on
+  `fix/MIL-132-home-rail-filter` off `master` (`7a5ab1b5`). PR #215 is open. On 2026-10-30 `master` (with #210) was
+  merged in; only this file conflicted.
   - **Change:**
     - the home route lists `MasterclassRailFilter` beside `HomeFacade`, so home keeps its own selections for the
       visit;
@@ -47,8 +48,8 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
   - **Seen, not caused here:** the AI Labs ring (`app-surround-carousel`) re-requests two S3 thumbnails with an
     `Origin` header, and S3 refuses localhost (CORS errors in the console). The same on `master`.
 
-- 🟡 **2026-10-29, NON-REFACTOR — MIL-156 (refactor), the masterclass rail filter moved to shared code. PLAN
-  APPROVED, PR 1 OF 2 DONE, GATES GREEN, UNCOMMITTED** (`prompts/home-rail-filter.md`), on
+- ✅ **2026-10-29, NON-REFACTOR — MIL-156 (refactor), the masterclass rail filter moved to shared code. MERGED** as
+  #213 (`7a5ab1b5`). PR 1 of 2 (`prompts/home-rail-filter.md`), on
   `refactor/MIL-156-shared-rail-filter` off `master` (`46264d4f`). PR 2 is MIL-132, the filter on the home page.
   - **Why:** the home page can't import the masterclass feature (AGENTS.md §3), so the filter moves below both.
   - **Moves (no behaviour change):**
@@ -72,9 +73,8 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     - with `filter/` answering 500: Field of Study and Credit only, the log says
       `[MasterclassRailFilter] filter load failed`, and the next click reads `filter/` again.
 
-- 🟡 **2026-10-28, NON-REFACTOR — MIL-148 (bug), signed-in learners kept off the home page. PLAN APPROVED, DONE,
-  GATES GREEN, UNCOMMITTED** (`prompts/signed-in-home-redirect.md`), on `fix/MIL-148-signed-in-home-redirect` off
-  `master` (`f07812db`). MIL-147 (the Coming Soon rail) is committed and pushed on its own branch; its PR is next.
+- ✅ **2026-10-28, NON-REFACTOR — MIL-148 (bug), signed-in learners kept off the home page. MERGED** as #211
+  (`46264d4f`) (`prompts/signed-in-home-redirect.md`).
   - **Change:**
     - new `core/guards/auth/guest-home-guard.ts` (`CanMatch`) on the standard `home` route sends a signed-in
       learner to `/<country>/<profession>/masterclass`, read off the navigation's URL tree, with the query string
@@ -102,6 +102,65 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     same in-app navigation as the checks above.
   - **Seen, not caused here:** the UAE CAIRA page's Levels carousels read `v2/library/?caira_levels=…`, which answers
     404 on UAT, signed in or out.
+
+- ✅ **2026-10-27, NON-REFACTOR — MIL-147 (feature), the Coming Soon rail on the masterclass page. MERGED** as #210
+  (`341d5150`), with Remind Me and `course_type=course` (`prompts/masterclass-coming-soon.md`); it was on
+  `feat/MIL-147-masterclass-coming-soon` off `master` (`f07812db`). On 2026-10-29
+  `master` (with #211) was merged into it; only this file conflicted, and both entries were kept.
+  - **Second `master` merge, 2026-10-29 (#213, the filter moved to shared code):** the page and the library facade
+    conflicted on imports only. `RAIL_FILTER_EMPTY`, `trackRail` and `MasterclassRail` now come from core, and the page
+    and its doc name `MasterclassRailFilter`; the Coming Soon imports stay. The constants and the library model merged
+    on their own (`RAIL_PAGE_SIZE` from core). tsc 0, lint 0 errors (98 warnings), structure ✔, `build:prod` 979.64 kB
+    raw, only `ai-labs.css`. In the browser, signed in (stub): Coming Soon is last before the FAQ with its heading,
+    card, sidenav entry and Trailer, one `coming-soon/` read; every other rail has the filter, and filtering
+    Recommended narrows it 3 → 1 with a count of 1; no console errors.
+  - **2026-10-29, `course_type=course` on the rail's request (the user's call), UNCOMMITTED.** Since 2026-10-28
+    `coming-soon/` also sends podcast and micro-learning teasers unless narrowed. UAT: `course` gives the one teaser,
+    `podcast` none, a bad value is a 400. In the browser the request reads `course_type=course&page_size=100` and the
+    rail renders.
+  - **Remind Me, in this PR (the user's call). PLAN APPROVED, DONE, GATES GREEN, UNCOMMITTED**
+    (`prompts/masterclass-coming-soon.md`, "Remind Me").
+    - **Change:**
+      - each row carries `notify_me`;
+      - `MasterclassLibraryFacade.toggleReminder` posts `{"notify_me": bool}` to
+        `api/v1/masterclass/coming-soon/<id>/notify-me/` with `SKIP_LOADING`, flips the button at once, keeps the
+        server's answer, and toasts;
+      - a 409 (launched) or 404 (unlisted) re-reads the rail, so the teaser leaves; any other failure flips back;
+      - on the card, Remind Me sits under Trailer, both full width, on hover and focus, with `aria-pressed`, and is
+        disabled while in flight.
+    - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 979.64 kB
+      raw, unchanged, only `ai-labs.css`.
+    - **Verified (dev 4101, Playwright, stub session and a stub notify-me server), 16 checks:**
+      - hover shows Trailer and Remind Me, stacked at one width;
+      - a click shows "Reminded" at once, disables the button in flight, shows no loading bar, sends one POST
+        `{"notify_me": true}` and toasts "We'll remind you"; `aria-pressed` follows;
+      - a reload keeps "Reminded"; a double click turns it off with one POST `{"notify_me": false}` and
+        "Reminder removed";
+      - a 500 puts it back with "Reminder not saved";
+      - a 409 and a 404 toast and re-read the rail, and the teaser leaves;
+      - 375 / 768 / 1440: no horizontal scroll, and hover doesn't change the rail's height (662 / 688 / 682 px).
+    - **Not exercised:** the real POST against UAT, which needs a real session. Without a token it answers 401, so the
+      route exists; its answers are from the Postman collection.
+  - **Gates (local macOS):** lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 227.95 kB, only
+    `ai-labs.css`.
+  - **Verified (dev 4101, Playwright; signed in stubbed, with UAT's real `coming-soon/` row):**
+    - **Signed in:** one `coming-soon/?page_size=100` read. The rail is last (after My List and "Courses you've
+      mastered", before the FAQ), with the heading and the bell line.
+    - **The card:** the artwork loads with rank 1, and Trailer appears on hover and opens the video dialog.
+    - **Sidenav:** "Coming Soon" (rocket) appears.
+    - **Signed out:** no request, no rail, no sidenav entry.
+    - **Empty answer and a 500:** no rail and no sidenav entry. The 500 logs "coming soon load failed".
+    - **Layout:** no overflow at 375 / 768 / 1440. The placeholder (680 px) matches the rail (662–688 px).
+  - **Revision, the hover fade (the user's call):** hovering a card with a trailer fades the bottom of its artwork to
+    dark (the course cards' `bg-linear-to-t from-background …`), so Trailer reads over busy artwork. Verified at
+    1440 and 375: hidden at rest, shown on hover, and Trailer stays clickable above it.
+  - **Old bindings:** none left on the masterclass page.
+    - The `v2/dashboard/?filter=coming_soon` route and `app-coming-soon` stay for podcast and micro-learning.
+    - `core/config/feature.config.ts` is unused; deleting it is a separate chore.
+  - **Remind Me: not in this PR, waiting on the backend.** A Coming Soon id isn't a course, so the bookmark route may
+    not take it. The user is checking `POST bookmark/<coming-soon id>/` in Postman. If it answers 200, Remind Me is a
+    follow-up, stacked under Trailer (`flex-col`, full width) at every width. Side by side fits only at 1440, with
+    0 px to spare.
 
 - ⏸ **2026-10-27 — Zoom + environment stack: #200–#205 merged; #206 (MIL-145) is the last one open.** Each squash
   merge left the next PR conflicting with `master`: the STATE.md and prompt status lines, plus `course-library.ts` and
