@@ -1,7 +1,7 @@
 # The rail filter on the home page
 
-Status: **approved. PR 1 implemented (2026-10-29); PR 2 next.** Two tickets, two PRs (a refactor, then the
-feature):
+Status: **approved and implemented (2026-10-29).** PR 1 merged as #213; PR 2 is MIL-132. Two tickets, two PRs (a
+refactor, then the feature):
 
 - PR 1, MIL-156: `refactor/MIL-156-shared-rail-filter`
 - PR 2, MIL-132 (logged as a bug): `fix/MIL-132-home-rail-filter`
@@ -92,6 +92,27 @@ Move the filter below the features:
 8. **The home rails keep everything else they have:** `@defer` per rail, the sized placeholder, the image priority
    on the first rail, the info and bookmark buttons.
 9. **Selections aren't shared between pages.** Home and masterclass each have their own, like two rails on one page.
+
+### Found while building PR 2
+
+10. **The first rail's image priority is picked by course, not by position.** Home's cards bound
+    `[priority]="first && index < 3"`. A filter moves cards in and out of the first three places, and
+    NgOptimizedImage throws NG02953 when `priority` changes after the image initialises. The throw cut the carousel's
+    update short, and Clear All brought back 12 of 21 cards. `priorityCourseIds` holds the first track's three
+    leading course ids, which are the same three images on first load, and never change for a rendered card.
+11. **Each rail's carousel and its empty line share a wrapper `<div>`,** as the masterclass page's `<section>` does,
+    so the line sits under its rail rather than one list gap below. The wrapper adds no height: the rails measure the
+    same as on `master` (414 / 438 / 462 px at 375 / 768 / 1440).
+12. **The cost of listing the service on the route:** `features.routes.ts` loads for every page under
+    `/:country/:profession`, so its chunk grows by about 1.3 kB gzip (4 kB raw). The initial bundle doesn't change.
+    Home and masterclass loaded the service already. Providing it on `Home` instead would keep it off the other
+    pages, but its selections would reset on every return to home.
+
+13. **The rails' placeholders at 1440 px and up (added to MIL-132 at the user's request).** `swiperConfigEven` shows 3.3
+    slides per view from 1440, and the placeholders modelled only 1.1 / 2 / 2.8, so each was 41 px too tall and the
+    page jumped as rails scrolled in. Both pages' placeholders and home's `skeletonClass` gain
+    `min-[90rem]:basis-[calc((100%-69px)/3.3)]` (in `rem`, so Tailwind orders it after `lg:`), and the placeholder
+    heading is `h-[46px]`, the real mobile heading row.
 
 ## Endpoint map
 

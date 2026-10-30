@@ -7,10 +7,49 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- 🟡 **2026-10-29, NON-REFACTOR — MIL-158 (refactor), one set of payload guards. PLAN APPROVED, DONE, GATES GREEN,
-  COMMITTED** (`4edb9715`, `prompts/core-contract-guards.md`), on `refactor/MIL-158-core-contract-guards`. It started
-  on MIL-156's branch; once #213 merged (`7a5ab1b5`), `master` was merged in, and the three conflicts (the
-  `contract-guards.ts` doc, the CAIRA tracker's comment, this entry) kept this branch's side. Its PR is next.
+- 🟡 **2026-10-29, NON-REFACTOR — MIL-132 (bug), the rail filter on the home page. PLAN APPROVED, DONE, GATES GREEN,
+  COMMITTED** (`a07538fe` the filter, `52399fd5` the placeholders; `prompts/home-rail-filter.md`, PR 2), on
+  `fix/MIL-132-home-rail-filter` off `master` (`7a5ab1b5`). PR #215 is open. On 2026-10-30 `master` was merged in
+  twice, for #210 and then #214; only this file conflicted each time.
+  - **Change:**
+    - the home route lists `MasterclassRailFilter` beside `HomeFacade`, so home keeps its own selections for the
+      visit;
+    - `Home` narrows its tracks as the masterclass page does (`trackRails`), and each carousel renders `rail.shown`
+      with the same filter button, count and empty line;
+    - the first rail's image priority is picked by course (`priorityCourseIds`), not by position. By position, a
+      filter changed `priority` on a rendered image, NgOptimizedImage threw NG02953, and Clear All brought back 12 of
+      21 cards.
+  - **Gates (local macOS):** lint 0 errors (98 warnings); structure ✔; Prettier ✔; tsc 0; `build:prod` raw 979.45 kB
+    unchanged, only `ai-labs.css`. The lazy `features-routes` chunk grows 4 kB raw / ~1.3 kB gzip (the service);
+    `FilterDialog` stays in its own chunk.
+  - **Verified (dev 4101, Playwright, signed out against UAT), 20 checks:**
+    - every home rail has the icon; nothing reads `filter/` before a click, and the first open makes 4 reads;
+    - one instructor narrows the first rail 21 → 1 with a count of 1, and only that rail;
+    - reopening keeps the tick and reads nothing; Clear All brings back all 21; another rail reads nothing;
+    - an instructor plus a field of study their course lacks empties the rail and shows the empty line;
+    - a selection on home doesn't show on the masterclass page, and is still there back on home;
+    - 375 / 768 / 1440: the icon sits in the heading row, no horizontal scroll, and the rails measure the same as on
+      `master` (414 / 438 / 462 px);
+    - the first rail's three leading images still load with priority; the masterclass page's filter passes its 12
+      checks unchanged.
+  - **Placeholder fix, added to this PR:** from 1440 px the track rails' placeholders were 41 px too tall on home
+    (503 against 462) and 39 px on the masterclass page, so each rail that scrolled in moved the page below it.
+    - Cause: `swiperConfigEven` shows 3.3 slides per view from 1440, and the placeholders modelled only 1.1 / 2 / 2.8.
+    - Fix: `min-[90rem]:basis-[calc((100%-69px)/3.3)]` beside each `lg:` basis (both pages' `@placeholder` and
+      `@empty` skeletons, and home's `skeletonClass`), and the placeholder heading `h-11` → `h-[46px]`, the real
+      mobile heading row.
+    - `90rem`, not `1440px`: Tailwind v4 can't order a `px` breakpoint against the theme's `rem` ones and emitted it
+      before `lg:`, which then won. Checked in the dev and the production CSS.
+    - Verified at 375 / 768 / 1024 / 1280 / 1439 / 1440 / 1536: home's placeholder equals the rail at every width;
+      the masterclass page's is within 2 px (one card with the AI Kit button stands 2 px taller, which a placeholder
+      can't know). Home's carousel skeleton is 378 px wide at 1440, like a real slide.
+    - Gates: lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 979.57 kB raw (+0.12 kB, the new
+      rule), only `ai-labs.css`.
+  - **Seen, not caused here:** the AI Labs ring (`app-surround-carousel`) re-requests two S3 thumbnails with an
+    `Origin` header, and S3 refuses localhost (CORS errors in the console). The same on `master`.
+
+- ✅ **2026-10-29, NON-REFACTOR — MIL-158 (refactor), one set of payload guards. MERGED** as #214 (`5256fb1a`)
+  (`prompts/core-contract-guards.md`).
   - **Change:** ten models import their payload guards from `core/utils/contract-guards.ts` and drop their copies:
     the core `commerce`, `course-resources` and `masterclass-home` models, and the payment `commerce`, home
     sections, course and instructor library, webinar, CAIRA tracker and CPE tracker models. Every copy matched the
