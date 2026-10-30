@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.16.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.15.1...v3.16.0) (2026-10-30)
+
+
+### Features
+
+* **offerings:** add the Coming Soon rail to the masterclass page ([#210](https://github.com/MilesEducation-Tech/miles-masterclass/issues/210)) ([341d515](https://github.com/MilesEducation-Tech/miles-masterclass/commit/341d5150e58572231b058f9d011d3bc0331c50c8))
+
+
+### Bug Fixes
+
+* **core:** keep signed-in learners off the home page ([#211](https://github.com/MilesEducation-Tech/miles-masterclass/issues/211)) ([46264d4](https://github.com/MilesEducation-Tech/miles-masterclass/commit/46264d4f34de2db1d6889eac629669e5fd595ad7))
+* **home:** add the rail filter to the home page tracks ([#215](https://github.com/MilesEducation-Tech/miles-masterclass/issues/215)) ([eddeb15](https://github.com/MilesEducation-Tech/miles-masterclass/commit/eddeb1579cb5a3c8f911a533a34067e0d04fbea9))
+
 ## [3.15.1](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.15.0...v3.15.1) (2026-10-27)
 
 
