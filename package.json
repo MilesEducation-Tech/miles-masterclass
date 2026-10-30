@@ -54,7 +54,7 @@
   "packageManager": "pnpm@12.11.2",
   "dependencies": {
     "@angular/animations": "^22.2.3",
-    "@angular/cdk": "^22.2.3",
+    "@angular/cdk": "^22.2.4",
     "@angular/common": "^22.2.3",
     "@angular/compiler": "^22.2.3",
     "@angular/core": "^22.2.3",
@@ -62,7 +62,7 @@
     "@angular/platform-browser": "^22.2.3",
     "@angular/platform-server": "^22.2.3",
     "@angular/router": "^22.2.3",
-    "@angular/ssr": "^22.2.3",
+    "@angular/ssr": "^22.2.4",
     "@code_with_sachin/ngx-gsap": "^0.1.0",
     "@code_with_sachin/ngx-motion": "^0.1.0",
     "@floating-ui/dom": "^1.8.0",
