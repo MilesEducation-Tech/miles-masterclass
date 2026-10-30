@@ -1,6 +1,4 @@
 import { Component, inject } from '@angular/core';
-import { NgIcon, provideIcons } from '@ng-icons/core';
-import { heroXMark } from '@ng-icons/heroicons/outline';
 import { injectDialogRef } from 'ng-primitives/dialog';
 
 import { Button } from '@shared/ui/button/button';
@@ -16,8 +14,7 @@ import { PaymentFacade } from '@features/payment/services/payment-facade';
  */
 @Component({
   selector: 'app-address-dialog',
-  imports: [Button, NgIcon, Dialog, BillingAddress],
-  viewProviders: [provideIcons({ heroXMark })],
+  imports: [Button, Dialog, BillingAddress],
   templateUrl: './address-dialog.html',
 })
 export class AddressDialog {

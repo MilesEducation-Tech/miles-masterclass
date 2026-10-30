@@ -10,7 +10,7 @@ import {
   injectDialogRef,
   provideDialogState,
 } from 'ng-primitives/dialog';
-import { cn } from '../../utils/cn';
+import { cn } from '@shared/utils/cn';
 
 /** Where the panel sits: a centred modal, or a full-height drawer on the right. */
 export type DialogPosition = 'center' | 'right';
@@ -24,8 +24,10 @@ const PANEL_BASE =
   'relative flex flex-col overflow-y-auto bg-dialog text-dialog-foreground shadow-2xl outline-none motion-reduce:animate-none';
 
 const PANEL: Record<DialogPosition, string> = {
+  // `w-fit`: the panel is as wide as what it holds. Most dialogs pass `p-0` and draw their own card, so a
+  // stretched panel would show its grey round the card once a call site lifts `max-w-lg`.
   center:
-    'max-h-[90svh] w-full max-w-lg rounded-xl p-6 animate-in fade-in-0 zoom-in-95 data-exit:animate-out data-exit:fade-out-0 data-exit:zoom-out-95',
+    'max-h-[90svh] w-fit max-w-lg rounded-xl p-6 animate-in fade-in-0 zoom-in-95 data-exit:animate-out data-exit:fade-out-0 data-exit:zoom-out-95',
   right:
     // `justify-end` puts the drawer at the inline end, so under RTL it is on the left and slides from there.
     'h-full w-full max-w-[500px] animate-in slide-in-from-right data-exit:animate-out data-exit:slide-out-to-right rtl:slide-in-from-left rtl:data-exit:slide-out-to-left',

@@ -1,6 +1,4 @@
 import { Component } from '@angular/core';
-import { NgIcon, provideIcons } from '@ng-icons/core';
-import { heroXMark } from '@ng-icons/heroicons/outline';
 import { injectDialogRef } from 'ng-primitives/dialog';
 
 import {
@@ -8,6 +6,7 @@ import {
   LibraryFilterSelection,
 } from '@features/library/course/models/course-library.model';
 import { CourseFilters } from '@features/library/course/components/course-filters/course-filters';
+import { Button } from '@shared/ui/button/button';
 import { Dialog } from '@shared/ui/dialog/dialog';
 
 export interface CourseFiltersDrawerData {
@@ -24,8 +23,7 @@ export interface CourseFiltersDrawerData {
  */
 @Component({
   selector: 'app-course-filters-drawer',
-  imports: [CourseFilters, NgIcon, Dialog],
-  providers: [provideIcons({ heroXMark })],
+  imports: [CourseFilters, Button, Dialog],
   templateUrl: './course-filters-drawer.html',
 })
 export class CourseFiltersDrawer {

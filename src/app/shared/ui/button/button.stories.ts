@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { argsToTemplate } from '@storybook/angular';
-import { Button } from './button';
+import { Button } from '@shared/ui/button/button';
 
 /** `disabled` is the ngpButton input the component exposes, not a class member. */
 type ButtonArgs = Button & { disabled: boolean };
@@ -12,7 +12,16 @@ const meta: Meta<ButtonArgs> = {
   argTypes: {
     variant: {
       control: 'select',
-      options: ['default', 'primary', 'secondary', 'destructive', 'outline', 'ghost', 'link'],
+      options: [
+        'default',
+        'primary',
+        'secondary',
+        'destructive',
+        'outline',
+        'ghost',
+        'link',
+        'close',
+      ],
     },
     size: { control: 'select', options: ['sm', 'md', 'lg', 'xl'] },
     disabled: { control: 'boolean' },
@@ -40,6 +49,7 @@ export const Variants: Story = {
         <button app-button type="button" variant="outline">Outline</button>
         <button app-button type="button" variant="ghost">Ghost</button>
         <button app-button type="button" variant="link">Link</button>
+        <button app-button type="button" variant="close" size="icon" aria-label="Close"></button>
       </div>
     `,
   }),

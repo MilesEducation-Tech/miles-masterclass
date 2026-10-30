@@ -4,14 +4,12 @@
       <button
         app-button
         type="button"
-        class="absolute top-4 end-4 z-10 rounded-full"
+        class="absolute top-4 end-4 z-10"
         aria-label="Close scheduler"
-        variant="ghost"
+        variant="close"
         size="icon"
         (click)="close()"
-      >
-        <ng-icon name="heroXMark" aria-hidden="true" />
-      </button>
+      ></button>
     }
 
     <div #widget class="calendly-inline-widget" style="width: 100%; height: 700px"></div>

@@ -11,15 +11,14 @@ import { ApiClient } from '@core/services/api-client/api-client';
 import { ContentDetails } from '@core/models/course.model';
 import { CommonResponse, SKIP_ERROR_NOTIFICATION } from '@core/models/http.model';
 import { MASTERCLASS_ROUTES } from '@core/models/masterclass.model';
-import { AiLabAgentAbout } from './ai-lab-agent-about/ai-lab-agent-about';
+import { AiLabAgentAbout } from '@shared/dialogs/ai-lab-agent-dialog/ai-lab-agent-about/ai-lab-agent-about';
 import { AiLabAssessmentReport } from '@core/models/ai-lab-assessment.model';
 import { CopilotWorkflow } from '@core/models/ai-lab.model';
 import { AiLabSubmission } from '@core/services/ai-lab-submission/ai-lab-submission';
-import { MilesSlug } from '../../components/miles-slug/miles-slug';
-import { Button } from '../../ui/button/button';
+import { MilesSlug } from '@shared/components/miles-slug/miles-slug';
+import { Button } from '@shared/ui/button/button';
 import { environment } from '@env/environment';
 import { Dialog } from '@shared/ui/dialog/dialog';
-import { heroXMark } from '@ng-icons/heroicons/outline';
 
 /**
  * One catalogue tile, flattened from either a masterclass chapter or a static
@@ -80,7 +79,7 @@ export type AiLabAgentDialogResult = 'launch';
     Dialog,
   ],
   templateUrl: './ai-lab-agent-dialog.html',
-  providers: [provideIcons({ matPlayArrowRound, heroXMark })],
+  providers: [provideIcons({ matPlayArrowRound })],
 })
 export class AiLabAgentDialog implements OnInit {
   private readonly dialogRef = injectDialogRef<AiLabAgentCard, AiLabAgentDialogResult>();
