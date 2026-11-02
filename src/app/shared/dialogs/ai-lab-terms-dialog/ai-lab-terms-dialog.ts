@@ -1,14 +1,12 @@
 import { Component, ElementRef, afterNextRender, signal, viewChild } from '@angular/core';
 import { injectDialogRef } from 'ng-primitives/dialog';
 
-import { Button } from '../../ui/button/button';
-import { AI_LAB_AGREEMENT } from './ai-lab-terms-dialog.model';
+import { Button } from '@shared/ui/button/button';
+import { AI_LAB_AGREEMENT } from '@shared/dialogs/ai-lab-terms-dialog/ai-lab-terms-dialog.model';
 import { Dialog } from '@shared/ui/dialog/dialog';
 import { Field } from '@shared/ui/field/field';
 import { NgpLabel } from 'ng-primitives/form-field';
 import { Checkbox } from '@shared/ui/checkbox/checkbox';
-import { NgIcon, provideIcons } from '@ng-icons/core';
-import { heroXMark } from '@ng-icons/heroicons/outline';
 
 /**
  * The Miles AI Labs participant agreement, gating account provisioning.
@@ -23,8 +21,7 @@ import { heroXMark } from '@ng-icons/heroicons/outline';
  */
 @Component({
   selector: 'app-ai-lab-terms-dialog',
-  imports: [Button, Dialog, Field, NgpLabel, Checkbox, NgIcon],
-  providers: [provideIcons({ heroXMark })],
+  imports: [Button, Dialog, Field, NgpLabel, Checkbox],
   templateUrl: './ai-lab-terms-dialog.html',
 })
 export class AiLabTermsDialog {

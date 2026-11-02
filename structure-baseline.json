@@ -570,67 +570,11 @@
       "count": 1,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
-    "src/app/shared/dialogs/ai-lab-agent-dialog/ai-lab-agent-dialog.ts": {
-      "count": 3,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/shared/dialogs/ai-lab-dialog/ai-lab-dialog.ts": {
-      "count": 1,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/shared/dialogs/ai-lab-terms-dialog/ai-lab-terms-dialog.ts": {
-      "count": 2,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/shared/dialogs/app-download-dialog/app-download-dialog.ts": {
-      "count": 1,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/shared/dialogs/calendly-dialog/calendly-dialog.ts": {
-      "count": 1,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
     "src/app/shared/dialogs/certificate-download-dialog/certificate-download-dialog.ts": {
       "count": 2,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
-    "src/app/shared/dialogs/course-info/course-info.ts": {
-      "count": 4,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/shared/dialogs/filter-dialog/filter-dialog.ts": {
-      "count": 1,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/shared/dialogs/profile-completion-dialog/profile-completion-dialog.ts": {
-      "count": 1,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/shared/dialogs/share-dialog/share-dialog.ts": {
-      "count": 1,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/shared/dialogs/utils-dialog/utils-dialog.ts": {
-      "count": 1,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/shared/dialogs/video-dialog/video-dialog.ts": {
-      "count": 2,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/shared/dialogs/webinar-details-dialog/webinar-details-dialog.ts": {
-      "count": 4,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/shared/ui/button/button.ts": {
-      "count": 1,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
     "src/app/shared/ui/combobox/combobox.ts": {
-      "count": 1,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/shared/ui/dialog/dialog.ts": {
       "count": 1,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },

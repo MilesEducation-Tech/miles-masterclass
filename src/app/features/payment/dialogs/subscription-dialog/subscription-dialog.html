@@ -1,18 +1,16 @@
 <app-dialog ariaLabel="Subscribe to a plan" panelClass="p-0 max-w-[95vw]">
   <div
-    class="relative mx-auto flex max-h-[90svh] w-[95svw] max-w-[min(100%,560px)] flex-col overflow-hidden rounded-xl bg-linear-to-b from-sheet-top to-sheet-bottom"
+    class="relative mx-auto flex max-h-[90svh] w-[min(95svw,560px)] flex-col overflow-hidden rounded-xl bg-linear-to-b from-sheet-top to-sheet-bottom"
   >
     <button
       app-button
       type="button"
-      class="absolute top-3 end-3 z-10 rounded-full text-gray-300 data-hover:bg-transparent data-press:bg-transparent data-hover:text-white"
+      class="absolute top-3 end-3 z-10"
       aria-label="Close dialog"
-      variant="ghost"
+      variant="close"
       size="icon"
       (click)="close()"
-    >
-      <ng-icon name="heroXMark" aria-hidden="true" />
-    </button>
+    ></button>
 
     <div class="flex-1 overflow-y-auto px-6 py-8 sm:px-10 sm:py-10">
       <div class="mb-8 px-2 text-center">

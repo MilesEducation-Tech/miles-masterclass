@@ -1,7 +1,6 @@
 import { NgOptimizedImage } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { heroXMark } from '@ng-icons/heroicons/outline';
 import { matPlayArrowRound } from '@ng-icons/material-icons/round';
 import { phosphorShareFatFill } from '@ng-icons/phosphor-icons/fill';
 import { injectDialogRef } from 'ng-primitives/dialog';
@@ -26,10 +25,7 @@ import { MasterclassCourseAbout } from '@features/offerings/masterclass/componen
   selector: 'app-masterclass-course-info-dialog',
   imports: [NgOptimizedImage, NgIcon, Button, Dialog, MilesSlug, MasterclassCourseAbout],
   templateUrl: './masterclass-course-info-dialog.html',
-  providers: [
-    CourseDetailFacade,
-    provideIcons({ heroXMark, matPlayArrowRound, phosphorShareFatFill }),
-  ],
+  providers: [CourseDetailFacade, provideIcons({ matPlayArrowRound, phosphorShareFatFill })],
 })
 export class MasterclassCourseInfoDialog {
   private readonly dialogRef = injectDialogRef<MasterclassCourseInfoDialogData>();

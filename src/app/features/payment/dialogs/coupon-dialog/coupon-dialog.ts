@@ -1,7 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { NgIcon, provideIcons } from '@ng-icons/core';
-import { heroXMark } from '@ng-icons/heroicons/outline';
 import { injectDialogRef } from 'ng-primitives/dialog';
 
 import { Button } from '@shared/ui/button/button';
@@ -20,8 +18,7 @@ const MAX_CODE_LENGTH = 50;
  */
 @Component({
   selector: 'app-coupon-dialog',
-  imports: [Button, NgIcon, Dialog, CurrencyPipe, DatePipe],
-  viewProviders: [provideIcons({ heroXMark })],
+  imports: [Button, Dialog, CurrencyPipe, DatePipe],
   templateUrl: './coupon-dialog.html',
 })
 export class CouponDialog {

@@ -7,9 +7,42 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- 🟡 **2026-10-29, NON-REFACTOR — MIL-132 (bug), the rail filter on the home page. PLAN APPROVED, DONE, GATES GREEN,
-  COMMITTED** (`a07538fe` the filter, `52399fd5` the placeholders; `prompts/home-rail-filter.md`, PR 2), on
-  `fix/MIL-132-home-rail-filter` off `master` (`7a5ab1b5`). PR #215 is open. On 2026-10-30 `master` was merged in
+- 🟡 **2026-10-30, NON-REFACTOR — MIL-161 (bug), dialogs: the grey panel round the card, and the close button. PLAN
+  APPROVED, DONE, GATES GREEN, NOT COMMITTED** (`prompts/dialog-panel-close-button.md`), on
+  `fix/MIL-161-dialog-panel-close-button` off `master` (`27756798`).
+  - **Cause:** the shared `Dialog` panel was `w-full` and painted `bg-dialog`. Almost every dialog passes `p-0`, draws
+    its own card and lifts `max-w-lg`, so the grey panel spanned the viewport round the card (Share: a 1403 px panel
+    round a 500 px card at 1440). The shared `Button` had no close style, so each dialog's X differed.
+  - **Change:**
+    - the centred panel is `w-fit`;
+    - `Button` gets `variant="close"`: a 40 px `bg-background/80` blurred disc that draws its own 20 px
+      `matCloseRound`, red with a white X on hover, `shrink-0`. All 23 dialog and drawer close buttons use it, and
+      the unused `heroXMark`/`NgIcon` wiring goes;
+    - cards that sized against the old panel get a definite width:
+      - subscription `w-[min(95svw,560px)]` and AI Labs `w-[min(95vw,48rem)]`;
+      - shared course-info and webinar details `w-[84vw]` on phones;
+      - filter dialog and micro-learning filter sheet: panel `w-full` on phones;
+      - course filters drawer: panel `max-w-sm`, sheet `w-full`;
+    - the comments in the masterclass course-info, video and utils dialogs no longer describe the old default;
+    - relative imports in the touched files become aliases, and `structure-baseline.json` is pruned.
+  - **Gates (local macOS):** lint 0 errors (98 legacy `any` warnings, unchanged); structure ✔; Prettier ✔; tsc 0;
+    `build:prod` 979.19 kB raw / 227.96 kB gzip (979.57 before), only `ai-labs.css`.
+  - **Verified (dev 4101, Playwright):**
+    - opened in the app at 1440 / 768 / 375, the panel's inner width equals the card's in every dialog, with no
+      sideways scroll. That covers Share, rail filter, masterclass and shared course info, trailer (video), AI Kit
+      (utils), course filters drawer (767 / 375), subscription, AI Labs, profile completion, cart drawer, coupon,
+      address, Calendly, certificate download, AI Labs agreement and AI Labs agent;
+    - every close button is a 40 px disc with a 20 px icon; on hover it is `rgb(239, 68, 68)` with white;
+    - Share closes on Escape, the X and a backdrop click;
+    - the rest (HTML content, select CPE mode, webinar registration and details, CPE compliance, app download,
+      micro-learning sheet and about, assessment result) were checked with their final classes in a dev-CSS
+      harness: no strip at any width.
+  - **Seen, not changed:** the global search's card (`min-w-[min(720px,95vw)]`) overflows its panel by 18 px at
+    375 px. The same on `master`.
+
+- ✅ **2026-10-29, NON-REFACTOR — MIL-132 (bug), the rail filter on the home page. MERGED** as #215 (`eddeb157`)
+  (`a07538fe` the filter, `52399fd5` the placeholders; `prompts/home-rail-filter.md`, PR 2), on
+  `fix/MIL-132-home-rail-filter` off `master` (`7a5ab1b5`). On 2026-10-30 `master` was merged in
   twice, for #210 and then #214; only this file conflicted each time.
   - **Change:**
     - the home route lists `MasterclassRailFilter` beside `HomeFacade`, so home keeps its own selections for the

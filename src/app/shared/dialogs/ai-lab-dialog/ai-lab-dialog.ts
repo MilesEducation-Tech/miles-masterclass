@@ -1,14 +1,13 @@
 import { Component, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { NgIcon, provideIcons } from '@ng-icons/core';
+import { NgIcon } from '@ng-icons/core';
 import { injectDialogRef } from 'ng-primitives/dialog';
 
 import { Utils } from '@shared/services/utils';
-import { Button } from '../../ui/button/button';
+import { Button } from '@shared/ui/button/button';
 import { logo } from '@core/constants/icon';
 import { environment } from '@env/environment';
 import { Dialog } from '@shared/ui/dialog/dialog';
-import { heroXMark } from '@ng-icons/heroicons/outline';
 
 /**
  * Feature-launch dialog for Miles AI Labs. Surfaced by `EngagementDialog` at
@@ -19,7 +18,6 @@ import { heroXMark } from '@ng-icons/heroicons/outline';
 @Component({
   selector: 'app-ai-lab-dialog',
   imports: [Button, NgIcon, Dialog],
-  providers: [provideIcons({ heroXMark })],
   templateUrl: './ai-lab-dialog.html',
   styleUrl: './ai-lab-dialog.css',
   host: { class: 'block' },

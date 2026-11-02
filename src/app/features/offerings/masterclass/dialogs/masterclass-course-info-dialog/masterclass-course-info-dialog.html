@@ -1,23 +1,17 @@
-<!-- The panel shrinks to its content and centres, as on production; with the panel's
-     default w-full it spanned the viewport, the content in its left part. So the
-     content is sized in vw on both breakpoints: a % width would be a share of the
+<!-- The panel shrinks to its content and centres; `max-w-none` lifts its 32rem cap. So
+     the content is sized in vw on both breakpoints: a % width would be a share of the
      shrink-wrapped panel and leave a strip. -->
-<app-dialog [ariaLabel]="card.title" [dismissible]="false" panelClass="p-0 w-auto max-w-none">
+<app-dialog [ariaLabel]="card.title" [dismissible]="false" panelClass="p-0 max-w-none">
   <div class="flex flex-col space-y-4 sm:w-[70vw] w-[84vw] relative bg-background">
     <div class="absolute top-4 end-4 w-full flex justify-end px-4 z-10">
-      <!-- As on production: a blurred dark disc that turns red on hover. `data-hover:` (ngpButton)
-           rather than `hover:`, so cn() replaces the ghost variant's grey hover instead of racing it. -->
       <button
         app-button
         type="button"
-        class="rounded-full bg-background/80 backdrop-blur-sm data-hover:bg-destructive data-hover:text-destructive-foreground"
-        variant="ghost"
+        variant="close"
         size="icon"
         aria-label="Close"
         (click)="close()"
-      >
-        <ng-icon name="heroXMark" aria-hidden="true" />
-      </button>
+      ></button>
     </div>
     <div class="flex w-full aspect-video relative overflow-hidden">
       <div
