@@ -7,6 +7,7 @@ import { PlanScrollingGallery } from '@shared/components/plan-scrolling-gallery/
 import { PlanComparisonTable } from '@features/payment/components/plan-comparison-table/plan-comparison-table';
 import { PlanSelectionCard } from '@features/payment/components/plan-selection-card/plan-selection-card';
 import { PromoOffer } from '@features/payment/components/promo-offer/promo-offer';
+import { PromoCoupons } from '@features/payment/components/promo-coupons/promo-coupons';
 import { PageLoading } from '@shared/ui/page-loading/page-loading';
 import { ErrorState } from '@shared/ui/error-state/error-state';
 import { AuthSession } from '@core/services/auth-session/auth-session';
@@ -27,6 +28,7 @@ import { SIGNUP_DIALOG_DATA } from '@features/payment/constants/payment';
     PlanComparisonTable,
     PlanSelectionCard,
     PromoOffer,
+    PromoCoupons,
     PageLoading,
     ErrorState,
     RouterLink,
@@ -75,8 +77,18 @@ export class Plan {
     this.cart.lineCount() > 0 ? 'Go to Cart' : 'Subscribe Now',
   );
 
+  /**
+   * "Your offers": a log-in prompt signed out, the learner's coupons signed in. A signed-in learner
+   * with no coupons (or a failed read) gets no strip.
+   */
+  protected readonly showOffers = computed(
+    () => !this.isLoggedIn() || this.facade.coupons().length > 0,
+  );
+
   constructor() {
     this.facade.loadPlans();
+    // Signed in only (the facade gates it); no cart needed, the market is the country's.
+    this.facade.loadCoupons();
   }
 
   protected retryLoad(): void {
@@ -105,7 +117,7 @@ export class Plan {
   }
 
   /** From the plan page we route to the cart page instead of the cart drawer. */
-  private goToCart(): void {
+  protected goToCart(): void {
     const { country, profession } = this.utils.getRouteParams();
     this.router.navigate([`/${country}/${profession}/payment/cart`]);
   }

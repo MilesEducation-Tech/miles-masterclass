@@ -7,8 +7,46 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- 🟡 **2026-10-30, NON-REFACTOR — MIL-161 (bug), dialogs: the grey panel round the card, and the close button. PLAN
-  APPROVED, DONE, GATES GREEN, NOT COMMITTED** (`prompts/dialog-panel-close-button.md`), on
+- 🟡 **2026-11-02, NON-REFACTOR — MIL-134 (bug), coupons on the plan page. PLAN APPROVED, DONE, GATES GREEN, NOT
+  COMMITTED** (`prompts/plan-page-coupons.md`), on `fix/MIL-134-plan-page-coupons` off `master` (`d0a53c28`).
+  - **Cause:** #127 (MIL-74) removed the plan page's `promo-coupons` because CAIRA had no coupon list then.
+    `GET commerce/coupons/` came later and was bound only into the cart's coupon dialog, behind a cart-with-a-line
+    gate.
+  - **Change:**
+    - new `features/payment/components/promo-coupons` under Subscribe Now. Signed out it shows "Your offers / Log in
+      to explore the coupons." Signed in it is an ng-primitives accordion: the best coupon (discount, description,
+      code) collapsed, every coupon as a chip with Apply when expanded. The page renders it only signed out or with
+      coupons;
+    - `PaymentFacade`:
+      - `couponsResource` reads without a cart (`cart_id` only with a line), and waits while the cart itself is
+        being read, so the cart page still reads once;
+      - `coupons` keeps the last list while a new cart id re-reads it (otherwise Apply's own add dropped the strip
+        and its `applied` output hit a destroyed component, NG0953);
+      - new `bestCoupon` (largest percentage, else largest flat);
+      - new `applyCouponWithPlan` (adds the plan unless the cart has a line, then D1). C2 moved into a private
+        `addLine` that `addPlanToCart` reuses;
+    - `Coupon` gains `discount_type` and `discount_value`: the plan page's label, since `discount_amount` needs a
+      cart;
+    - `docs/COMMERCE_API.md`: the no-cart read is noted, and not yet captured on UAT.
+  - **Gates (local macOS):** lint 0 errors (98 warnings, unchanged); structure ✔; Prettier ✔; tsc 0; `build:prod`
+    985.08 kB raw / 228.48 kB gzip (`master` 983.58 / 228.37: the root facade), only `ai-labs.css`.
+  - **Verified (dev 4101, Playwright, stubbed session and commerce answers):**
+    - signed out: the strip and its prompt, Log in opens the sign-up dialog, no coupons/ read;
+    - signed in, empty cart: one read with `X-Country-Code` and no `cart_id`; 25% headlines over $250 with its code;
+      the chips stay hidden until opened (`aria-expanded`); $250 Off with "Valid till Dec 31, 2026" (UTC); the best
+      chip tagged;
+    - Apply: "Applying…" with every chip disabled, one add then one apply, lands on the cart with the coupon. With
+      a line the session knows: apply only;
+    - refused (409): the message under the chip, enabled again, still on the page, and Subscribe reads Go to Cart;
+    - no coupons, or a 500: no strip, the failure logged;
+    - the cart page: one read with `cart_id`, the inline list and the dialog apply as before;
+    - 375 / 768 / 1440: the strip is the Subscribe button's width and the chips scroll inside it.
+  - **Not verified:** real UAT coupons with no cart (needs a signed-in learner).
+  - **Seen, not changed:** the plan page scrolls 28 px sideways at 375 because of a plan card's hidden tooltip
+    (`absolute w-56`). The same on `master`, with or without the strip.
+
+- ✅ **2026-10-30, NON-REFACTOR — MIL-161 (bug), dialogs: the grey panel round the card, and the close button.
+  MERGED** as #217 (`5a72f697`) (`prompts/dialog-panel-close-button.md`), on
   `fix/MIL-161-dialog-panel-close-button` off `master` (`27756798`).
   - **Cause:** the shared `Dialog` panel was `w-full` and painted `bg-dialog`. Almost every dialog passes `p-0`, draws
     its own card and lifts `max-w-lg`, so the grey panel spanned the viewport round the card (Share: a 1403 px panel
