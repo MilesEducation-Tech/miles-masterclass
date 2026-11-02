@@ -13,7 +13,7 @@ import { Logger } from '@core/services/logger/logger';
  * `web-masterclass-highlight-v1`. Replaced `v2/dashboard/?filter=popular`, a
  * 404 on every host.
  */
-const HIGHLIGHT_URL = `${environment.BASE_API_URL}web-api/v1/masterclass/highlight/`;
+const HIGHLIGHT_URL = `${environment.API.baseUrl}web-api/v1/masterclass/highlight/`;
 
 /**
  * Every pinned course in one call (the API's ceiling; default 6). The list is

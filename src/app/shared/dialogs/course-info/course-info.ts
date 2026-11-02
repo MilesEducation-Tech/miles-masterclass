@@ -2,10 +2,10 @@ import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { injectDialogRef } from 'ng-primitives/dialog';
 
-import { VideoPoster } from '../../components/video-poster/video-poster';
+import { VideoPoster } from '@shared/components/video-poster/video-poster';
 import { ContentAbout } from '@core/models/course.model';
-import { Button } from '../../ui/button/button';
-import { MilesSlug } from '../../components/miles-slug/miles-slug';
+import { Button } from '@shared/ui/button/button';
+import { MilesSlug } from '@shared/components/miles-slug/miles-slug';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   matBookmarkBorderRound,
@@ -13,10 +13,9 @@ import {
   matPlayArrowRound,
 } from '@ng-icons/material-icons/round';
 import { phosphorShareFatFill } from '@ng-icons/phosphor-icons/fill';
-import { CourseAbout } from '../../components/course-about/course-about';
+import { CourseAbout } from '@shared/components/course-about/course-about';
 import { Utils } from '@shared/services/utils';
 import { Dialog } from '@shared/ui/dialog/dialog';
-import { heroXMark } from '@ng-icons/heroicons/outline';
 
 @Component({
   selector: 'app-course-info',
@@ -28,7 +27,6 @@ import { heroXMark } from '@ng-icons/heroicons/outline';
       matBookmarkBorderRound,
       matBookmarkRound,
       phosphorShareFatFill,
-      heroXMark,
     }),
   ],
 })

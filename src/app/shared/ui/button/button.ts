@@ -1,6 +1,8 @@
 import { Component, computed, ElementRef, inject, input } from '@angular/core';
+import { NgIcon } from '@ng-icons/core';
+import { matCloseRound } from '@ng-icons/material-icons/round';
 import { NgpButton } from 'ng-primitives/button';
-import { cn } from '../../utils/cn';
+import { cn } from '@shared/utils/cn';
 
 /**
  * The size of the button.
@@ -11,7 +13,7 @@ export type ButtonSize = 'sm' | 'md' | 'lg' | 'xl' | 'icon';
  * The variant of the button.
  */
 export type ButtonVariant =
-  'default' | 'primary' | 'secondary' | 'destructive' | 'outline' | 'ghost' | 'link';
+  'default' | 'primary' | 'secondary' | 'destructive' | 'outline' | 'ghost' | 'link' | 'close';
 
 // `data-hover` / `data-press` / `data-focus-visible` come from ngpButton, so hover and press
 // behave the same for mouse, touch and keyboard; `disabled:` is the native attribute the
@@ -31,6 +33,9 @@ const VARIANTS: Record<ButtonVariant, string> = {
     'border border-border bg-transparent text-foreground data-hover:bg-muted data-press:bg-secondary',
   ghost: 'bg-transparent text-foreground data-hover:bg-muted data-press:bg-secondary',
   link: 'bg-transparent text-accent underline-offset-4 data-hover:underline data-press:text-accent/80',
+  // Every dialog's close button: a dark disc that turns red. It draws its own X; pair it with `size="icon"`.
+  close:
+    'shrink-0 rounded-full bg-background/80 backdrop-blur-sm text-foreground data-hover:bg-destructive data-hover:text-destructive-foreground data-press:bg-destructive/80',
 };
 
 const SIZES: Record<ButtonSize, string> = {
@@ -44,7 +49,11 @@ const SIZES: Record<ButtonSize, string> = {
 @Component({
   selector: 'button[app-button]',
   hostDirectives: [{ directive: NgpButton, inputs: ['disabled'] }],
+  imports: [NgIcon],
   template: `
+    @if (variant() === 'close') {
+      <ng-icon [svg]="closeIcon" class="text-xl" aria-hidden="true" />
+    }
     <ng-content select="[slot=leading]" />
     <ng-content />
     <ng-content select="[slot=trailing]" />
@@ -63,6 +72,8 @@ export class Button {
    * The variant of the button.
    */
   readonly variant = input<ButtonVariant>('default');
+
+  protected readonly closeIcon = matCloseRound;
 
   // The element's own `class` attribute goes through cn() too, so a caller's `px-0` or `w-full`
   // wins over the size defaults instead of colliding with them.

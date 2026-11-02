@@ -7,6 +7,19 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-11-02, NON-REFACTOR, MIL-117: `origin/master` (`d0a53c28`) merged into the branch, conflicts
+  resolved, MERGE NOT YET COMMITTED** (PR #225). The user aborted the rebase and merged instead.
+  - **Environment:** master's grouped files and `Environment` type (#203/#205), with the branch's
+    `AI_LABS` block (labs Entra/Supabase sign-in, per-build channel names) replacing master's
+    `catalogueCourses`/`assessmentEnabled`, which the branch no longer reads. `AI_LABS_API` reads
+    `environment.API.baseUrl`.
+  - **Other files:** `auth-session.ts` keeps the branch's `clearAiLabSession` with master's
+    `AUTH_COOKIES`. `ai-labs.model.ts` takes the branch side (master only renamed keys in code the
+    branch had replaced). The baseline takes master's pruned side. STATE.md keeps both sides.
+  - **#217 follow-through:** the credits top-up dialog's close button uses `variant="close"`, like every
+    dialog #217 touched.
+  - **Checks:** tsc ✔, lint 0 errors, structure ✔, format ✔, build:prod ✔ (1.01 MB / 228.96 kB, the
+    known `ai-labs.css` budget warning).
 - 🔧 **2026-10-29, NON-REFACTOR, MIL-117: test emails bound, UNCOMMITTED** (`prompts/ai-labs-test-emails.md`,
   guide `docs/AI_LABS_TRIGGER_EMAIL_API.md`, reaches UAT with the backend's next deploy).
   - The Test emails row posts `api/v1/ai-labs/assignment-trigger-email/<id>/` (no body) and shows AI
@@ -665,6 +678,540 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
       download stories were the `TOAST_COMPONENT` failure. A full probe of all 220 stories (CDP,
       error-display check) is running in the background to confirm the global change regresses
       nothing. Lint 0 errors; `build-storybook` ✔.
+- 🟡 **2026-10-30, NON-REFACTOR — MIL-161 (bug), dialogs: the grey panel round the card, and the close button. PLAN
+  APPROVED, DONE, GATES GREEN, NOT COMMITTED** (`prompts/dialog-panel-close-button.md`), on
+  `fix/MIL-161-dialog-panel-close-button` off `master` (`27756798`).
+  - **Cause:** the shared `Dialog` panel was `w-full` and painted `bg-dialog`. Almost every dialog passes `p-0`, draws
+    its own card and lifts `max-w-lg`, so the grey panel spanned the viewport round the card (Share: a 1403 px panel
+    round a 500 px card at 1440). The shared `Button` had no close style, so each dialog's X differed.
+  - **Change:**
+    - the centred panel is `w-fit`;
+    - `Button` gets `variant="close"`: a 40 px `bg-background/80` blurred disc that draws its own 20 px
+      `matCloseRound`, red with a white X on hover, `shrink-0`. All 23 dialog and drawer close buttons use it, and
+      the unused `heroXMark`/`NgIcon` wiring goes;
+    - cards that sized against the old panel get a definite width:
+      - subscription `w-[min(95svw,560px)]` and AI Labs `w-[min(95vw,48rem)]`;
+      - shared course-info and webinar details `w-[84vw]` on phones;
+      - filter dialog and micro-learning filter sheet: panel `w-full` on phones;
+      - course filters drawer: panel `max-w-sm`, sheet `w-full`;
+    - the comments in the masterclass course-info, video and utils dialogs no longer describe the old default;
+    - relative imports in the touched files become aliases, and `structure-baseline.json` is pruned.
+  - **Gates (local macOS):** lint 0 errors (98 legacy `any` warnings, unchanged); structure ✔; Prettier ✔; tsc 0;
+    `build:prod` 979.19 kB raw / 227.96 kB gzip (979.57 before), only `ai-labs.css`.
+  - **Verified (dev 4101, Playwright):**
+    - opened in the app at 1440 / 768 / 375, the panel's inner width equals the card's in every dialog, with no
+      sideways scroll. That covers Share, rail filter, masterclass and shared course info, trailer (video), AI Kit
+      (utils), course filters drawer (767 / 375), subscription, AI Labs, profile completion, cart drawer, coupon,
+      address, Calendly, certificate download, AI Labs agreement and AI Labs agent;
+    - every close button is a 40 px disc with a 20 px icon; on hover it is `rgb(239, 68, 68)` with white;
+    - Share closes on Escape, the X and a backdrop click;
+    - the rest (HTML content, select CPE mode, webinar registration and details, CPE compliance, app download,
+      micro-learning sheet and about, assessment result) were checked with their final classes in a dev-CSS
+      harness: no strip at any width.
+  - **Seen, not changed:** the global search's card (`min-w-[min(720px,95vw)]`) overflows its panel by 18 px at
+    375 px. The same on `master`.
+
+- ✅ **2026-10-29, NON-REFACTOR — MIL-132 (bug), the rail filter on the home page. MERGED** as #215 (`eddeb157`)
+  (`a07538fe` the filter, `52399fd5` the placeholders; `prompts/home-rail-filter.md`, PR 2), on
+  `fix/MIL-132-home-rail-filter` off `master` (`7a5ab1b5`). On 2026-10-30 `master` was merged in
+  twice, for #210 and then #214; only this file conflicted each time.
+  - **Change:**
+    - the home route lists `MasterclassRailFilter` beside `HomeFacade`, so home keeps its own selections for the
+      visit;
+    - `Home` narrows its tracks as the masterclass page does (`trackRails`), and each carousel renders `rail.shown`
+      with the same filter button, count and empty line;
+    - the first rail's image priority is picked by course (`priorityCourseIds`), not by position. By position, a
+      filter changed `priority` on a rendered image, NgOptimizedImage threw NG02953, and Clear All brought back 12 of
+      21 cards.
+  - **Gates (local macOS):** lint 0 errors (98 warnings); structure ✔; Prettier ✔; tsc 0; `build:prod` raw 979.45 kB
+    unchanged, only `ai-labs.css`. The lazy `features-routes` chunk grows 4 kB raw / ~1.3 kB gzip (the service);
+    `FilterDialog` stays in its own chunk.
+  - **Verified (dev 4101, Playwright, signed out against UAT), 20 checks:**
+    - every home rail has the icon; nothing reads `filter/` before a click, and the first open makes 4 reads;
+    - one instructor narrows the first rail 21 → 1 with a count of 1, and only that rail;
+    - reopening keeps the tick and reads nothing; Clear All brings back all 21; another rail reads nothing;
+    - an instructor plus a field of study their course lacks empties the rail and shows the empty line;
+    - a selection on home doesn't show on the masterclass page, and is still there back on home;
+    - 375 / 768 / 1440: the icon sits in the heading row, no horizontal scroll, and the rails measure the same as on
+      `master` (414 / 438 / 462 px);
+    - the first rail's three leading images still load with priority; the masterclass page's filter passes its 12
+      checks unchanged.
+  - **Placeholder fix, added to this PR:** from 1440 px the track rails' placeholders were 41 px too tall on home
+    (503 against 462) and 39 px on the masterclass page, so each rail that scrolled in moved the page below it.
+    - Cause: `swiperConfigEven` shows 3.3 slides per view from 1440, and the placeholders modelled only 1.1 / 2 / 2.8.
+    - Fix: `min-[90rem]:basis-[calc((100%-69px)/3.3)]` beside each `lg:` basis (both pages' `@placeholder` and
+      `@empty` skeletons, and home's `skeletonClass`), and the placeholder heading `h-11` → `h-[46px]`, the real
+      mobile heading row.
+    - `90rem`, not `1440px`: Tailwind v4 can't order a `px` breakpoint against the theme's `rem` ones and emitted it
+      before `lg:`, which then won. Checked in the dev and the production CSS.
+    - Verified at 375 / 768 / 1024 / 1280 / 1439 / 1440 / 1536: home's placeholder equals the rail at every width;
+      the masterclass page's is within 2 px (one card with the AI Kit button stands 2 px taller, which a placeholder
+      can't know). Home's carousel skeleton is 378 px wide at 1440, like a real slide.
+    - Gates: lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 979.57 kB raw (+0.12 kB, the new
+      rule), only `ai-labs.css`.
+  - **Seen, not caused here:** the AI Labs ring (`app-surround-carousel`) re-requests two S3 thumbnails with an
+    `Origin` header, and S3 refuses localhost (CORS errors in the console). The same on `master`.
+
+- ✅ **2026-10-29, NON-REFACTOR — MIL-158 (refactor), one set of payload guards. MERGED** as #214 (`5256fb1a`)
+  (`prompts/core-contract-guards.md`).
+  - **Change:** ten models import their payload guards from `core/utils/contract-guards.ts` and drop their copies:
+    the core `commerce`, `course-resources` and `masterclass-home` models, and the payment `commerce`, home
+    sections, course and instructor library, webinar, CAIRA tracker and CPE tracker models. Every copy matched the
+    core guard exactly.
+  - **Kept local:** each model's own `contractError` (the `[masterclass]`, `[webinar]`, `[caira-tracker]` and
+    `[cpe-tracker]` log lines are unchanged), and the one-owner guards `pageOf`, `isLoginType`, `isStrList` and
+    `isLevelOrNull`. The comments that explained the copies lose that part.
+  - **Gates (local macOS):** lint 0 errors (98 warnings); structure ✔; Prettier ✔; tsc 0; `build:prod` raw
+    979.45 kB unchanged, 227.95 kB gzip (227.89 before), only `ai-labs.css`.
+  - **Verified (dev 4101, Playwright, signed out against UAT):** home's tracks (68 cards); the masterclass tracks and
+    the AI Kit dialog; the course library (64 cards); an instructor page; the webinar list, reached in-app so the
+    browser parses the feed. No contract errors and no 5xx.
+    - UAT has no highlight webinar and no signed-out webinars today (`count: 0`), so home shows no ticket and the
+      webinar page its empty state. Both answers parsed.
+  - **Not exercised:** the CPE and CAIRA trackers and the cart. They need a real session, and their parsers only
+    lost the copies; the type check binds them to the same signatures.
+
+- ✅ **2026-10-29, NON-REFACTOR — MIL-156 (refactor), the masterclass rail filter moved to shared code. MERGED** as
+  #213 (`7a5ab1b5`). PR 1 of 2 (`prompts/home-rail-filter.md`), on
+  `refactor/MIL-156-shared-rail-filter` off `master` (`46264d4f`). PR 2 is MIL-132, the filter on the home page.
+  - **Why:** the home page can't import the masterclass feature (AGENTS.md §3), so the filter moves below both.
+  - **Moves (no behaviour change):**
+    - `MasterclassRailFilterFacade` → `shared/services/masterclass-rail-filter.ts`, renamed `MasterclassRailFilter`
+      (nothing in `shared/` is a facade); still `autoProvided: false`, and its log tag follows the name;
+    - its utils → `shared/utils/masterclass-rail-filter.ts`;
+    - its model → `core/models/masterclass-rail-filter.model.ts`;
+    - `MasterclassRail` and `trackRail` → `core/models/masterclass-home.model.ts`, beside `MasterclassTrack`;
+    - the filter's constants and `RAIL_PAGE_SIZE` → `core/constants/masterclass.ts`;
+    - `features/offerings/utils/contract-guards.ts` → `core/utils/`, with its 8 other importers repointed.
+  - **The CAIRA tracker's model** keeps its own copy of the guards; only its comment changes, because it named the
+    old path. Several models keep such copies; moving them onto the core file is a separate cleanup.
+  - **Gates (local macOS):** lint 0 errors (98 warnings); structure ✔; Prettier ✔; tsc 0; `build:prod` 227.89 kB
+    (was 227.91), only `ai-labs.css`. The service and `FilterDialog` sit in lazy chunks, not the initial bundle.
+  - **Verified (dev 4101, Playwright, signed out against UAT):**
+    - every track has the icon, and nothing reads `filter/` before a click;
+    - the first open makes 4 reads (one page, three levels), and the dialog shows Instructor, Field of Study, CAIRA
+      Level and Credit;
+    - ticking one instructor narrows that rail 21 → 1 with a count of 1; the other rails keep every card;
+    - reopening keeps the tick and reads nothing, Clear All brings back all 21, and another rail reads nothing;
+    - with `filter/` answering 500: Field of Study and Credit only, the log says
+      `[MasterclassRailFilter] filter load failed`, and the next click reads `filter/` again.
+
+- ✅ **2026-10-28, NON-REFACTOR — MIL-148 (bug), signed-in learners kept off the home page. MERGED** as #211
+  (`46264d4f`) (`prompts/signed-in-home-redirect.md`).
+  - **Change:**
+    - new `core/guards/auth/guest-home-guard.ts` (`CanMatch`) on the standard `home` route sends a signed-in
+      learner to `/<country>/<profession>/masterclass`, read off the navigation's URL tree, with the query string
+      kept;
+    - the `''` redirect in `features.routes.ts` picks `masterclass` or `home` by `isAuthenticated()`;
+    - the UAE CAIRA `home` route is unchanged and stays open signed in (plan assumption 2).
+  - **Gates (local macOS):** lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 227.91 kB, only
+    `ai-labs.css`.
+  - **Verified:**
+    - **Before the fix (dev SSR, signed-in cookie):** `/us/accounting/home` answered 200 with `<app-home>`, and
+      `/us/accounting` answered 302 to home.
+    - **After, production SSR server (port 4000):**
+      - signed in, `/us/accounting/home` and `/us/accounting` answer 302 to `/us/accounting/masterclass`, and
+        `?utm_source=mail` is kept;
+      - signed out, home answers 200 and `/us/accounting` answers 302 to home;
+      - `/ae/accounting/home` answers 200 with the UAE CAIRA page either way;
+      - every answer carries `Cache-Control: no-cache`, so the CDN never shares the redirect.
+    - **After, dev 4101 in a browser:**
+      - signed in, a full load of home, the header logo, and an in-app navigation to
+        `/in/accounting/home?utm_source=mail` all end on masterclass in that country with the query kept, and home
+        never renders;
+      - `/ae/accounting/home` shows the UAE CAIRA page;
+      - signed out, all of them stay on home as before.
+  - **Not exercised:** a real OTP sign-in, which would send a real code. Its `navigateByUrl(redirect ?? '/')` is the
+    same in-app navigation as the checks above.
+  - **Seen, not caused here:** the UAE CAIRA page's Levels carousels read `v2/library/?caira_levels=…`, which answers
+    404 on UAT, signed in or out.
+
+- ✅ **2026-10-27, NON-REFACTOR — MIL-147 (feature), the Coming Soon rail on the masterclass page. MERGED** as #210
+  (`341d5150`), with Remind Me and `course_type=course` (`prompts/masterclass-coming-soon.md`); it was on
+  `feat/MIL-147-masterclass-coming-soon` off `master` (`f07812db`). On 2026-10-29
+  `master` (with #211) was merged into it; only this file conflicted, and both entries were kept.
+  - **Second `master` merge, 2026-10-29 (#213, the filter moved to shared code):** the page and the library facade
+    conflicted on imports only. `RAIL_FILTER_EMPTY`, `trackRail` and `MasterclassRail` now come from core, and the page
+    and its doc name `MasterclassRailFilter`; the Coming Soon imports stay. The constants and the library model merged
+    on their own (`RAIL_PAGE_SIZE` from core). tsc 0, lint 0 errors (98 warnings), structure ✔, `build:prod` 979.64 kB
+    raw, only `ai-labs.css`. In the browser, signed in (stub): Coming Soon is last before the FAQ with its heading,
+    card, sidenav entry and Trailer, one `coming-soon/` read; every other rail has the filter, and filtering
+    Recommended narrows it 3 → 1 with a count of 1; no console errors.
+  - **2026-10-29, `course_type=course` on the rail's request (the user's call), UNCOMMITTED.** Since 2026-10-28
+    `coming-soon/` also sends podcast and micro-learning teasers unless narrowed. UAT: `course` gives the one teaser,
+    `podcast` none, a bad value is a 400. In the browser the request reads `course_type=course&page_size=100` and the
+    rail renders.
+  - **Remind Me, in this PR (the user's call). PLAN APPROVED, DONE, GATES GREEN, UNCOMMITTED**
+    (`prompts/masterclass-coming-soon.md`, "Remind Me").
+    - **Change:**
+      - each row carries `notify_me`;
+      - `MasterclassLibraryFacade.toggleReminder` posts `{"notify_me": bool}` to
+        `api/v1/masterclass/coming-soon/<id>/notify-me/` with `SKIP_LOADING`, flips the button at once, keeps the
+        server's answer, and toasts;
+      - a 409 (launched) or 404 (unlisted) re-reads the rail, so the teaser leaves; any other failure flips back;
+      - on the card, Remind Me sits under Trailer, both full width, on hover and focus, with `aria-pressed`, and is
+        disabled while in flight.
+    - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 979.64 kB
+      raw, unchanged, only `ai-labs.css`.
+    - **Verified (dev 4101, Playwright, stub session and a stub notify-me server), 16 checks:**
+      - hover shows Trailer and Remind Me, stacked at one width;
+      - a click shows "Reminded" at once, disables the button in flight, shows no loading bar, sends one POST
+        `{"notify_me": true}` and toasts "We'll remind you"; `aria-pressed` follows;
+      - a reload keeps "Reminded"; a double click turns it off with one POST `{"notify_me": false}` and
+        "Reminder removed";
+      - a 500 puts it back with "Reminder not saved";
+      - a 409 and a 404 toast and re-read the rail, and the teaser leaves;
+      - 375 / 768 / 1440: no horizontal scroll, and hover doesn't change the rail's height (662 / 688 / 682 px).
+    - **Not exercised:** the real POST against UAT, which needs a real session. Without a token it answers 401, so the
+      route exists; its answers are from the Postman collection.
+  - **Gates (local macOS):** lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 227.95 kB, only
+    `ai-labs.css`.
+  - **Verified (dev 4101, Playwright; signed in stubbed, with UAT's real `coming-soon/` row):**
+    - **Signed in:** one `coming-soon/?page_size=100` read. The rail is last (after My List and "Courses you've
+      mastered", before the FAQ), with the heading and the bell line.
+    - **The card:** the artwork loads with rank 1, and Trailer appears on hover and opens the video dialog.
+    - **Sidenav:** "Coming Soon" (rocket) appears.
+    - **Signed out:** no request, no rail, no sidenav entry.
+    - **Empty answer and a 500:** no rail and no sidenav entry. The 500 logs "coming soon load failed".
+    - **Layout:** no overflow at 375 / 768 / 1440. The placeholder (680 px) matches the rail (662–688 px).
+  - **Revision, the hover fade (the user's call):** hovering a card with a trailer fades the bottom of its artwork to
+    dark (the course cards' `bg-linear-to-t from-background …`), so Trailer reads over busy artwork. Verified at
+    1440 and 375: hidden at rest, shown on hover, and Trailer stays clickable above it.
+  - **Old bindings:** none left on the masterclass page.
+    - The `v2/dashboard/?filter=coming_soon` route and `app-coming-soon` stay for podcast and micro-learning.
+    - `core/config/feature.config.ts` is unused; deleting it is a separate chore.
+  - **Remind Me: not in this PR, waiting on the backend.** A Coming Soon id isn't a course, so the bookmark route may
+    not take it. The user is checking `POST bookmark/<coming-soon id>/` in Postman. If it answers 200, Remind Me is a
+    follow-up, stacked under Trailer (`flex-col`, full width) at every width. Side by side fits only at 1440, with
+    0 px to spare.
+
+- ⏸ **2026-10-27 — Zoom + environment stack: #200–#205 merged; #206 (MIL-145) is the last one open.** Each squash
+  merge left the next PR conflicting with `master`: the STATE.md and prompt status lines, plus `course-library.ts` and
+  the environment files for #205. Each was resolved by merging `origin/master` into the next branch; no rebases or
+  force-pushes.
+
+- 🟡 **2026-10-27, NON-REFACTOR — orphaned `/blog-api` proxy removed. DONE, UNCOMMITTED** (patch 3 of 3). The blog
+  feature was deleted in `890e52d`; nothing in `src/app` called `/blog-api`. Removed the Express handler in
+  `src/server.ts` (with `WP_BLOG_UPSTREAM` and `WP_FORWARDED_HEADERS`), `proxy.conf.json`, and the dev-server
+  `proxyConfig` in `angular.json`. The `vercel.json` `/blog` rewrites to the WordPress site stay: that's the live blog,
+  served by WordPress itself.
+
+- 🟡 **2026-10-27, NON-REFACTOR — URL keys grouped. DONE, UNCOMMITTED** (patch 2 of 3).
+  `BASE_API_URL` → `API.baseUrl`, `S3_BUCKET_URL` → `ASSETS.s3Url`, `GCS_URL` → `ASSETS.gcsUrl`, in the
+  `Environment` type, all three files, every `environment.*` access in `src/` (41 files) and the comments, `AGENTS.md`
+  and `docs/AUTH_API.md`. Component fields that happen to be named `S3_BUCKET_URL` are left alone. Values unchanged.
+  - **Merged with `master` (#197/#199/#207) on 2026-10-27:** `master`'s 5 new `environment.BASE_API_URL` uses are
+    renamed to `API.baseUrl` in the merge commit. `course-library.ts` takes `master`'s move of `COURSE_RESOURCES_*` to
+    `core/constants/course-resources.ts`. Type-check, lint and `build:prod` green.
+
+- 🟡 **2026-10-27, NON-REFACTOR — production log level `WARN`. DONE, UNCOMMITTED** (patch 1 of 3; see the hand-off).
+  `environment.ts` `LOGGER.LogLevel` changed from `DEBUG` to `WARN`, so `Logger.debug`/`info` stay silent in production.
+  UAT and local stay `DEBUG`.
+
+- 🟡 **2026-10-27, NON-REFACTOR — environment cleanup (`prompts/environment-cleanup.md`). DONE, GATES GREEN,
+  UNCOMMITTED**, in the working tree on top of `fix/MIL-140-live-room-isolation`, together with the uncommitted
+  `liveEnabled` comment edits. Branch it off as `refactor/MIL-<n>-environment-cleanup` before committing.
+  - **Removed (no readers):** `SSO_SUPPORT_API_KEY`, `WEBINAR.pollsEnabled`, `WP_BLOG`, and every `AI_LABS` key except
+    `catalogueCourses` and `assessmentEnabled` (the Entra/Supabase sign-in fields and the two channel names).
+  - **Moved to their readers:**
+    - `appType`/`platform` → `CLIENT_APP_TYPE`/`CLIENT_PLATFORM` in `app-interceptor.ts`
+    - the four auth cookie names → `AUTH_COOKIES` in `auth-session.ts`
+    - `browserSessionId` → `BROWSER_SESSION_KEY` in `storage.ts`
+    - `leaseHeartbeatSeconds`/`joinWindowMinutes` → `constants/live-session.ts`
+    - `registrationPollCapSeconds` → `webinar-registration.ts`
+  - **New `src/environments/environment.model.ts`:** the `Environment` interface, documented once. All three files
+    end `satisfies Environment`; deleting `otpLength` from the local file alone fails `tsc`. The files went from 546
+    to 254 lines (110 of them the type).
+  - **Values unchanged** in all three builds (checked against `HEAD`). Every remaining leaf has a reader. The
+    removed values (AI Labs Supabase project, Entra ids, channel names, WP URL) are absent from `dist/`.
+    `docs/AUTH_API.md` header lines updated. No skill or agent file mentions a removed key.
+  - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` initial
+    975.04 kB raw / 226.83 kB (was 976.00 / 226.94), only `ai-labs.css`; `development` and `local` configs build.
+  - **Browser (dev):** home renders its CDN images (71 loaded, 0 broken) with the canonical from `SITE_URL`; AI Labs
+    renders its Audit and CFO sections. The OTP screen wasn't opened (it would send a real code).
+
+- 🟡 **2026-10-27, NON-REFACTOR — stale `liveEnabled` comments. DONE, UNCOMMITTED**, on
+  `fix/MIL-140-live-room-isolation` (comments only). The user confirmed that `liveEnabled` stays `true` in production:
+  production has no learners yet and is where the room is tested before a soft launch. The comments in
+  `environment*.ts`, `webinar.routes.ts` and `join-target.ts` no longer say the room is off in production; they call
+  the flag a kill switch. Lint 0 errors, structure ✔.
+
+- 🟡 **2026-10-27, NON-REFACTOR — `/live` cross-origin isolation (PR 3 of `prompts/webinar-live-states.md`, B5). DONE,
+  GATES GREEN, UNCOMMITTED**, in the working tree on top of `fix/MIL-139-webinar-live-states` (`6c295260`). Branch it
+  off before committing. PR 1 (`1365de31`) and PR 2 (`6c295260`) are committed.
+  - **Change:** new `webinar/guards/live-document-guard.ts` on the `:id/live` route.
+    - `liveDocumentEnterGuard` (`canActivate`) turns any in-app navigation into `/live` into a real page load,
+      so the COOP/COEP headers apply. It lets through the document's first navigation (`!router.navigated`), never
+      `crossOriginIsolated`, which would loop forever in Safari.
+    - `liveDocumentLeaveGuard` (`canDeactivate`) runs `ZoomMeetingClient.leave()` + `MeetingSession.release()`, then
+      loads the destination as a fresh page. It uses `location.replace` on back/forward so history doesn't stack.
+  - **Gates (local macOS):** lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 226.94 kB, only
+    `ai-labs.css`.
+  - **Not verified in the browser:** `/live` needs a signed-in learner (its `authGuard` runs before these guards), and
+    the COOP/COEP headers exist only on Vercel. Check on a preview: Join → `crossOriginIsolated === true` on `/live`;
+    Back to webinar → `false`; Back button from `/live` → the detail page, and Back again doesn't land in the room.
+
+- 🟡 **2026-10-27, NON-REFACTOR — webinar live room states + retry fixes (PR 2 of `prompts/webinar-live-states.md`,
+  B1–B4). DONE, GATES GREEN, UNCOMMITTED**, in the same working tree as the Zoom CSP fix below. Split them with the
+  saved PR 1 patch before committing (steps in the hand-off).
+  - **States:** `JoinPhase` gains `on-hold` (Zoom `isHold`, read after join and on `user-updated`/`user-added`) and
+    `reconnecting` (`connection-change`). Error 3008 sets `waitingForHost`: the lease is held and the room re-joins
+    every 15 s with a fresh signature until the host starts.
+  - **Zoom error codes** are mapped by `ZOOM_ERROR_OUTCOMES`, never by `reason` text: 3009 → exit `removed`, 4004 → exit
+    `meeting-ended`, 4005 → refusal `full`, 3099 → `not-registered`, 3603/3611 → `web-unsupported` (Open in Zoom),
+    3265/3623/3705/3712 → one re-mint. Any other code → `failed`, which also releases the lease.
+  - **B1:** `MeetingSession.acquire()` skips the Web Lock and the claim when the lease is already ours for that webinar,
+    so a retry no longer conflicts with its own tab. **B2:** `ZoomMeetingClient.join()` destroys any previous client
+    first. The free-text `zoomError` banner is gone; failures render as refusals.
+  - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); Prettier ✔; `build:prod` 226.99 kB, only
+    `ai-labs.css`; the Zoom SDK is still only in lazy chunks.
+  - **Not verified in the browser:** it needs a signed-in learner and a UAT Zoom webinar with the host account. The
+    steps are in the prompt's "How to verify".
+  - **Size:** ~540 changed lines in `src`, over the ~400 guide; much of it is comments and template copy.
+
+- 🟡 **2026-10-27, NON-REFACTOR — Zoom webinar media fails to load (bug). DONE, GATES GREEN, UNCOMMITTED**, on
+  `fix/MIL-000-zoom-csp-blob` off `master` (`b473f6c0`). The ticket number is a placeholder; rename the branch.
+  - **Cause:** Zoom SDK 6.5's `js_media` loads `wmsc.min.js` as a `blob:` script. The `vercel.json` CSP
+    `script-src` had no `blob:`, so chunk 557 failed on every retry and ended in `WMSC_JS_LOAD_FAIL_FAILOVER`.
+  - **Change:** `blob:` added to `script-src`. `sdkKey` is no longer passed to `client.join()` (removed from join
+    options since SDK v4) or kept in `ZoomJoinParams`. `sdk_key` stays in the contract parser.
+  - **Gates (local macOS):** lint 0 errors; structure ✔; `build:prod` 227.03 kB, only `ai-labs.css`.
+  - **Not verified:** the CSP is a Vercel header, so the fix only shows on a preview deploy's `/live` page.
+  - **Backend:** the signature JWT should add an `appKey` claim (the SDK warns that `sdkKey` there is deprecated).
+
+- 🟡 **2026-10-27, NON-REFACTOR — MIL-129 (feature), a bookmark on the masterclass course cards. PLAN APPROVED,
+  DONE, GATES GREEN, UNCOMMITTED** (`prompts/masterclass-card-bookmark.md`), on `feat/MIL-129-course-card-bookmark`
+  off `master` (`f59c576d`).
+  - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 228.06 kB,
+    only `ai-labs.css`.
+  - **Verified (dev 4101, Playwright; signed-in answers stubbed, since a real sign-in isn't possible here):**
+    - **Signed out:** 68 icons on the masterclass page and 55 on the home page, all outline. A click goes to
+      `/auth/login?redirect=…` and makes no `bookmark/` request.
+    - **Signed in, masterclass page:**
+      - A click fills the icon at once, then makes one `POST bookmark/<uuid>/` and one `library/` re-read.
+      - "Added to My List" toasts, every card of that course fills, and My List matches the server.
+      - Removing it from My List reverses all of that.
+    - **Course page round trip:** its Bookmark button records into the store and re-reads `library/` in the
+      background. Back on the masterclass page, the card is filled and in My List, with no extra reads.
+    - **Home page:** the icons match the server; a toggle makes only the `POST`.
+    - **`bookmark/` 500:** the icon flips back, "Bookmark not saved" toasts, the failure is logged, and there's no
+      `library/` re-read.
+    - **Layout:** the icon sits 12 px from the artwork's top right at 375 / 768 / 1440, covers no button, and there's
+      no overflow. Storybook's two new stories render.
+  - **Plan:** a root `MasterclassBookmarks` store in `core/services/` toggles through
+    `web-api/v1/masterclass/bookmark/<uuid>/`. Its per-visit answers reset on sign-in or sign-out.
+    - The card gets `showBookmark` / `bookmarked` / `(bookmark)`, wired on the masterclass page and the home page's
+      tracks.
+    - `library/` re-reads after a confirmed toggle, so My List follows.
+    - The course page records its own toggles in the store and reads the store's answers.
+  - **Revision, the course page's toast (the user's screenshot):** its Bookmark button showed no toast. The success
+    toast moved into `MasterclassBookmarks.record()`, which the cards and the course page both call, so it reads
+    "Added to My List" / "Removed from My List" with the course name everywhere. The course page also toasts "Bookmark
+    not saved" and logs on failure; before, a failure there was silent. Verified: course page add, remove and 500; a
+    card click still toasts once. `build:prod` 228.02 kB.
+
+- ✅ **2026-10-27, NON-REFACTOR — MIL-128 (feature), a filter on every masterclass rail. MERGED (#199,
+  `f59c576d`)** (`prompts/masterclass-rail-filter.md`), on `feat/MIL-128-masterclass-rail-filter` off
+  `master` (`2f493dde`).
+  - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 228.09 kB,
+    only `ai-labs.css`.
+  - **Verified (dev 4101, Playwright):**
+    - **Signed out:** the 3 tracks have the icon. The first click makes 4 `filter/` reads, and none happen before
+      it.
+    - **Track 2, Adam Tahir:** 34 → 1, matching UAT's own instructor tags. The badge shows 1, and reopening shows
+      the tick.
+    - **Empty:** adding "Greater than 5 credits" shows the empty line, and the other tracks are untouched. Clear All
+      brings back all 34.
+    - **Signed in (stubbed rails):** all 9 rails have the icon. My List's dialog lists only its own courses'
+      options. A second rail makes no new reads, and Escape changes nothing.
+    - **`filter/` 500:** the dialog shows Field of Study and Credit, the failure is logged, and the next open
+      retries.
+    - **Layout:** no overflow at 375 / 768 / 1440.
+  - **Two shared fixes found while verifying (in the plan's "Changes from the plan"):**
+    - `Carousel`'s card query is now `{ descendants: false }`. The badge's `@if` had been rendering in every slide.
+    - `FilterDialog`'s panel is now `md:w-auto`. It had been filling the screen with a grey band.
+  - **Size:** about 600 changed source lines, over the ~400 guideline. 428 of them are the three new files.
+  - **Groups:** Instructor, Field of Study, Additional Category, CAIRA Level and Credit. There's no Category group:
+    the backend confirmed it's the same as Field of Study.
+  - **Data:** Field of Study and Credit come from the cards. Instructor and Additional Category come from one
+    `filter/?content_type=masterclass_course&page_size=100` read. CAIRA Level comes from one
+    `filter/?…&level=<id>` read per level (UAT: 22 + 31 + 11 = 64 courses).
+  - **Loading:** the reads run on the first dialog open and are shared by every rail.
+  - **Open:** whether a new route-scoped `MasterclassRailFilterFacade` is OK (plan assumption 1).
+
+- 🟡 **2026-10-26, NON-REFACTOR — MIL-127 (bug), signed-in rails on the masterclass page. PLAN APPROVED, DONE,
+  GATES GREEN, UNCOMMITTED** (`prompts/masterclass-signed-in-rails.md`), on `fix/MIL-127-masterclass-signed-in-rails`
+  off `master` (`70ec9353`).
+  - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 227.01 kB,
+    only `ai-labs.css`.
+  - **Verified (dev 4101, Playwright; signed-in answers filled in the browser only, from real signed-out cards):**
+    - **Signed out:** no `library/` or `completed-course-section/` request; hero, 3 tracks, FAQ; sidenav Home,
+      Tracker, FAQ.
+    - **Signed in, full:** one `library/` with the 7 per-rail page sizes and one `completed-course-section/`.
+      - Rails in order: Continue Watching, Recommended For You, "Complimentary Courses for Miles Education
+        Employees", Because You Watched, 3 tracks, My List, Courses you've mastered.
+      - A bookmarked podcast is kept out of My List.
+      - Sidenav: Home, Continue Watching, Tracker, My List, Completed Courses, FAQ. No console errors.
+    - **Signed in, empty:** looks as signed out.
+    - **Both reads 500:** the rails hide, the hero stays, and both failures are logged.
+    - **Layout:** no overflow at 375 / 768 / 1440.
+  - **Not done:** Coming Soon (held back), and a real signed-in capture to confirm the row shape.
+  - **Revision, AI Kit (the user's call):**
+    - The click logic moves from the course library to `core/models/course-resources.model.ts`,
+      `core/constants/course-resources.ts` and `shared/services/course-ai-kit.ts`; the library delegates.
+    - The card's horizontal layout gains the button, and the masterclass page turns it on for every rail.
+    - **Verified:** 6 buttons on the track rails (5 kit courses on UAT), each opening its PDF; a signed-in rail
+      too; the library's kit unchanged; the home page shows none. `build:prod` 227.00 kB.
+  - **Revision, the AI Kit dialog's close button (the user's screenshot):** `UtilsDialog`'s X is a dark filled
+    circle again (`bg-background/80 backdrop-blur-sm`, size 40), with a 20 px, stroke-2 X. The fill was dropped
+    in #133, and it holds on hover. The gradient panel's cap is `md:max-w-lg`, matching `app-dialog`'s frame; at
+    500 px it left a 6 px grey strip down each side. This affects every `UtilsDialog`. UAT's 5 kits have `description: null`, so the row reads "AI Kit";
+    a kit with a description shows it.
+  - **Separate tickets (the user's call):** the card bookmark icon, and the footer "Continue Learning" bar
+    (blocked on backend Q8).
+  - **Coming Soon preview (the user asked to see it):**
+    - UAT `coming-soon/` has 0 rows, so the shared card is shown in Storybook (`Cards/ComingSoon`, port 6006,
+      running in the background).
+    - Its story errored (NG0201: the real `Utils` needs app-level tokens); it now provides `MockUtils` as the
+      other card stories do, in `coming-soon.stories.ts`.
+    - That fix is **not MIL-127**: leave it out of that commit.
+    - **Open:** whether to bind Coming Soon now on a guessed row shape, or wait for a backend sample.
+  - **Wording pass (the user's naming rule for commit files):** "legacy button" removed from
+    `course-resources.ts` and `course-ai-kit.ts`, and "live `library/` rows" in the plan now reads "UAT's". The
+    added lines and the new files name neither the old app nor the public site. This file's older mentions are
+    already on `master` and untouched.
+  - **Old bindings:** none left on the page. The hero (`highlight/`) and tracks (`tracks-page/`) match Postman and
+    answer 200. `FeatureFacade`'s `v2/` routes still feed podcast and micro-learning, so they stay.
+  - **Plan:** a route-scoped `MasterclassLibraryFacade` with `library/?login_type=post_login` (per-rail
+    `page_size=100`) and `completed-course-section/`, signed in and browser only.
+  - **Open:** Coming Soon is held back (no rows on UAT, no documented shape); a signed-in capture would confirm the
+    row shape.
+
+- 🟡 **2026-10-26, NON-REFACTOR — MIL-126 (SEO bug), course canonicals + SEO slug guard. DONE, GATES GREEN,
+  UNCOMMITTED** (`prompts/review-2026-10-23-tickets.md` T7), on `fix/MIL-126-course-canonical` off `master`
+  (`7aae2472`).
+  - **Open question answered on UAT:**
+    - `course-detail/` still sends no slug.
+    - For all 64 masterclass courses, `slugify(course_details.name)` equals the sitemap feed's `slug`, so no
+      backend change is needed.
+    - The sitemap feed (`filter/?content_type=masterclass_course`) still answers: 64 rows, one page.
+  - **Canonical:** `setupCourseSeo` builds the canonical (and so `og:url`) from the URL until the course loads,
+    then from the record: `…/<course.id>/<Utils.slugify(name | title)>`. It covers masterclass, podcast and
+    micro-learning. The visible URL isn't redirected.
+  - **Slug guard:** `SupabaseSeo.getBySlug` refuses a slug that isn't word characters and `-` segments, so URL
+    text never reaches PostgREST's `.or()`. The `src/seo.ts` sitemap comment now says how the canonical matches.
+  - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 240.65 kB,
+    only `ai-labs.css`.
+  - **SSR (`build:prod` on :4000):** `masterclass/9cf29a8c…/` with the right slug, `buy-cheap-pills-here`,
+    `x%2Cpage_slug.eq.home` and `x(y)` all answer 200 with canonical and `og:url` equal to the sitemap `<loc>`.
+    The comma case is refused before the query and gets the fallback title; no server errors.
+  - **Browser:** hydration keeps the corrected canonical. On dev, landing → course A → back → course B keeps og at
+    7 / 8 / 7 / 8 and one canonical.
+
+- 🟡 **2026-10-26, NON-REFACTOR — MIL-125 (tech debt), facade scoping + dead facade code. DONE, GATES GREEN,
+  UNCOMMITTED** (`prompts/review-2026-10-23-tickets.md` T6), on `refactor/MIL-125-facade-scoping` off `master`
+  (`7aae2472`).
+  - **`FeedbackFacade`:** was provided on 3 routes and on the component. The component entry is dropped, so the
+    route entries apply (AGENTS §3: route-scoped facades live in route `providers`). This is the reverse of the
+    ticket's wording, with the same result.
+  - **`MasterclassFacade`:** moved from `features.routes.ts` (above every offering) to podcast's
+    `:courseId/:courseTitle`. Grep shows its only real users are `podcast-course` (hero, chapter list, resources)
+    and `podcast-chapter` (`video-chapter`). The micro-learning and masterclass hits are comments.
+  - **`AuthFacade`:** moved from the auth shell to the `login` route. `Login` keeps its `clear()` on destroy:
+    without router injector auto-cleanup, a route's injector outlives the page wherever the provider sits. The
+    ticket's premise was wrong.
+  - **Dead code removed:**
+    - `MasterclassFacade.route`, `ChapterFacade.router`
+    - `WebinarFacade.isRegistering()`, `SectionFiltersFacade.clear()`
+    - the unbound `isLockedElsewhere` inputs on webinar-hero and webinar-card
+  - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 240.60 kB,
+    only `ai-labs.css`; `build-storybook` ✔.
+  - **Verified (dev, UAT):**
+    - `/podcast/190/think-plan-grow-with-ai` builds the page. `course-resources` renders and `MasterclassFacade`
+      runs its load, which then fails on UAT's 404 `v2/podcast/details/` (pre-existing). No injector error.
+    - Login renders, and leaving and coming back works.
+    - Webinar shows no hero or cards (UAT has no webinars).
+  - **Noted, not changed:** the login phone number survives leaving and returning because `AuthFacade.clear()`
+    resets `otpModel` but not `authModel`. It was the same on `master`.
+
+- 🟡 **2026-10-23, NON-REFACTOR — MIL-122 (bug), feedback gate + content-dialog sanitizing + tabnabbing. DONE,
+  GATES GREEN, UNCOMMITTED** (`prompts/review-2026-10-23-tickets.md` T3), on `fix/MIL-122-feedback-gate-and-html-sanitize`
+  off `master` (`7aae2472`). MIL-120/121 are committed on their own branches.
+  - **Feedback gate:** `course-feedback.ts` gated on an inert `currentUser = signal(null)`, so podcast, webinar and
+    micro-learning feedback always opened "Complete Profile". It now uses `AuthSession.isProfileCompleted() === false`,
+    the same rule as `CourseEvaluationFacade.submit` (unknown goes through). The never-rendered user-info block is
+    removed.
+  - **Content dialog:** `HtmlContentDialog` dropped `bypassSecurityTrustHtml`, so the HTML is now sanitized by
+    Angular. The sanitizer strips the CMS's inline `style`s, so the container restores them with Tailwind
+    descendant utilities. Measured: `h3` 24px/20px gap, `p` 14px/1.6/20px gap, logo 150px.
+  - **Tabnabbing:** `course-resources.ts` `window.open(..., 'noopener')`.
+  - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 240.66 kB,
+    only `ai-labs.css`.
+  - **Verified (dev, UAT data):** "AI: It's All About the Prompt" glossary renders sanitized, with no scripts. The
+    console's "sanitizing HTML stripped some content" is the `style` attributes.
+  - **Not verified in the browser:** the feedback submit, which needs a signed-in learner. Steps are in the hand-off.
+
+- 🟡 **2026-10-23, NON-REFACTOR — MIL-123 (bug), signed-out bookmark POSTs. DONE, GATES GREEN, UNCOMMITTED**
+  (`prompts/review-2026-10-23-tickets.md` T4), on `fix/MIL-123-bookmark-sign-in-guard` off `master` (`7aae2472`).
+  - **Change:** `Utils.toggleBookmarkCourse` checks `AuthSession.isAuthenticated()` first. When signed out it sends no
+    request, redirects to `/auth/login?redirect=<current url>` (the same as `CourseDetailFacade.toggleBookmark`) and
+    returns `EMPTY`. All 7 callers react only to a successful response, so none changes.
+  - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 240.59 kB,
+    only `ai-labs.css`.
+  - **Not verified in the browser:** on UAT today, no page renders the cards that reach this path. Podcast,
+    micro-learning, UAE CAIRA home and the partner pages show no `app-hover`/`app-vertical`/`app-horizontal`/
+    `app-coming-soon`. The dev build's `ng.getComponent` only exposes `app-root`, so it couldn't be called from the
+    console either.
+
+- 🟡 **2026-10-26, NON-REFACTOR — MIL-124 (security), client-bundle secrets. DONE, GATES GREEN, UNCOMMITTED**
+  (`prompts/review-2026-10-23-tickets.md` T5), on `chore/MIL-124-remove-client-secrets` off `master` (`7aae2472`).
+  - **Removed:**
+    - `MILES_ACTIVITY` (AWS API Gateway URL + `x-api-key`) from the 3 environment files
+    - `PAYMENT_TEST_SSN` from `environment.ts`
+    - the dead `core/services/miles-activity/` (no importers)
+  - The baseline is pruned (−1 entry).
+  - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 240.60 kB,
+    only `ai-labs.css`.
+  - **Bundle scan:** the old key and SSN values match 0 files in `dist/` and `src/`.
+  - **Still open (backend):** the key is in shipped bundles and in git history, so it must be rotated.
+
+- 🟡 **2026-10-23, NON-REFACTOR — MIL-120 (remove admin) + MIL-121 (seo_pages RLS). PLAN APPROVED, IN PROGRESS,
+  UNCOMMITTED** (`prompts/review-2026-10-23-tickets.md`, T1 + T2), working tree on `fix/MIL-121-seo-pages-rls` off
+  `master` (`7aae2472`). Commit T2's paths there, then `git switch -c chore/MIL-120-remove-admin` for the rest.
+  - **MIL-121 (done, verified):**
+    - Deleted 16 admin migrations and added `20261023000000_seo_pages_rls.sql`: RLS on, public select, admin
+      write policies and the audit trigger dropped.
+    - Scratch Postgres (local, Homebrew pg): all 3 migrations apply, and a re-run is clean. anon reads 18 rows;
+      anon insert is rejected by RLS; authenticated update changes 0 rows; anon delete leaves 18.
+  - **MIL-120 (done, verified):**
+    - **Deleted:**
+      - `src/app/admin/`, `testing/partner-mock/`, `core/interceptors/dev/`
+      - deprecation-banner, block-status-dialog, apply-partner-code-dialog
+      - the SupabaseSeo write API and `DEFAULT_SEO_PAGES`
+      - `IS_ADMIN_REQUEST` / `SKIP_AUDIT_LOG`
+      - `.admin-theme` and the admin-only tokens
+      - `SupabaseUser` env keys
+      - `@admin/*` aliases and the eslint `admin` element
+    - **Edited:**
+      - `/admin/**` → a 404 route with `notFound` (else `/admin/x` soft-redirects home through the profession
+        guard)
+      - `Disallow: /admin` and the admin legacy redirects dropped
+      - Supabase client is stateless
+      - AGENTS.md and README updated
+      - structure baseline pruned
+    - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 226.96 kB
+      initial (was 240.6), only `ai-labs.css`.
+    - **SSR (`build:prod` served on :4000):**
+      - `/admin`, `/admin/users`, `/admin/seo`, `/admin/dashboard/seo-manager` → 404, "Page not found",
+        `noindex`, no canonical.
+      - `/us/accounting/{masterclass,home,library/course-library}` → titles + canonicals identical to live
+        production; the `seo:masterclass` row is in TransferState (read by the stateless client).
+      - Prod robots has no `/admin`; the sitemap has 85 locs, none admin.
+    - **Browser (dev):** no localStorage keys on a learner page; og count stays 7 home → masterclass → back;
+      `/admin/users` renders the 404 page.
+  - **Flag:** `docs/refactor/smoke-routes.json` still lists `/admin/login`, which now answers 404. Yours to change
+    (harness input).
+
 - 🟡 **2026-10-22, NON-REFACTOR — MIL-119 (bug), course library "Failed to Load Courses". PLAN APPROVED, DONE,
   GATES GREEN, UNCOMMITTED** (`prompts/course-library-filter-list.md`), on `fix/MIL-119-course-library-filter-api`
   off `master` (`db43a117`, which has MIL-118 #180).
@@ -6126,6 +6673,7 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-11-02 · NON-REFACTOR · **MIL-117 merged `origin/master` `d0a53c28`** (merge uncommitted, PR #225): environment = master's typed files + the branch's `AI_LABS` sign-in block; `API.baseUrl`; `AUTH_COOKIES` + `clearAiLabSession`; top-up close button on #217's `close` variant · tsc ✔, lint 0 errors, structure ✔, format ✔, build:prod ✔
 - 2026-10-29 · NON-REFACTOR · **MIL-117 test emails** (uncommitted): row posts `assignment-trigger-email/`, busy while in flight, no auto-retry, disabled/unconfigured hide the row · CDP 4 scenarios · lint 0 errors, structure ✔, build:prod ✔
 - 2026-10-28 · NON-REFACTOR · **MIL-117 guide 2026-10-28** (uncommitted): MCQ facts + pass date + View report, exam report read-back (withheld key), feedback read-back, `cpe_awarded` amount, `max_score`, `practical_attempts` · CDP 7 scenarios + live-shape regression · lint 0 errors, structure ✔, build:prod ✔, storybook ✔
 - 2026-10-28 · NON-REFACTOR · **MIL-117 dialog panels**: certificate, credits top-up and participant-agreement dialogs drew a full-width grey panel beside their fixed-width card (`panelClass="p-0 max-w-full"` keeps the panel `w-full`); panel now `w-auto bg-transparent shadow-none` · CDP panel = card at 1440 / 375 · lint 0 errors, structure ✔, build:prod ✔ · same pattern still on select-cpe-mode, share, course-info, webinar-details (not touched)
@@ -6178,6 +6726,23 @@ These are environment and product observations the repair surfaced. None changed
 - 2026-10-20 · NON-REFACTOR · **MIL-117 PR 4a built** (uncommitted): the course page's practical on `web-api/v1` — brief, agents/flows, submit, 12 s grading poll, grade card + input-file re-signing · lint 0 errors, structure ✔, build:prod ✔, storybook ✔ · not exercised in-app (needs a signed-in learner past the exam)
 
 - 2026-10-20 · NON-REFACTOR · **MIL-117 PR 3 built** (uncommitted): `AiLabCourseFacade` on the lab route (behind `authGuard`) — detail / started / progress reads, start, video-progress reports; page converted from inputs to the facade and from `ContentDetails` to the lab detail; START and AI_LAB CTA stages · lint 0 errors, structure ✔, build:prod ✔, storybook ✔ · guest 302 to login verified; signed-in unverified
+- 2026-10-27 · NON-REFACTOR · **Stack merged through #205**: each squash merge left the next PR conflicting with `master`; resolved by merging `origin/master` into the next branch, no rebases or force-pushes
+
+- 2026-10-27 · NON-REFACTOR · **Environment cleanup built** (uncommitted): 15 dead keys removed, 9 app constants moved to readers, `Environment` type with `satisfies` in all three files · tsc 0, lint 0 errors, build:prod 226.83 kB, dev + local configs build · home and AI Labs checked in browser
+
+- 2026-10-27 · NON-REFACTOR · **`liveEnabled` comments corrected** (uncommitted, on MIL-140): on in production by decision (pre-launch, prod is the test bed) · lint 0 errors
+
+- 2026-10-27 · NON-REFACTOR · **`/live` isolation guards built** (uncommitted): page load into and out of the room so COOP/COEP apply only there; Zoom leave + lease release before leaving · lint 0 errors, structure ✔, build:prod 226.94 kB · needs a Vercel preview + signed-in learner to verify
+
+- 2026-10-27 · NON-REFACTOR · **Webinar live states built** (uncommitted): waiting-for-host auto re-join, on-hold, reconnecting, Zoom error-code outcomes, retry no longer self-conflicts, SDK client torn down before re-join · tsc 0, lint 0 errors, build:prod 226.99 kB · not run in a browser (needs a signed-in learner + Zoom host)
+
+- 2026-10-27 · NON-REFACTOR · **Zoom CSP fix built** (uncommitted): `blob:` in `script-src` so the Zoom media chunk loads, `sdkKey` dropped from `join()` · lint 0 errors, structure ✔, build:prod 227.03 kB · needs a Vercel preview to verify
+
+- 2026-10-26 · NON-REFACTOR · **MIL-127 wording pass**: comments no longer point at the old app ("legacy button", "live" rows); the commit's added lines and new files name neither the old app nor the public site · Prettier ✔
+
+- 2026-10-26 · NON-REFACTOR · **MIL-127 built** (uncommitted, on `fix/MIL-127-masterclass-signed-in-rails`): signed-in rails from `library/` + `completed-course-section/`, AI Kit moved to `shared/services/course-ai-kit.ts` and on for every masterclass rail, `UtilsDialog` close circle + full-width panel · tsc 0, lint 0 errors (98 warnings), structure ✔, Prettier ✔, build:prod 226.91 kB · headless scenarios pass; hand-test `.playwright-mcp/manual-mil127.js` · Coming Soon story repaired for a preview (not MIL-127; keep out of its commit)
+
+- 2026-10-26 · NON-REFACTOR · **MIL-126 built** (uncommitted): course canonical from the record (`<id>/<slugify(name)>`, equal to the sitemap URL for all 64 UAT courses), `getBySlug` refuses unsafe slugs · tsc 0, lint 0 errors, structure ✔, build:prod 240.65 kB · SSR + browser canonical checks pass
 
 - 2026-10-20 · NON-REFACTOR · **MIL-117 PR 2 built** (uncommitted): `AiLabsFacade` + `AI_LABS_API` — guest rail / learner lab catalogue, account-ensure poll, create / reset with reason-mapped prompts, re-login on `entitlement_refresh_required` · lint 0 errors, structure ✔, build:prod ✔ · guest path verified in a CDP-driven browser; signed-in unverified · found Node 26 + UAT zstd empties every SSR read locally
 

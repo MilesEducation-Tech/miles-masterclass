@@ -1,13 +1,12 @@
 import { Component } from '@angular/core';
-import { NgIcon, provideIcons } from '@ng-icons/core';
+import { NgIcon } from '@ng-icons/core';
 import { injectDialogRef } from 'ng-primitives/dialog';
 import { environment } from '@env/environment';
 
-import { Button } from '../../ui/button/button';
+import { Button } from '@shared/ui/button/button';
 import { ButtonVariant } from '@core/models/button.model';
 import { appStoreIcon, googlePlayIcon } from '@core/constants/icon';
 import { Dialog } from '@shared/ui/dialog/dialog';
-import { heroXMark } from '@ng-icons/heroicons/outline';
 
 export interface DialogButton {
   label: string;
@@ -74,7 +73,6 @@ const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.miles.
 @Component({
   selector: 'app-utils-dialog',
   imports: [Button, NgIcon, Dialog],
-  providers: [provideIcons({ heroXMark })],
   templateUrl: './utils-dialog.html',
 })
 export class UtilsDialog {
@@ -83,7 +81,7 @@ export class UtilsDialog {
 
   protected readonly APP_STORE_URL = APP_STORE_URL;
   protected readonly PLAY_STORE_URL = PLAY_STORE_URL;
-  protected readonly S3_BUCKET_URL = environment.S3_BUCKET_URL;
+  protected readonly S3_BUCKET_URL = environment.ASSETS.s3Url;
   /** Shared brand SVGs reused from the footer + app-download component. */
   protected readonly appStoreIcon = appStoreIcon;
   protected readonly googlePlayIcon = googlePlayIcon;

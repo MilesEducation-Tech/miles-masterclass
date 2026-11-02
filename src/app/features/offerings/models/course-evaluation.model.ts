@@ -17,7 +17,7 @@ import {
   isStr,
   isStrOrNull,
   listOf,
-} from '@features/offerings/utils/contract-guards';
+} from '@core/utils/contract-guards';
 
 /** One question of the form. Every question on UAT is a 1–5 `rating`. */
 export interface EvaluationQuestion {

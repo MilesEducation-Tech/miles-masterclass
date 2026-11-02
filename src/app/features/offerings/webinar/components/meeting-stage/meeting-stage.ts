@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import {
   afterNextRender,
   Component,
@@ -12,8 +13,10 @@ import { LiveSessionFacade } from '@features/offerings/webinar/services/live-ses
 /**
  * The element the Zoom SDK renders into, plus our chrome around it.
  *
- * It owns no SDK, no lease and no state: it reads the room's title and status
- * from `LiveSessionFacade` and hands the facade its `#zoomRoot` once rendered.
+ * It owns no SDK, no lease and no state: it reads the room's title, status and
+ * wait-for-host state from `LiveSessionFacade` and hands the facade its
+ * `#zoomRoot` once rendered. The root stays mounted through every in-room
+ * phase: Zoom draws its own screens, waiting room included, inside it.
  *
  * The container is kept free of Tailwind utilities on purpose. The SDK injects
  * its own stylesheet and lays the meeting out itself; classes applied inside
@@ -22,7 +25,7 @@ import { LiveSessionFacade } from '@features/offerings/webinar/services/live-ses
  */
 @Component({
   selector: 'app-meeting-stage',
-  imports: [Button],
+  imports: [DatePipe, Button],
   templateUrl: './meeting-stage.html',
 })
 export class MeetingStage {

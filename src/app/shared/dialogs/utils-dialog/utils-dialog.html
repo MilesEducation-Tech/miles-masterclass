@@ -5,25 +5,24 @@
   [dismissible]="!data.disableClose"
   panelClass="p-0"
 >
+  <!-- `md:max-w-lg` is `app-dialog`'s own panel cap (32rem). -->
   <div
     class="bg-linear-to-br from-[#0d1a2d] to-[#1a2332] shadow-2xl flex flex-col w-[95svw] mx-auto overflow-hidden relative"
-    [class]="showAppDownload ? 'md:w-[640px] xl:w-[800px]' : 'md:max-w-[500px]'"
+    [class]="showAppDownload ? 'md:w-[640px] xl:w-[800px]' : 'md:max-w-lg'"
   >
     <!-- Close Button -->
     <div class="absolute top-4 end-4 z-30">
-      <!-- No hover fill: the ghost variant's navy `bg-muted` reads as a stray block on these
-           gradient panels. Colour is the hover cue (`data-hover:`, to beat the variant's own). -->
+      <!-- A dark filled circle over the gradient panel. The fill stays put on hover (the ghost
+           variant's navy `bg-muted` reads as a stray block here); colour is the hover cue
+           (`data-hover:`, to beat the variant's own). -->
       <button
         app-button
         type="button"
-        class="rounded-full text-gray-300 data-hover:bg-transparent data-press:bg-transparent data-hover:text-white"
-        variant="ghost"
+        variant="close"
         size="icon"
         aria-label="Close"
         (click)="close()"
-      >
-        <ng-icon name="heroXMark" aria-hidden="true" />
-      </button>
+      ></button>
     </div>
 
     <!-- Miles One app-download layout: title + subtitle + store badges + QR + phone mockup + footer -->

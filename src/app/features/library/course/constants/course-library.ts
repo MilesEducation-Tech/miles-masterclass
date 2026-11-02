@@ -1,5 +1,4 @@
 import { environment } from '@env/environment';
-import { RouteConfig } from '@core/models/http.model';
 import {
   CourseLibraryTab,
   LibraryCourseType,
@@ -11,16 +10,16 @@ import {
  * The sidebar's read: every filter option, plus an unfiltered page of cards.
  * Public (`AllowAny`). It takes the filters and `content_type`, but no
  * `course_type` or `login_type`: since the backend's 2026-10-15 change either
- * one is a 400. Built whole off `BASE_API_URL`, like `TRACKS_PAGE_URL`.
+ * one is a 400. Built whole off `environment.API.baseUrl`, like `TRACKS_PAGE_URL`.
  */
-export const COURSE_LIBRARY_FILTERS_URL = `${environment.BASE_API_URL}web-api/v1/masterclass/filter/`;
+export const COURSE_LIBRARY_FILTERS_URL = `${environment.API.baseUrl}web-api/v1/masterclass/filter/`;
 
 /**
  * The cards' read: one `course_type`'s courses under the selected filters.
  * Public; `course_type` and `login_type` are required, and it rejects
  * `content_type`, which is why an AI Kit selection reads `filter/` instead.
  */
-export const COURSE_LIBRARY_LIST_URL = `${environment.BASE_API_URL}web-api/v1/masterclass/filter-based-masterclass-list/`;
+export const COURSE_LIBRARY_LIST_URL = `${environment.API.baseUrl}web-api/v1/masterclass/filter-based-masterclass-list/`;
 
 /** Rows per page: fills the 2-, 3- and 4-column grids evenly. The API caps it at 100. */
 export const COURSE_LIBRARY_PAGE_SIZE = 12;
@@ -61,24 +60,3 @@ export const EMPTY_LIBRARY_SELECTION: LibraryFilterSelection = {
   track: [],
   content_type: [],
 };
-
-/**
- * The AI Kit button's read: the kit and exercise files sit in the course
- * detail's `miscellaneous_data`. `pre_login` for everyone: the extras are
- * public, and the signed-in variant adds nothing they need.
- */
-export const COURSE_RESOURCES_ROUTE = {
-  path: `${environment.BASE_API_URL}web-api/v1/masterclass/course-detail/:id/`,
-  method: 'GET',
-} as RouteConfig<void, unknown, Record<string, string>, { login_type: 'pre_login' }>;
-
-/** The "Additional Resources" dialog and its toasts, worded as the legacy button's. */
-export const COURSE_RESOURCES_COPY = {
-  title: 'Additional Resources',
-  aiKit: 'AI Kit',
-  exerciseFile: 'Exercise file',
-  emptyTitle: 'No Resources',
-  emptyMessage: 'No additional resources are available for this course.',
-  errorTitle: 'Error',
-  errorMessage: 'Failed to fetch additional resources. Please try again later.',
-} as const;

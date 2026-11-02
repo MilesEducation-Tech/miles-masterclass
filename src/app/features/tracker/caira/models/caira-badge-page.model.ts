@@ -1,5 +1,15 @@
 import { environment } from '@env/environment';
 import { ButtonVariant } from '@core/models/button.model';
+import {
+  isBool,
+  isNum,
+  isNumOrNull,
+  isObject,
+  isStr,
+  isStrOrNull,
+  Json,
+  listOf,
+} from '@core/utils/contract-guards';
 
 /**
  * Wire types for the CAIRA tracker's one read:
@@ -28,7 +38,7 @@ import { ButtonVariant } from '@core/models/button.model';
  */
 
 /** The origin root carries the trailing slash; `web-api/` and `api/` are siblings under it. */
-export const BADGES_PAGE_URL = `${environment.BASE_API_URL}web-api/v1/badges/page/`;
+export const BADGES_PAGE_URL = `${environment.API.baseUrl}web-api/v1/badges/page/`;
 
 /**
  * The three paged sections, spelled exactly as the API namespaces their query parameters:
@@ -290,25 +300,7 @@ export function badgeCtaUi(row: BadgeRowBase): BadgeCtaUi {
  * checked; EXTRA keys pass, because the contract adds keys without notice. A missing or
  * retyped key fails the WHOLE response, once, in `parse`, so it lands in `error()` rather
  * than half-rendered on screen.
- *
- * These primitives are a local copy of `features/offerings/utils/contract-guards.ts` on
- * purpose: a feature may not import another feature (AGENTS.md §3), which is also why
- * `offerings/webinar` and `home` carry their own.
  */
-type Json = Record<string, unknown>;
-
-const isObject = (v: unknown): v is Json =>
-  typeof v === 'object' && v !== null && !Array.isArray(v);
-const isStr = (v: unknown): v is string => typeof v === 'string';
-const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
-const isBool = (v: unknown): v is boolean => typeof v === 'boolean';
-const isStrOrNull = (v: unknown): v is string | null => v === null || isStr(v);
-const isNumOrNull = (v: unknown): v is number | null => v === null || isNum(v);
-
-const listOf =
-  <T>(guard: (v: unknown) => v is T) =>
-  (v: unknown): v is T[] =>
-    Array.isArray(v) && v.every(guard);
 
 /** Thrown from `parse`; the message names the route so the log says where. */
 function contractError(part: string): Error {

@@ -22,7 +22,7 @@ import {
   isStr,
   isStrOrNull,
   listOf,
-} from '@features/offerings/utils/contract-guards';
+} from '@core/utils/contract-guards';
 
 /** One option, in the server's `order`. */
 export interface AssessmentOption {

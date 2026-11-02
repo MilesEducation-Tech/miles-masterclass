@@ -9,5 +9,5 @@ import { Component } from '@angular/core';
   templateUrl: './podcast-hero.html',
 })
 export class PodcastHero {
-  S3_BUCKET_URL = environment.S3_BUCKET_URL;
+  S3_BUCKET_URL = environment.ASSETS.s3Url;
 }

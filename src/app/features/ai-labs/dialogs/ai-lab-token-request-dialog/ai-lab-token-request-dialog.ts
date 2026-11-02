@@ -1,7 +1,5 @@
 import { DecimalPipe } from '@angular/common';
 import { Component, computed, signal } from '@angular/core';
-import { NgIcon, provideIcons } from '@ng-icons/core';
-import { heroXMark } from '@ng-icons/heroicons/outline';
 import { injectDialogRef } from 'ng-primitives/dialog';
 import { NgpDescription, NgpLabel } from 'ng-primitives/form-field';
 import { AiLabTokenAddOn, AiLabTokenRequestBody } from '@features/ai-labs/models/ai-labs.model';
@@ -49,8 +47,7 @@ const OPTIONS: readonly { tokens: AiLabTokenAddOn; label: string; hint: string }
  */
 @Component({
   selector: 'app-ai-lab-token-request-dialog',
-  imports: [Button, DecimalPipe, Dialog, Field, NgIcon, NgpDescription, NgpLabel, Textarea],
-  providers: [provideIcons({ heroXMark })],
+  imports: [Button, DecimalPipe, Dialog, Field, NgpDescription, NgpLabel, Textarea],
   templateUrl: './ai-lab-token-request-dialog.html',
 })
 export class AiLabTokenRequestDialog {

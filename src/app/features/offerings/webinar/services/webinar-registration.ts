@@ -1,7 +1,6 @@
 import { DestroyRef, inject, Service, signal } from '@angular/core';
 import { HttpContext } from '@angular/common/http';
 import { firstValueFrom, map } from 'rxjs';
-import { environment } from '@env/environment';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
 import { CommonResponse, SKIP_LOADING } from '@core/models/http.model';
@@ -30,6 +29,12 @@ import { toWebinarError, WebinarError } from '../utils/webinar-error';
 const FAST_POLL_MS = 2_000;
 const FAST_POLL_WINDOW_MS = 15_000;
 const SLOW_POLL_MS = 5_000;
+
+/**
+ * Ceiling on the registration status poll. `ZOOM_PENDING_APPROVAL` is terminal
+ * but reports as `PENDING`, so an uncapped loop spins forever.
+ */
+const REGISTRATION_POLL_CAP_SECONDS = 45;
 
 export interface RegistrationOutcome {
   /** `'registered'` is the only outcome that opens a join affordance. */
@@ -173,7 +178,7 @@ export class WebinarRegistration {
     statusUrl: string,
     attemptId: string,
   ): Promise<RegistrationOutcome> {
-    const capMs = environment.WEBINAR.registrationPollCapSeconds * 1000;
+    const capMs = REGISTRATION_POLL_CAP_SECONDS * 1000;
     const startedAt = Date.now();
     let last: AttemptStatusResponse | null = null;
 

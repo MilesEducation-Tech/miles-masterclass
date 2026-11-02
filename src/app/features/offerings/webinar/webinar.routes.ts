@@ -2,6 +2,10 @@ import { Routes } from '@angular/router';
 import { authGuard } from '@core/guards/auth/auth-guard';
 import { environment } from '@env/environment';
 import { FeedbackFacade } from '@features/offerings/services/feedback-facade';
+import {
+  liveDocumentEnterGuard,
+  liveDocumentLeaveGuard,
+} from '@features/offerings/webinar/guards/live-document-guard';
 import { GuestRegistration } from '@features/offerings/webinar/services/guest-registration';
 import { LiveSessionFacade } from '@features/offerings/webinar/services/live-session-facade';
 import { MeetingSession } from '@features/offerings/webinar/services/meeting-session';
@@ -49,16 +53,24 @@ export const webinarRoutes: Routes = [
         // Two `CanMatch` guards, so neither the Zoom chunk nor the lease client
         // is ever downloaded by someone who cannot use them.
         //
-        // `liveEnabled` is the ship gate, off in production until QA signs off:
-        // with it off this route must not match at all — `resolveJoinTarget`
-        // sends Join to the registrant's `join_url` instead, and a stale deep
-        // link falls through to the detail page rather than opening a room
-        // nobody has signed off.
+        // `liveEnabled` is the kill switch for the in-app room (on in every
+        // build, production included): with it off this route must not match
+        // at all — `resolveJoinTarget` sends Join to the registrant's `join_url`
+        // instead, and a stale deep link falls through to the detail page
+        // rather than opening a room that is switched off.
         //
         // `authGuard` handles the redirect. The server refuses a signature
         // without a valid token regardless, so that one is for the redirect,
         // not the security.
         canMatch: [() => environment.WEBINAR.liveEnabled, authGuard],
+        data: {
+          layout: 'plain',
+        },
+        // The room always runs in a document of its own, so the COOP/COEP
+        // headers `vercel.json` sends for `/live` apply in it and nowhere else.
+        // See `live-document-guard.ts`.
+        canActivate: [liveDocumentEnterGuard],
+        canDeactivate: [liveDocumentLeaveGuard],
         providers: [MeetingSession, ZoomMeetingClient, LiveSessionFacade],
         loadComponent: () =>
           import('@features/offerings/webinar/pages/webinar-live/webinar-live').then(

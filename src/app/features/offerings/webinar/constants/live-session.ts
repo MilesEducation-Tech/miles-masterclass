@@ -4,9 +4,11 @@ import { RouteConfig, SKIP_LOADING } from '@core/models/http.model';
 import {
   ClaimRequest,
   DeviceMatcher,
+  JoinRefusal,
   JoinRefusalKind,
   SessionIdRequest,
   SignatureRequest,
+  ZoomJoinOutcome,
 } from '@features/offerings/webinar/models/meeting-session.model';
 import type { KnownWebinarErrorCode } from '@features/offerings/webinar/utils/webinar-error';
 
@@ -16,11 +18,11 @@ import type { KnownWebinarErrorCode } from '@features/offerings/webinar/utils/we
  */
 
 /**
- * Absolute URLs off `BASE_API_URL` (the origin root), built whole like
+ * Absolute URLs off `environment.API.baseUrl` (the origin root), built whole like
  * `WEBINAR_ENDPOINTS` so `apiUrl()` passes them through untouched. These are the
  * `api/v1/` surface: the same routes serve the app and the web.
  */
-const ROOT = environment.BASE_API_URL;
+const ROOT = environment.API.baseUrl;
 
 /**
  * The four live-session routes. Responses are typed `unknown` because each one
@@ -79,6 +81,63 @@ export const JOIN_REFUSAL_KINDS: Readonly<Record<string, JoinRefusalKind | undef
 } satisfies Partial<Record<KnownWebinarErrorCode, JoinRefusalKind>>;
 
 /**
+ * What a Zoom join rejection means, by the SDK's numeric `errorCode`
+ * (developers.zoom.us/docs/meeting-sdk/web/error-codes). A code missing here is
+ * `failed`: generic copy, a retry, and an `error` log so it gets a row.
+ */
+export const ZOOM_ERROR_OUTCOMES: Readonly<Record<number, ZoomJoinOutcome | undefined>> = {
+  /** MEETING_NOT_START: the host has not started the webinar, or is still in its practice session. */
+  3008: 'not-started',
+  /** BE_REMOVED: the host removed this learner, and Zoom will not let them back. */
+  3009: 'removed',
+  /** REGISTRATION_REQUIRED: Zoom has no registrant behind this `tk`. */
+  3099: 'not-registered',
+  /** TOKEN_ERROR, SIGNATURE_EXPIRED, TOKEN_ERROR (alt), SIGNATURE_INVALID: mint a fresh one. */
+  3265: 'bad-signature',
+  3623: 'bad-signature',
+  3705: 'bad-signature',
+  3712: 'bad-signature',
+  /** NOT_SUPPORT_WEBCLIENT, USE_DESKTOP_OR_MOBILE: the webinar refuses browser joins. */
+  3603: 'web-unsupported',
+  3611: 'web-unsupported',
+  /** MEETING_ENDED. */
+  4004: 'meeting-ended',
+  /** MEETING_CAPACITY_REACHED. */
+  4005: 'full',
+};
+
+/**
+ * The room's copy for the refusals only Zoom can give. The server's refusals
+ * carry their own `detail`; these never show Zoom's raw `reason` text.
+ */
+export const ZOOM_REFUSALS: Readonly<
+  Record<Extract<ZoomJoinOutcome, 'full' | 'not-registered' | 'web-unsupported'>, JoinRefusal>
+> = {
+  full: {
+    kind: 'full',
+    message: 'This webinar has reached its attendee limit. Please try again in a moment.',
+    opensAt: null,
+  },
+  'not-registered': {
+    kind: 'not-registered',
+    message: 'Zoom could not find your registration for this webinar.',
+    opensAt: null,
+  },
+  'web-unsupported': {
+    kind: 'web-unsupported',
+    message:
+      'This webinar can only be joined in the Zoom app. Your attendance is still recorded for CPE.',
+    opensAt: null,
+  },
+};
+
+/**
+ * How often the room tries Zoom again while the host has not started the
+ * webinar. Each try mints a fresh signature, so a long wait never outlives it.
+ */
+export const WAITING_FOR_HOST_RETRY_MS = 15_000;
+
+/**
  * The Web Lock every tab of this origin contends for. One name for the whole
  * app, because the rule is one live session per learner, not per webinar.
  */
@@ -102,10 +161,25 @@ export const TAKEOVER_POLL_MS = 150;
 /**
  * The server sends the heartbeat cadence so it can be tuned without a release,
  * but the lease TTL is 45s: anything outside this range is a bad value, not a
- * tuning, and falls back to `environment.WEBINAR.leaseHeartbeatSeconds`.
+ * tuning, and falls back to `LEASE_HEARTBEAT_SECONDS`.
  */
 export const HEARTBEAT_MIN_SECONDS = 5;
 export const HEARTBEAT_MAX_SECONDS = 30;
+
+/** Lease heartbeat cadence when the server sends none. Server TTL is 45s — three misses before eviction. */
+export const LEASE_HEARTBEAT_SECONDS = 15;
+
+/**
+ * How long before the start the Join button appears.
+ *
+ * Fallback only IN PRINCIPLE: `joinOpensAt()` would prefer a server-sent
+ * `join_opens_at`, but that field appears NOWHERE in `EVENTS_API_CONTRACT_V1`,
+ * so today this value is the whole rule and it is computed in the browser. A
+ * skewed clock can therefore show Join early and have the server refuse it —
+ * `ServerClock` syncs off the feed's `server_time` to bound that. Ask the
+ * backend for `join_opens_at`.
+ */
+export const JOIN_WINDOW_MINUTES = 15;
 
 /** `device_label` length cap, and what it says when nothing in the user agent matched. */
 export const DEVICE_LABEL_MAX_LENGTH = 64;

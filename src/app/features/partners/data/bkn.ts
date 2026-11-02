@@ -15,7 +15,7 @@ import {
 } from '@core/constants/partner-icons';
 import type { PartnerShowcaseConfig } from '../models/partner-showcase.model';
 
-const S3_BUCKET_URL = environment.S3_BUCKET_URL;
+const S3_BUCKET_URL = environment.ASSETS.s3Url;
 
 const employeesCards: PartnerLevelCard[] = [
   {

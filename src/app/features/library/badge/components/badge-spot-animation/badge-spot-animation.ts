@@ -13,7 +13,7 @@ import { environment } from '@env/environment';
 })
 export class BadgeSpotAnimation {
   private sanitizer = inject(DomSanitizer);
-  S3_BUCKET_URL = environment.S3_BUCKET_URL;
+  S3_BUCKET_URL = environment.ASSETS.s3Url;
 
   roundStar: SafeHtml = this.sanitizer
     .bypassSecurityTrustHtml(`<svg width="6" height="5" viewBox="0 0 6 5" fill="none" xmlns="http://www.w3.org/2000/svg">

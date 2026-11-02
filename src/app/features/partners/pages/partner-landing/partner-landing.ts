@@ -14,7 +14,7 @@ import {
 } from '../../components/partnership-content/partnership-content';
 import type { PartnerLandingConfig } from '../../models/partner-landing.model';
 
-const S3_BUCKET_URL = environment.S3_BUCKET_URL;
+const S3_BUCKET_URL = environment.ASSETS.s3Url;
 
 /**
  * The partner landing page. One component renders every partner: the route resolves the partner's

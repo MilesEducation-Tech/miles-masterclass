@@ -1,3 +1,13 @@
+import {
+  isBool,
+  isNum,
+  isNumOrNull,
+  isObject,
+  isStr,
+  isStrOrNull,
+  listOf,
+} from '@core/utils/contract-guards';
+
 /**
  * Types for the web masterclass API (`web-api/v1/masterclass/`): `tracks-page/`
  * (read by `MasterclassHomeFacade` for the home page and the masterclass page),
@@ -71,7 +81,16 @@ export interface MasterclassCourse {
   has_individual_badge: boolean;
   included_for_caira: boolean;
   has_additional_resources: MasterclassAdditionalResources;
+  /**
+   * The learner's bookmark; `false` on every anonymous read. Optional because
+   * `completed-course-section/` has no captured body to confirm it; every other
+   * card route sends it (UAT and Postman, 2026-10-27).
+   */
+  is_bookmarked?: boolean;
 }
+
+/** What a bookmark is read off: a card, or the course page's course. */
+export type MasterclassBookmarkable = Pick<MasterclassCourse, 'id' | 'is_bookmarked'>;
 
 /**
  * What the course-info ("i") dialog opens with: the card the learner clicked.
@@ -101,6 +120,29 @@ export interface MasterclassHomePage {
   login_type: MasterclassLoginType;
   tracks: MasterclassTrack[];
 }
+
+// ---- Rails -----------------------------------------------------------------
+
+/** One rail as a page renders it. */
+export interface MasterclassRail {
+  /**
+   * The section's element id, which the masterclass page's sidenav scrolls to.
+   * Also keys the rail's filter.
+   */
+  id: string;
+  heading: string;
+  /** The line under the heading; only tracks have one. */
+  subText?: string;
+  courses: MasterclassCourse[];
+}
+
+/** A track as a rail, so it renders and filters like the signed-in ones. */
+export const trackRail = (track: MasterclassTrack): MasterclassRail => ({
+  id: `masterclass-track-${track.slug}`,
+  heading: track.name,
+  subText: track.description ?? '',
+  courses: track.courses,
+});
 
 // ---- CAIRA levels ----------------------------------------------------------
 
@@ -147,23 +189,8 @@ type ApiTrack = Omit<MasterclassTrack, 'courses'> & { courses: ApiPage<Mastercla
 // retyped key fails the whole response, once, in the resource's `parse`, so it
 // lands in `error()` rather than half-rendered on screen.
 
-type Json = Record<string, unknown>;
-
-const isObject = (v: unknown): v is Json =>
-  typeof v === 'object' && v !== null && !Array.isArray(v);
-const isStr = (v: unknown): v is string => typeof v === 'string';
-const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
-const isBool = (v: unknown): v is boolean => typeof v === 'boolean';
-const isStrOrNull = (v: unknown): v is string | null => v === null || isStr(v);
-const isNumOrNull = (v: unknown): v is number | null => v === null || isNum(v);
-
 const LOGIN_TYPES: readonly unknown[] = ['pre_login', 'post_login'];
 const isLoginType = (v: unknown): v is MasterclassLoginType => LOGIN_TYPES.includes(v);
-
-const listOf =
-  <T>(guard: (v: unknown) => v is T) =>
-  (v: unknown): v is T[] =>
-    Array.isArray(v) && v.every(guard);
 
 /** A paginated block whose `results` all pass `guard`. A bare array is not one. */
 const pageOf =
@@ -211,7 +238,8 @@ export function isMasterclassCourse(v: unknown): v is MasterclassCourse {
     isNumOrNull(v['total_cpe_credits']) &&
     isBool(v['has_individual_badge']) &&
     isBool(v['included_for_caira']) &&
-    isAdditionalResources(v['has_additional_resources'])
+    isAdditionalResources(v['has_additional_resources']) &&
+    (v['is_bookmarked'] === undefined || isBool(v['is_bookmarked']))
   );
 }
 
@@ -238,6 +266,14 @@ function isLevel(v: unknown): v is MasterclassLevel {
     isStrOrNull(v['image_url']) &&
     isStr(v['subject_name'])
   );
+}
+
+/** `parse` for the bookmark toggle: where it landed, `data.bookmarked`. */
+export function parseBookmarkToggle(raw: unknown): boolean {
+  const data = isObject(raw) ? raw['data'] : undefined;
+  const bookmarked = isObject(data) ? data['bookmarked'] : undefined;
+  if (isBool(bookmarked)) return bookmarked;
+  throw contractError('bookmark');
 }
 
 /** `parse` for `levels/`: `data` is a bare list (the ladder is not paginated). */

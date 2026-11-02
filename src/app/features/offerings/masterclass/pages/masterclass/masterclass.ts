@@ -1,42 +1,81 @@
+import { NgOptimizedImage, NgTemplateOutlet } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
-import { swiperConfigEven, swiperConfigOdd } from '@core/config/swiper.config';
+import {
+  swiperConfigComingSoon,
+  swiperConfigEven,
+  swiperConfigOdd,
+} from '@core/config/swiper.config';
+import { filterIcon } from '@core/constants/icon';
+import { RAIL_FILTER_EMPTY } from '@core/constants/masterclass';
 import {
   MasterclassCourse,
   MasterclassCourseInfoDialogData,
+  trackRail,
 } from '@core/models/masterclass-home.model';
+import { MasterclassBookmarks } from '@core/services/masterclass-bookmarks/masterclass-bookmarks';
 import { MasterclassHomeFacade } from '@core/services/masterclass-home-facade/masterclass-home-facade';
+import { NgIcon } from '@ng-icons/core';
+import { faSolidBell, faSolidCheck, faSolidPlay } from '@ng-icons/font-awesome/solid';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Carousel } from '@shared/components/carousel/carousel';
 import { MasterclassCourseCard } from '@shared/components/cards/masterclass-course-card/masterclass-course-card';
 import { Faq } from '@shared/components/faq/faq';
+import { PartnerContentList } from '@shared/components/partner-content-list/partner-content-list';
 import { SectionNav, SectionNavItem } from '@shared/components/section-nav/section-nav';
 import { SliderSkeleton } from '@shared/components/skeleton/slider-skeleton/slider-skeleton';
 import { Slider } from '@shared/components/slider/slider';
+import { CourseAiKit } from '@shared/services/course-ai-kit';
+import { MasterclassRailFilter } from '@shared/services/masterclass-rail-filter';
 import { Utils } from '@shared/services/utils';
 import { Button } from '@shared/ui/button/button';
+import {
+  MASTERCLASS_COMING_SOON_HEADING,
+  MASTERCLASS_RAIL_SECTION_IDS,
+} from '@features/offerings/masterclass/constants/masterclass';
 import {
   MASTERCLASS_SECTION_NAV,
   MASTERCLASS_TRACKS_SECTION_ID,
 } from '@features/offerings/masterclass/constants/masterclass-nav';
+import { MasterclassComingSoonCourse } from '@features/offerings/masterclass/models/masterclass-library.model';
 import { MasterclassHighlightFacade } from '@features/offerings/masterclass/services/masterclass-highlight-facade';
+import { MasterclassLibraryFacade } from '@features/offerings/masterclass/services/masterclass-library-facade';
 
 /**
  * The masterclass landing page: the hero over the admin-pinned courses from
  * `highlight/`, then one carousel per track from `tracks-page/`. The tracks come
  * from the root `MasterclassHomeFacade`, which the home page shares, so
- * navigating between the two does not refetch.
+ * navigating between the two does not refetch. Signed in, the learner's own
+ * rails sit around the tracks (`MasterclassLibraryFacade`). Every rail, tracks
+ * included, has a filter (`MasterclassRailFilter`), and every card a
+ * bookmark (`MasterclassBookmarks`). Signed in, Coming Soon closes the rails.
  */
 @Component({
   selector: 'app-masterclass',
-  imports: [Carousel, Faq, SectionNav, Slider, SliderSkeleton, Button, MasterclassCourseCard],
+  imports: [
+    Carousel,
+    Faq,
+    NgOptimizedImage,
+    NgTemplateOutlet,
+    PartnerContentList,
+    SectionNav,
+    Slider,
+    SliderSkeleton,
+    Button,
+    MasterclassCourseCard,
+    NgIcon,
+  ],
   templateUrl: './masterclass.html',
 })
 export class Masterclass {
   private readonly utils = inject(Utils);
   private readonly dialogs = inject(NgpDialogManager);
+  private readonly aiKit = inject(CourseAiKit);
 
   protected readonly highlight = inject(MasterclassHighlightFacade);
   protected readonly home = inject(MasterclassHomeFacade);
+  protected readonly library = inject(MasterclassLibraryFacade);
+  protected readonly railFilter = inject(MasterclassRailFilter);
+  protected readonly bookmarks = inject(MasterclassBookmarks);
 
   constructor() {
     // MIL-23: this page renders the tracks on the server (a crawler gets the
@@ -47,18 +86,50 @@ export class Masterclass {
   // Even tracks render vertical cards (more per view), odd ones horizontal.
   protected readonly swiperConfigEven = swiperConfigEven;
   protected readonly swiperConfigOdd = swiperConfigOdd;
+  protected readonly swiperConfigComingSoon = swiperConfigComingSoon;
+  protected readonly comingSoonHeading = MASTERCLASS_COMING_SOON_HEADING;
+  protected readonly comingSoonSectionId = MASTERCLASS_RAIL_SECTION_IDS.comingSoon;
+  protected readonly playIcon = faSolidPlay;
+  protected readonly bellIcon = faSolidBell;
+  protected readonly checkIcon = faSolidCheck;
+  protected readonly filterIcon = filterIcon;
+  protected readonly railFilterEmpty = RAIL_FILTER_EMPTY;
 
-  protected readonly sectionNavItems = computed<SectionNavItem[]>(() =>
-    MASTERCLASS_SECTION_NAV.map((item) =>
+  // Every rail through its filter; `courses` stays whole for the dialog.
+  protected readonly railsAboveTracks = computed(() =>
+    this.railFilter.narrow(this.library.railsAboveTracks()),
+  );
+  protected readonly trackRails = computed(() =>
+    this.railFilter.narrow(this.home.tracks().map(trackRail)),
+  );
+  protected readonly railsBelowTracks = computed(() =>
+    this.railFilter.narrow(this.library.railsBelowTracks()),
+  );
+
+  protected readonly sectionNavItems = computed<SectionNavItem[]>(() => {
+    const railIds = this.library.sectionIds();
+    return MASTERCLASS_SECTION_NAV.map((item) =>
       item.id === MASTERCLASS_TRACKS_SECTION_ID
         ? { ...item, visible: this.home.tracks().length > 0 }
-        : item,
-    ),
-  );
+        : railIds.has(item.id)
+          ? { ...item, visible: true }
+          : item,
+    );
+  });
 
   /** The shared video dialog; it toasts "Trailer Not Found" for a course with none. */
   protected openTrailer(course: MasterclassCourse): void {
     void this.utils.openVideoDialog(course.horizontal_trailer_url, course.title);
+  }
+
+  /** A Coming Soon teaser's trailer, in the same dialog. */
+  protected openComingSoonTrailer(course: MasterclassComingSoonCourse): void {
+    void this.utils.openVideoDialog(course.trailer_url, course.name);
+  }
+
+  /** The AI Kit button, on courses that have one: the "Additional Resources" dialog. */
+  protected openAiKit(course: MasterclassCourse): void {
+    this.aiKit.open(course);
   }
 
   /** The "i" dialog: the course's About, read when it opens. Loaded on first use. */

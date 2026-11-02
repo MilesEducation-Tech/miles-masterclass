@@ -14,6 +14,9 @@
           @case ('meeting-ended') {
             The session has ended
           }
+          @case ('removed') {
+            You were removed from the session
+          }
           @default {
             You were disconnected
           }
@@ -24,6 +27,22 @@
           <!-- The host ended it: final, so there is nothing to rejoin. -->
           <p class="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
             Thank you for attending. Your attendance is recorded for CPE.
+          </p>
+          <button
+            app-button
+            type="button"
+            variant="primary"
+            class="mt-6"
+            (click)="facade.backToWebinar()"
+          >
+            Back to webinar
+          </button>
+        }
+        @case ('removed') {
+          <!-- The host removed this learner; Zoom will not let them back in. -->
+          <p class="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+            The host removed you from this webinar. If you think this was a mistake, contact
+            support.
           </p>
           <button
             app-button
@@ -123,6 +142,12 @@
           @case ('signed-out') {
             Please sign in again
           }
+          @case ('full') {
+            This session is full
+          }
+          @case ('web-unsupported') {
+            Join this session in Zoom
+          }
           @default {
             We could not connect you
           }
@@ -162,6 +187,29 @@
               Try again
             </button>
           }
+          @case ('full') {
+            <button app-button type="button" variant="primary" (click)="facade.retry()">
+              Try again
+            </button>
+            <button app-button type="button" variant="outline" (click)="facade.backToWebinar()">
+              Back to webinar
+            </button>
+          }
+          @case ('web-unsupported') {
+            @if (facade.mobileJoinUrl(); as url) {
+              <a
+                [href]="url"
+                target="_blank"
+                rel="noopener"
+                class="inline-flex rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary/90"
+              >
+                Open in Zoom
+              </a>
+            }
+            <button app-button type="button" variant="outline" (click)="facade.backToWebinar()">
+              Back to webinar
+            </button>
+          }
           @default {
             <button app-button type="button" variant="primary" (click)="facade.backToWebinar()">
               Back to webinar
@@ -196,24 +244,5 @@
     </section>
   } @else {
     <app-meeting-stage />
-
-    @if (facade.zoomError(); as error) {
-      <div
-        class="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-4 text-center"
-        role="alert"
-      >
-        <p class="text-sm">{{ error.message }}</p>
-        <button
-          app-button
-          type="button"
-          variant="outline"
-          size="sm"
-          class="mt-3"
-          (click)="facade.retry()"
-        >
-          Try again
-        </button>
-      </div>
-    }
   }
 </div>

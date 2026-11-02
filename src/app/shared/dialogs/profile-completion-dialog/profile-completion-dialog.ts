@@ -10,14 +10,12 @@ import { JobSectors } from '@core/services/job-sectors/job-sectors';
 import { PROFILE_ROUTES } from '@core/models/profile.model';
 import { RouteResponse } from '@core/models/http.model';
 
-import { Button } from '../../ui/button/button';
+import { Button } from '@shared/ui/button/button';
 
 import { Dialog } from '@shared/ui/dialog/dialog';
 import { Field } from '@shared/ui/field/field';
 import { NgpLabel } from 'ng-primitives/form-field';
 import { Combobox } from '@shared/ui/combobox/combobox';
-import { NgIcon, provideIcons } from '@ng-icons/core';
-import { heroXMark } from '@ng-icons/heroicons/outline';
 
 export interface ProfileCompletionDialogResult {
   saved: boolean;
@@ -32,8 +30,7 @@ interface ProfileCompletionFormState {
 
 @Component({
   selector: 'app-profile-completion-dialog',
-  imports: [Button, AngularFormField, Dialog, Field, NgpLabel, Combobox, NgIcon],
-  providers: [provideIcons({ heroXMark })],
+  imports: [Button, AngularFormField, Dialog, Field, NgpLabel, Combobox],
   templateUrl: './profile-completion-dialog.html',
   host: { class: 'block' },
 })

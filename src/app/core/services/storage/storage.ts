@@ -2,8 +2,10 @@ import { Service, PLATFORM_ID, REQUEST, inject } from '@angular/core';
 import { isPlatformBrowser, isPlatformServer } from '@angular/common';
 import { CookieService } from 'ngx-cookie-service';
 import { CookieOptions } from '../../models/storage.model';
-import { environment } from '@env/environment';
 import { generateUUID } from '@core/utils/uuid';
+
+/** Session-storage key for the browser session id (`getOrCreateBrowserSessionId`). */
+const BROWSER_SESSION_KEY = 'BROWSER_SESSION_ID';
 
 /**
  * Unified Storage Service for managing cookies, localStorage, and sessionStorage.
@@ -197,13 +199,13 @@ export class Storage {
 
   /**
    * Get (or lazily create + persist) the browser session id used to tie a
-   * signup back to its UTM campaign. Stored in session storage under the env
-   * key so the id is stable across the landing (UTM), auth, and webinar
-   * registration flows within a session. Returns a fresh uuid on the server
+   * signup back to its UTM campaign. Stored in session storage under
+   * `BROWSER_SESSION_KEY` so the id is stable across the landing (UTM), auth,
+   * and webinar registration flows within a session. Returns a fresh uuid on the server
    * (no session storage) — callers only send it from browser-side flows.
    */
   getOrCreateBrowserSessionId(): string {
-    const key = environment.AUTH.browserSessionId;
+    const key = BROWSER_SESSION_KEY;
     let sessionId = this.getSession<string>(key);
     if (!sessionId) {
       sessionId = generateUUID();

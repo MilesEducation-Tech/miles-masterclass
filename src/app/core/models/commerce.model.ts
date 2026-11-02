@@ -1,4 +1,5 @@
 import { CommonResponse, RouteConfig } from '@core/models/http.model';
+import { isObject } from '@core/utils/contract-guards';
 
 /**
  * The CAIRA commerce cart (`api/v1/commerce/cart/`), the one piece of commerce state read outside
@@ -71,9 +72,6 @@ export interface Cart {
   pending_order_id: string | null;
   lines: CartLine[];
 }
-
-const isObject = (v: unknown): v is Record<string, unknown> =>
-  typeof v === 'object' && v !== null && !Array.isArray(v);
 
 /**
  * The trust boundary for a cart, as `isUserDetails` is for the user record: a drifted body becomes

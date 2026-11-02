@@ -9,6 +9,6 @@ import { environment } from '@env/environment';
   templateUrl: './for-firms-panel.html',
 })
 export class ForFirmsPanel {
-  protected readonly S3_BUCKET_URL = environment.S3_BUCKET_URL;
+  protected readonly S3_BUCKET_URL = environment.ASSETS.s3Url;
   protected readonly iconBentoAi = iconBentoAi;
 }

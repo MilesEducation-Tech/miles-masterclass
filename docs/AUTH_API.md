@@ -18,7 +18,7 @@ Re-audited against the collection on 2026-09-27 (MIL-5 auth fixes, MIL-6 profile
 and `OnboardingApi` (`parse`). Error details move too: a field-keyed 400 is `data: {<field>: message}`, and
 `message` is lifted to the top.
 
-| Environment | `BASE_API_URL`                    |
+| Environment | `environment.API.baseUrl`         |
 | ----------- | --------------------------------- |
 | production  | `https://api.milescaira.com/`     |
 | UAT / local | `https://uat-api.milescaira.com/` |
@@ -27,7 +27,7 @@ and `OnboardingApi` (`parse`). Error details move too: a field-keyed 400 is `dat
 
 ## 1. The routes
 
-All under `{BASE_API_URL}api/v1/account/`. Every path has a trailing slash; omitting it 404s.
+All under `{API.baseUrl}api/v1/account/`. Every path has a trailing slash; omitting it 404s.
 
 ### Sign-in — no auth, `AllowAny`
 
@@ -315,8 +315,8 @@ non-wildcard origin.
   on 2026-10-13.
 - `X-Country-Code`, upper-case ISO2 from `CountryContext`. The commerce, catalogue and plans APIs price by
   it.
-- `X-Platform`, from `environment.platform`.
-- `X-App-Type`, from `environment.appType`.
+- `X-Platform`, from `CLIENT_PLATFORM` in `app-interceptor.ts` (`masterclass`).
+- `X-App-Type`, from `CLIENT_APP_TYPE` in `app-interceptor.ts` (`WA`).
 
 None of the four is CORS-safelisted, so each must be listed in `Access-Control-Allow-Headers`, or the
 browser blocks the request. Checked 2026-10-13:

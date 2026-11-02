@@ -1,4 +1,5 @@
 import { isMasterclassCourse, MasterclassCourse } from '@core/models/masterclass-home.model';
+import { isNum, isObject, isStr, isStrOrNull } from '@core/utils/contract-guards';
 
 /**
  * Types for the instructor library's read, `GET web-api/v1/masterclass/all-instructors-page/`
@@ -78,14 +79,6 @@ export interface InstructorCourseTab {
 // Like `course-library.model.ts`: every key the page reads is checked, extra
 // keys pass, and a missing or retyped one fails the whole answer in the
 // resource's `parse`, so it lands in `error()` rather than half-rendered.
-
-type Json = Record<string, unknown>;
-
-const isObject = (v: unknown): v is Json =>
-  typeof v === 'object' && v !== null && !Array.isArray(v);
-const isStr = (v: unknown): v is string => typeof v === 'string';
-const isStrOrNull = (v: unknown): v is string | null => v === null || isStr(v);
-const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 
 const isInstructorSocial = (v: unknown): v is InstructorSocial =>
   isObject(v) &&

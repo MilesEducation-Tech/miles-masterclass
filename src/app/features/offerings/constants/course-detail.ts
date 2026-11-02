@@ -3,12 +3,12 @@ import { CourseDetailApi, CourseOffering } from '@features/offerings/models/cour
 import { AssessmentReviewStatus } from '@features/offerings/models/final-assessment.model';
 
 /**
- * Absolute URLs off `BASE_API_URL`, which is the ORIGIN ROOT (trailing slash,
+ * Absolute URLs off `environment.API.baseUrl`, which is the ORIGIN ROOT (trailing slash,
  * no `api/` segment). Built whole, the same way as `WEBINAR_ENDPOINTS`, so
  * `apiUrl()` passes them through untouched and the `web-api/` surface is
  * spelled out where a reviewer can see it. These pages never call `app-api/`.
  */
-const ROOT = environment.BASE_API_URL;
+const ROOT = environment.API.baseUrl;
 
 /**
  * `CourseDetailFacade`'s routes and names, per offering. An offering joins by
@@ -32,9 +32,9 @@ export const COURSE_DETAIL_API: Record<CourseOffering, CourseDetailApi> = {
     aboutCourse: `${ROOT}web-api/v1/masterclass/about-course/`,
 
     /**
-     * `IsAuthenticated`, no body. Its response shape is not captured anywhere
-     * (Postman's template "could not be resolved"), so the facade re-reads
-     * `course-detail/` after it rather than trusting the body.
+     * `IsAuthenticated`, no body: a toggle that answers where it landed,
+     * `data.bookmarked` (`parseBookmarkToggle`). The cards toggle the same route
+     * through `MasterclassBookmarks`; the facade also re-reads `course-detail/`.
      */
     bookmark: { path: `${ROOT}web-api/v1/masterclass/bookmark/:id/`, method: 'POST' },
 

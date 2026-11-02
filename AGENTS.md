@@ -112,15 +112,15 @@ src/app/
 
 **Where each kind of logic lives:**
 
-| Layer                          | Lives in                                                                      | Rule                                                                                                 |
-| ------------------------------ | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Presentation                   | components (`*.ts` / `*.html`)                                                | Renders state. No HTTP, no business rules, no `HttpClient`.                                          |
-| Feature state + business logic | **Facades**: `features/<f>/services/<name>-facade.ts`                         | Signals and resources for state, methods for actions. This is where HTTP, dialogs and routing live.  |
-| HTTP                           | `ApiClient` (`core/services/api-client/`)                                     | Prepends `BASE_API_URL`. Reads use `httpResource` with `apiUrl()`; mutations use `ApiClient.call()`. |
-| Cross-cutting singletons       | `core/services/`                                                              | Auth session, Storage, Dialog, Notification, Logger, Analytics, SEO, Viewport, Network…              |
-| Route protection               | `core/guards/`                                                                | Guards decide access. Components never check auth inline.                                            |
-| Domain types                   | `core/models/` when shared; `features/<f>/models/` when one feature owns them | Move a model up only when a second feature needs it.                                                 |
-| Reusable UI                    | `shared/ui/`, `shared/components/`, `shared/dialogs/`                         | Generic only. A dialog one feature opens lives in that feature's `dialogs/`.                         |
+| Layer                          | Lives in                                                                      | Rule                                                                                                            |
+| ------------------------------ | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Presentation                   | components (`*.ts` / `*.html`)                                                | Renders state. No HTTP, no business rules, no `HttpClient`.                                                     |
+| Feature state + business logic | **Facades**: `features/<f>/services/<name>-facade.ts`                         | Signals and resources for state, methods for actions. This is where HTTP, dialogs and routing live.             |
+| HTTP                           | `ApiClient` (`core/services/api-client/`)                                     | Prepends `environment.API.baseUrl`. Reads use `httpResource` with `apiUrl()`; mutations use `ApiClient.call()`. |
+| Cross-cutting singletons       | `core/services/`                                                              | Auth session, Storage, Dialog, Notification, Logger, Analytics, SEO, Viewport, Network…                         |
+| Route protection               | `core/guards/`                                                                | Guards decide access. Components never check auth inline.                                                       |
+| Domain types                   | `core/models/` when shared; `features/<f>/models/` when one feature owns them | Move a model up only when a second feature needs it.                                                            |
+| Reusable UI                    | `shared/ui/`, `shared/components/`, `shared/dialogs/`                         | Generic only. A dialog one feature opens lives in that feature's `dialogs/`.                                    |
 
 Four hard boundaries:
 
@@ -177,7 +177,7 @@ Full detail — versions, scripts, build configs, environments — lives in the 
   accordion, switch, radio and OTP. `@angular/cdk` stays only where it is already used and ng-primitives has no
   equivalent (`BreakpointObserver`).
 - **Supabase:** read-only `seo_pages` rows, through one stateless, anonymous client (see the `supabase` skill).
-- **Django REST API** (`BASE_API_URL`): courses, users, payment, CPE, and everything else learner-facing.
+- **Django REST API** (`environment.API.baseUrl`): courses, users, payment, CPE, and everything else learner-facing.
 - **Video.js 8** (+ HLS, YouTube plugin) for video and audio. **`@ng-icons`** for icons. **Swiper 12** for carousels.
   **jsPDF + html2canvas-pro** for certificates and reports.
 - **Tooling:** **ESLint 10** + angular-eslint 22 + typescript-eslint 8; **Prettier 3**;
@@ -354,7 +354,7 @@ Domain types live in `src/app/core/models/`, or in `features/<f>/models/` when o
 
 Two backends. Do not cross the wires.
 
-**Django REST** — base `environment.BASE_API_URL`, called through `ApiClient`, bearer attached by `appInterceptor`.
+**Django REST** — base `environment.API.baseUrl`, called through `ApiClient`, bearer attached by `appInterceptor`.
 
 - `GET` for reads: course lists, course detail, chapters, CPE tracker report, orders, plans, profile.
 - `POST` for actions: the five `api/v1/account/auth-*` sign-in routes, quiz + final-assessment submission, `myclassactivity` progress, cart operations, checkout, feedback, enquiry.

@@ -11,7 +11,7 @@ import {
 import { environment } from '@env/environment';
 
 /**
- * Resolves a path against `BASE_API_URL`, leaving absolute URLs alone.
+ * Resolves a path against `environment.API.baseUrl`, leaving absolute URLs alone.
  *
  * Exported as a free function because `httpResource` needs a URL string while
  * commands go through `ApiClient` — both must resolve the base identically, and
@@ -19,7 +19,7 @@ import { environment } from '@env/environment';
  */
 export function apiUrl(url: string): string {
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  return `${environment.BASE_API_URL}${url}`;
+  return `${environment.API.baseUrl}${url}`;
 }
 
 @Service()

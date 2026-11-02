@@ -13,7 +13,7 @@ import { HomeWebinar, parseHighlightWebinar } from '../models/home-sections.mode
  * design: it takes no `login_type`, a signed-in caller gets the same rail, and
  * any undeclared query parameter is a 400. Upcoming webinars only.
  */
-const HIGHLIGHT_WEBINARS_URL = `${environment.BASE_API_URL}web-api/v1/events/highlight-webinars/`;
+const HIGHLIGHT_WEBINARS_URL = `${environment.API.baseUrl}web-api/v1/events/highlight-webinars/`;
 
 /**
  * The level ladder (Postman `web-masterclass-levels-v1`). Not paginated. Read
@@ -23,7 +23,7 @@ const HIGHLIGHT_WEBINARS_URL = `${environment.BASE_API_URL}web-api/v1/events/hig
  * `docs/MASTERCLASS_API_QUESTIONS.md`); until then the section stays hidden
  * for guests and the failure is logged.
  */
-const LEVELS_URL = `${environment.BASE_API_URL}web-api/v1/masterclass/levels/`;
+const LEVELS_URL = `${environment.API.baseUrl}web-api/v1/masterclass/levels/`;
 
 /** The programme whose ladder the CAIRA stack shows; `levels/` returns every programme's. */
 const CAIRA_SUBJECT = 'CAIRA';

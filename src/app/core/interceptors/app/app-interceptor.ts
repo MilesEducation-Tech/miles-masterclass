@@ -1,12 +1,15 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { environment } from '@env/environment';
 import { from, switchMap } from 'rxjs';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { CountryContext } from '@core/services/country-context/country-context';
 import { LanguageContext } from '@core/services/language-context/language-context';
 import { IS_EXTERNAL_REQUEST, SKIP_AUTH_TOKEN } from '@core/models/http.model';
 import { SESSION_MINTING_PATHS } from '@core/models/auth.model';
+
+/** Which client is calling, sent on every platform request as `X-Platform` / `X-App-Type`. */
+const CLIENT_PLATFORM = 'masterclass';
+const CLIENT_APP_TYPE = 'WA';
 
 /**
  * The four session-minting routes must never be preceded by a refresh:
@@ -44,8 +47,8 @@ export const appInterceptor: HttpInterceptorFn = (original, next) => {
     setHeaders: {
       'X-Accept-Language': inject(LanguageContext).current,
       'X-Country-Code': inject(CountryContext).current().toUpperCase(),
-      'X-Platform': environment.platform,
-      'X-App-Type': environment.appType,
+      'X-Platform': CLIENT_PLATFORM,
+      'X-App-Type': CLIENT_APP_TYPE,
     },
   });
 

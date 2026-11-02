@@ -47,7 +47,7 @@ export const DEFAULT_OFFERINGS: OfferingData[] = [
     service: 'Masterclass',
     title: 'Hollywood-Style Master Classes',
     description: 'Cinematic, expert-led sessions that make AI concepts clear and actionable.',
-    media: environment.GCS_URL + 'features/masterclassHome.mp4',
+    media: environment.ASSETS.gcsUrl + 'features/masterclassHome.mp4',
     icon: matPlayArrowOutline,
     mediaType: 'video',
     animation: true,
@@ -56,7 +56,7 @@ export const DEFAULT_OFFERINGS: OfferingData[] = [
       {
         id: 1,
         name: 'Floating Asset 1',
-        media: environment.GCS_URL + 'home/masterclass-nasba.webp',
+        media: environment.ASSETS.gcsUrl + 'home/masterclass-nasba.webp',
         mediaType: 'image',
         position: { x: 0, y: 5, z: 1, width: 30 },
         animationName: 'floatInit',
@@ -64,7 +64,7 @@ export const DEFAULT_OFFERINGS: OfferingData[] = [
       {
         id: 2,
         name: 'Floating Asset 2',
-        media: environment.GCS_URL + 'home/masterclass-instructor.webp',
+        media: environment.ASSETS.gcsUrl + 'home/masterclass-instructor.webp',
         mediaType: 'image',
         position: { x: 80, y: 50, z: 1, width: 30 },
         animationName: 'floatInitBounce',
@@ -72,7 +72,7 @@ export const DEFAULT_OFFERINGS: OfferingData[] = [
       {
         id: 3,
         name: 'Floating Asset 3',
-        media: environment.GCS_URL + 'home/masterclass-topic.webp',
+        media: environment.ASSETS.gcsUrl + 'home/masterclass-topic.webp',
         mediaType: 'image',
         position: { x: -10, y: 40, z: 1, width: 30 },
         animationName: 'floatInitSlide',
@@ -85,7 +85,7 @@ export const DEFAULT_OFFERINGS: OfferingData[] = [
     title: 'Live Premieres',
     description:
       'Get early access to new AI content. Join live sessions led by master instructors every Friday evening',
-    media: environment.GCS_URL + 'features/premiereHome.mp4',
+    media: environment.ASSETS.gcsUrl + 'features/premiereHome.mp4',
     icon: matVideoCameraFrontOutline,
     mediaType: 'video',
     animation: true,
@@ -94,7 +94,7 @@ export const DEFAULT_OFFERINGS: OfferingData[] = [
       {
         id: 1,
         name: 'Floating Asset 1',
-        media: environment.GCS_URL + 'home/premiere-live.webp',
+        media: environment.ASSETS.gcsUrl + 'home/premiere-live.webp',
         mediaType: 'image',
         position: { x: 0, y: 5, z: 1, width: 15 },
         animationName: 'floatInit',
@@ -102,7 +102,7 @@ export const DEFAULT_OFFERINGS: OfferingData[] = [
       {
         id: 2,
         name: 'Floating Asset 2',
-        media: environment.GCS_URL + 'home/PoolQuestions.webp',
+        media: environment.ASSETS.gcsUrl + 'home/PoolQuestions.webp',
         mediaType: 'image',
         position: { x: 80, y: 50, z: 1, width: 20 },
         animationName: 'floatInitBounce',
@@ -110,7 +110,7 @@ export const DEFAULT_OFFERINGS: OfferingData[] = [
       {
         id: 3,
         name: 'Floating Asset 3',
-        media: environment.GCS_URL + 'home/premiere.webp',
+        media: environment.ASSETS.gcsUrl + 'home/premiere.webp',
         mediaType: 'image',
         position: { x: -10, y: 40, z: 1, width: 30 },
         animationName: 'floatInitSlide',
@@ -123,7 +123,7 @@ export const DEFAULT_OFFERINGS: OfferingData[] = [
     title: 'Insightful Podcasts',
     description:
       'Focused audio learning for busy professionals. Earn credits for qualifying episodes.',
-    media: environment.GCS_URL + 'features/podcastHome.mp4',
+    media: environment.ASSETS.gcsUrl + 'features/podcastHome.mp4',
     icon: matMicNoneOutline,
     mediaType: 'video',
     animation: true,
@@ -133,7 +133,7 @@ export const DEFAULT_OFFERINGS: OfferingData[] = [
       {
         id: 1,
         name: 'Floating Asset 1',
-        media: environment.GCS_URL + 'home/podcast-record.webp',
+        media: environment.ASSETS.gcsUrl + 'home/podcast-record.webp',
         mediaType: 'image',
         position: { x: 70, y: 10, z: 0, width: 40 },
         animationName: 'slideLeft',
@@ -141,7 +141,7 @@ export const DEFAULT_OFFERINGS: OfferingData[] = [
       {
         id: 2,
         name: 'Floating Asset 2',
-        media: environment.GCS_URL + 'home/podcast-microphone.webp',
+        media: environment.ASSETS.gcsUrl + 'home/podcast-microphone.webp',
         mediaType: 'image',
         position: { x: -10, y: 5, z: 0, width: 40 },
         animationName: 'slideRight',
@@ -154,7 +154,7 @@ export const DEFAULT_OFFERINGS: OfferingData[] = [
     title: 'Reels for Micro-Learning*',
     description:
       'Short, targeted AI lessons designed for quick learning. Perfect for busy schedules.',
-    media: environment.GCS_URL + 'features/nanoLearningHome.mp4',
+    media: environment.ASSETS.gcsUrl + 'features/nanoLearningHome.mp4',
     icon: matPhoneIphoneOutline,
     mediaType: 'video',
     animation: true,
@@ -165,7 +165,7 @@ export const DEFAULT_OFFERINGS: OfferingData[] = [
       {
         id: 1,
         name: 'Floating Asset 1',
-        media: environment.GCS_URL + 'home/nano-stuff.webp',
+        media: environment.ASSETS.gcsUrl + 'home/nano-stuff.webp',
         mediaType: 'image',
         position: { x: 0, y: 5, z: 1, width: 30 },
         animationName: 'floatInit',
@@ -173,7 +173,7 @@ export const DEFAULT_OFFERINGS: OfferingData[] = [
       {
         id: 2,
         name: 'Floating Asset 2',
-        media: environment.GCS_URL + 'home/nano-learn.webp',
+        media: environment.ASSETS.gcsUrl + 'home/nano-learn.webp',
         mediaType: 'image',
         position: { x: 80, y: 50, z: 1, width: 30 },
         animationName: 'floatInitBounce',
@@ -181,7 +181,7 @@ export const DEFAULT_OFFERINGS: OfferingData[] = [
       {
         id: 3,
         name: 'Floating Asset 3',
-        media: environment.GCS_URL + 'home/nano-watch.webp',
+        media: environment.ASSETS.gcsUrl + 'home/nano-watch.webp',
         mediaType: 'image',
         position: { x: -10, y: 40, z: 1, width: 30 },
         animationName: 'floatInitSlide',
@@ -195,7 +195,7 @@ export const PARTNER_OFFERINGS: OfferingData[] = [
     service: 'Masterclass',
     title: 'Hollywood-Style Master Classes',
     description: 'Cinematic, expert-led sessions that make AI concepts clear and actionable.',
-    media: environment.GCS_URL + 'features/masterclassHome.mp4',
+    media: environment.ASSETS.gcsUrl + 'features/masterclassHome.mp4',
     icon: matPlayArrowOutline,
     mediaType: 'video',
     animation: true,
@@ -203,7 +203,7 @@ export const PARTNER_OFFERINGS: OfferingData[] = [
       {
         id: 1,
         name: 'Floating Asset 1',
-        media: environment.GCS_URL + 'home/masterclass-nasba.webp',
+        media: environment.ASSETS.gcsUrl + 'home/masterclass-nasba.webp',
         mediaType: 'image',
         position: { x: 0, y: 5, z: 1, width: 30 },
         animationName: 'floatInit',
@@ -211,7 +211,7 @@ export const PARTNER_OFFERINGS: OfferingData[] = [
       {
         id: 2,
         name: 'Floating Asset 2',
-        media: environment.GCS_URL + 'home/masterclass-instructor.webp',
+        media: environment.ASSETS.gcsUrl + 'home/masterclass-instructor.webp',
         mediaType: 'image',
         position: { x: 80, y: 50, z: 1, width: 30 },
         animationName: 'floatInitBounce',
@@ -219,7 +219,7 @@ export const PARTNER_OFFERINGS: OfferingData[] = [
       {
         id: 3,
         name: 'Floating Asset 3',
-        media: environment.GCS_URL + 'home/masterclass-topic.webp',
+        media: environment.ASSETS.gcsUrl + 'home/masterclass-topic.webp',
         mediaType: 'image',
         position: { x: -10, y: 40, z: 1, width: 30 },
         animationName: 'floatInitSlide',
@@ -232,7 +232,7 @@ export const PARTNER_OFFERINGS: OfferingData[] = [
     title: 'Reels for Micro-Learning',
     description:
       'Short, targeted AI lessons designed for quick learning. Perfect for busy schedules.',
-    media: environment.GCS_URL + 'features/nanoLearningHome.mp4',
+    media: environment.ASSETS.gcsUrl + 'features/nanoLearningHome.mp4',
     icon: matVideoCameraFrontOutline,
     mediaType: 'video',
     animation: true,
@@ -241,7 +241,7 @@ export const PARTNER_OFFERINGS: OfferingData[] = [
       {
         id: 1,
         name: 'Floating Asset 1',
-        media: environment.GCS_URL + 'home/nano-stuff.webp',
+        media: environment.ASSETS.gcsUrl + 'home/nano-stuff.webp',
         mediaType: 'image',
         position: { x: 0, y: 5, z: 1, width: 30 },
         animationName: 'floatInit',
@@ -249,7 +249,7 @@ export const PARTNER_OFFERINGS: OfferingData[] = [
       {
         id: 2,
         name: 'Floating Asset 2',
-        media: environment.GCS_URL + 'home/nano-learn.webp',
+        media: environment.ASSETS.gcsUrl + 'home/nano-learn.webp',
         mediaType: 'image',
         position: { x: 80, y: 50, z: 1, width: 30 },
         animationName: 'floatInitBounce',
@@ -257,7 +257,7 @@ export const PARTNER_OFFERINGS: OfferingData[] = [
       {
         id: 3,
         name: 'Floating Asset 3',
-        media: environment.GCS_URL + 'home/nano-watch.webp',
+        media: environment.ASSETS.gcsUrl + 'home/nano-watch.webp',
         mediaType: 'image',
         position: { x: -10, y: 40, z: 1, width: 30 },
         animationName: 'floatInitSlide',
@@ -270,7 +270,7 @@ export const PARTNER_OFFERINGS: OfferingData[] = [
     title: 'Insightful Podcasts',
     description:
       'Focused audio learning for busy professionals. Earn credits for qualifying episodes.',
-    media: environment.GCS_URL + 'features/podcastHome.mp4',
+    media: environment.ASSETS.gcsUrl + 'features/podcastHome.mp4',
     icon: matMicNoneOutline,
     mediaType: 'video',
     animation: true,
@@ -279,7 +279,7 @@ export const PARTNER_OFFERINGS: OfferingData[] = [
       {
         id: 1,
         name: 'Floating Asset 1',
-        media: environment.GCS_URL + 'home/podcast-record.webp',
+        media: environment.ASSETS.gcsUrl + 'home/podcast-record.webp',
         mediaType: 'image',
         position: { x: 70, y: 10, z: 0, width: 40 },
         animationName: 'slideLeft',
@@ -287,7 +287,7 @@ export const PARTNER_OFFERINGS: OfferingData[] = [
       {
         id: 2,
         name: 'Floating Asset 2',
-        media: environment.GCS_URL + 'home/podcast-microphone.webp',
+        media: environment.ASSETS.gcsUrl + 'home/podcast-microphone.webp',
         mediaType: 'image',
         position: { x: -10, y: 5, z: 0, width: 40 },
         animationName: 'slideRight',
@@ -299,7 +299,7 @@ export const PARTNER_OFFERINGS: OfferingData[] = [
     service: 'Gamified Learning',
     title: 'Gamified Learning',
     description: 'One skill. Seven days. Streaks and challenges designed to make CPE engaging.',
-    media: environment.S3_BUCKET_URL + 'static-assests/web-app/partners/7-days-challenge.webp',
+    media: environment.ASSETS.s3Url + 'static-assests/web-app/partners/7-days-challenge.webp',
     icon: matPhoneIphoneOutline,
     mediaType: 'image',
     animation: true,
@@ -309,7 +309,7 @@ export const PARTNER_OFFERINGS: OfferingData[] = [
       {
         id: 1,
         name: 'Floating Asset 1',
-        media: environment.S3_BUCKET_URL + 'static-assests/web-app/partners/start-challenge.webp',
+        media: environment.ASSETS.s3Url + 'static-assests/web-app/partners/start-challenge.webp',
         mediaType: 'image',
         position: { x: 80, y: 60, z: 1, width: 60 },
         animationName: 'floatInit',
@@ -317,7 +317,7 @@ export const PARTNER_OFFERINGS: OfferingData[] = [
       {
         id: 2,
         name: 'Floating Asset 2',
-        media: environment.S3_BUCKET_URL + 'static-assests/web-app/partners/life.webp',
+        media: environment.ASSETS.s3Url + 'static-assests/web-app/partners/life.webp',
         mediaType: 'image',
         position: { x: 80, y: 0, z: 1, width: 23 },
         animationName: 'floatInitBounce',
@@ -326,7 +326,7 @@ export const PARTNER_OFFERINGS: OfferingData[] = [
         id: 3,
         name: 'Floating Asset 3',
         media:
-          environment.S3_BUCKET_URL + 'static-assests/web-app/partners/7-days-challenge-text.webp',
+          environment.ASSETS.s3Url + 'static-assests/web-app/partners/7-days-challenge-text.webp',
         mediaType: 'image',
         position: { x: -20, y: 10, z: 1, width: 70 },
         animationName: 'floatInitSlide',
@@ -340,7 +340,7 @@ export const MGI_PARTNER_OFFERINGS: OfferingData[] = [
     service: 'Masterclass',
     title: 'Master Classes',
     description: 'Cinematic, expert-led sessions on real-world AI applications.',
-    media: environment.GCS_URL + 'features/masterclassHome.mp4',
+    media: environment.ASSETS.gcsUrl + 'features/masterclassHome.mp4',
     icon: matPlayArrowOutline,
     mediaType: 'video',
     animation: true,
@@ -348,7 +348,7 @@ export const MGI_PARTNER_OFFERINGS: OfferingData[] = [
       {
         id: 1,
         name: 'Floating Asset 1',
-        media: environment.GCS_URL + 'home/masterclass-nasba.webp',
+        media: environment.ASSETS.gcsUrl + 'home/masterclass-nasba.webp',
         mediaType: 'image',
         position: { x: 0, y: 5, z: 1, width: 30 },
         animationName: 'floatInit',
@@ -356,7 +356,7 @@ export const MGI_PARTNER_OFFERINGS: OfferingData[] = [
       {
         id: 2,
         name: 'Floating Asset 2',
-        media: environment.GCS_URL + 'home/masterclass-instructor.webp',
+        media: environment.ASSETS.gcsUrl + 'home/masterclass-instructor.webp',
         mediaType: 'image',
         position: { x: 80, y: 50, z: 1, width: 30 },
         animationName: 'floatInitBounce',
@@ -364,7 +364,7 @@ export const MGI_PARTNER_OFFERINGS: OfferingData[] = [
       {
         id: 3,
         name: 'Floating Asset 3',
-        media: environment.GCS_URL + 'home/masterclass-topic.webp',
+        media: environment.ASSETS.gcsUrl + 'home/masterclass-topic.webp',
         mediaType: 'image',
         position: { x: -10, y: 40, z: 1, width: 30 },
         animationName: 'floatInitSlide',
@@ -376,7 +376,7 @@ export const MGI_PARTNER_OFFERINGS: OfferingData[] = [
     service: 'Micro Learning',
     title: 'Micro-Learning',
     description: 'Instagram-style reels for 10-minute daily skill-building.',
-    media: environment.GCS_URL + 'features/nanoLearningHome.mp4',
+    media: environment.ASSETS.gcsUrl + 'features/nanoLearningHome.mp4',
     icon: matVideoCameraFrontOutline,
     mediaType: 'video',
     animation: true,
@@ -385,7 +385,7 @@ export const MGI_PARTNER_OFFERINGS: OfferingData[] = [
       {
         id: 1,
         name: 'Floating Asset 1',
-        media: environment.GCS_URL + 'home/nano-stuff.webp',
+        media: environment.ASSETS.gcsUrl + 'home/nano-stuff.webp',
         mediaType: 'image',
         position: { x: 0, y: 5, z: 1, width: 30 },
         animationName: 'floatInit',
@@ -393,7 +393,7 @@ export const MGI_PARTNER_OFFERINGS: OfferingData[] = [
       {
         id: 2,
         name: 'Floating Asset 2',
-        media: environment.GCS_URL + 'home/nano-learn.webp',
+        media: environment.ASSETS.gcsUrl + 'home/nano-learn.webp',
         mediaType: 'image',
         position: { x: 80, y: 50, z: 1, width: 30 },
         animationName: 'floatInitBounce',
@@ -401,7 +401,7 @@ export const MGI_PARTNER_OFFERINGS: OfferingData[] = [
       {
         id: 3,
         name: 'Floating Asset 3',
-        media: environment.GCS_URL + 'home/nano-watch.webp',
+        media: environment.ASSETS.gcsUrl + 'home/nano-watch.webp',
         mediaType: 'image',
         position: { x: -10, y: 40, z: 1, width: 30 },
         animationName: 'floatInitSlide',
@@ -413,7 +413,7 @@ export const MGI_PARTNER_OFFERINGS: OfferingData[] = [
     service: 'Podcasts',
     title: 'Podcasts',
     description: 'Sharp conversations on AI strategy and firm leadership.',
-    media: environment.GCS_URL + 'features/podcastHome.mp4',
+    media: environment.ASSETS.gcsUrl + 'features/podcastHome.mp4',
     icon: matMicNoneOutline,
     mediaType: 'video',
     animation: true,
@@ -422,7 +422,7 @@ export const MGI_PARTNER_OFFERINGS: OfferingData[] = [
       {
         id: 1,
         name: 'Floating Asset 1',
-        media: environment.GCS_URL + 'home/podcast-record.webp',
+        media: environment.ASSETS.gcsUrl + 'home/podcast-record.webp',
         mediaType: 'image',
         position: { x: 70, y: 10, z: 0, width: 40 },
         animationName: 'slideLeft',
@@ -430,7 +430,7 @@ export const MGI_PARTNER_OFFERINGS: OfferingData[] = [
       {
         id: 2,
         name: 'Floating Asset 2',
-        media: environment.GCS_URL + 'home/podcast-microphone.webp',
+        media: environment.ASSETS.gcsUrl + 'home/podcast-microphone.webp',
         mediaType: 'image',
         position: { x: -10, y: 5, z: 0, width: 40 },
         animationName: 'slideRight',
@@ -443,7 +443,7 @@ export const MGI_PARTNER_OFFERINGS: OfferingData[] = [
     service: 'Virtual Premieres',
     title: 'Live Webinars',
     description: 'Interactive, hands-on sessions across the full AI stack, with live Q&A.',
-    media: environment.GCS_URL + 'features/premiereHome.mp4',
+    media: environment.ASSETS.gcsUrl + 'features/premiereHome.mp4',
     icon: matVideoCameraFrontOutline,
     mediaType: 'video',
     animation: true,
@@ -452,7 +452,7 @@ export const MGI_PARTNER_OFFERINGS: OfferingData[] = [
       {
         id: 1,
         name: 'Floating Asset 1',
-        media: environment.GCS_URL + 'home/premiere-live.webp',
+        media: environment.ASSETS.gcsUrl + 'home/premiere-live.webp',
         mediaType: 'image',
         position: { x: 0, y: 5, z: 1, width: 15 },
         animationName: 'floatInit',
@@ -460,7 +460,7 @@ export const MGI_PARTNER_OFFERINGS: OfferingData[] = [
       {
         id: 2,
         name: 'Floating Asset 2',
-        media: environment.GCS_URL + 'home/PoolQuestions.webp',
+        media: environment.ASSETS.gcsUrl + 'home/PoolQuestions.webp',
         mediaType: 'image',
         position: { x: 80, y: 50, z: 1, width: 20 },
         animationName: 'floatInitBounce',
@@ -468,7 +468,7 @@ export const MGI_PARTNER_OFFERINGS: OfferingData[] = [
       {
         id: 3,
         name: 'Floating Asset 3',
-        media: environment.GCS_URL + 'home/premiere.webp',
+        media: environment.ASSETS.gcsUrl + 'home/premiere.webp',
         mediaType: 'image',
         position: { x: -10, y: 40, z: 1, width: 30 },
         animationName: 'floatInitSlide',
@@ -489,7 +489,7 @@ export const CPA_CANADA_OFFERINGS: OfferingData[] = [
     service: 'Masterclass',
     title: 'Master Classes',
     description: 'Cinematic, expert-led sessions on real-world AI applications.',
-    media: environment.GCS_URL + 'features/masterclassHome.mp4',
+    media: environment.ASSETS.gcsUrl + 'features/masterclassHome.mp4',
     icon: matPlayArrowOutline,
     mediaType: 'video',
     animation: true,
@@ -497,7 +497,7 @@ export const CPA_CANADA_OFFERINGS: OfferingData[] = [
       {
         id: 1,
         name: 'Floating Asset 1',
-        media: environment.GCS_URL + 'home/masterclass-nasba.webp',
+        media: environment.ASSETS.gcsUrl + 'home/masterclass-nasba.webp',
         mediaType: 'image',
         position: { x: 0, y: 5, z: 1, width: 30 },
         animationName: 'floatInit',
@@ -505,7 +505,7 @@ export const CPA_CANADA_OFFERINGS: OfferingData[] = [
       {
         id: 2,
         name: 'Floating Asset 2',
-        media: environment.GCS_URL + 'home/masterclass-instructor.webp',
+        media: environment.ASSETS.gcsUrl + 'home/masterclass-instructor.webp',
         mediaType: 'image',
         position: { x: 80, y: 50, z: 1, width: 30 },
         animationName: 'floatInitBounce',
@@ -513,7 +513,7 @@ export const CPA_CANADA_OFFERINGS: OfferingData[] = [
       {
         id: 3,
         name: 'Floating Asset 3',
-        media: environment.GCS_URL + 'home/masterclass-topic.webp',
+        media: environment.ASSETS.gcsUrl + 'home/masterclass-topic.webp',
         mediaType: 'image',
         position: { x: -10, y: 40, z: 1, width: 30 },
         animationName: 'floatInitSlide',
@@ -544,7 +544,7 @@ export const CPA_CANADA_OFFERINGS: OfferingData[] = [
     service: 'Micro Learning',
     title: 'Micro-Learning',
     description: 'Instagram-style reels for 10-minute daily skill-building.',
-    media: environment.GCS_URL + 'features/nanoLearningHome.mp4',
+    media: environment.ASSETS.gcsUrl + 'features/nanoLearningHome.mp4',
     icon: matVideoCameraFrontOutline,
     mediaType: 'video',
     animation: true,
@@ -553,7 +553,7 @@ export const CPA_CANADA_OFFERINGS: OfferingData[] = [
       {
         id: 1,
         name: 'Floating Asset 1',
-        media: environment.GCS_URL + 'home/nano-stuff.webp',
+        media: environment.ASSETS.gcsUrl + 'home/nano-stuff.webp',
         mediaType: 'image',
         position: { x: 0, y: 5, z: 1, width: 30 },
         animationName: 'floatInit',
@@ -561,7 +561,7 @@ export const CPA_CANADA_OFFERINGS: OfferingData[] = [
       {
         id: 2,
         name: 'Floating Asset 2',
-        media: environment.GCS_URL + 'home/nano-learn.webp',
+        media: environment.ASSETS.gcsUrl + 'home/nano-learn.webp',
         mediaType: 'image',
         position: { x: 80, y: 50, z: 1, width: 30 },
         animationName: 'floatInitBounce',
@@ -569,7 +569,7 @@ export const CPA_CANADA_OFFERINGS: OfferingData[] = [
       {
         id: 3,
         name: 'Floating Asset 3',
-        media: environment.GCS_URL + 'home/nano-watch.webp',
+        media: environment.ASSETS.gcsUrl + 'home/nano-watch.webp',
         mediaType: 'image',
         position: { x: -10, y: 40, z: 1, width: 30 },
         animationName: 'floatInitSlide',
@@ -581,7 +581,7 @@ export const CPA_CANADA_OFFERINGS: OfferingData[] = [
     service: 'Podcasts',
     title: 'Podcasts',
     description: 'Sharp conversations on AI strategy and firm leadership.',
-    media: environment.GCS_URL + 'features/podcastHome.mp4',
+    media: environment.ASSETS.gcsUrl + 'features/podcastHome.mp4',
     icon: matMicNoneOutline,
     mediaType: 'video',
     animation: true,
@@ -590,7 +590,7 @@ export const CPA_CANADA_OFFERINGS: OfferingData[] = [
       {
         id: 1,
         name: 'Floating Asset 1',
-        media: environment.GCS_URL + 'home/podcast-record.webp',
+        media: environment.ASSETS.gcsUrl + 'home/podcast-record.webp',
         mediaType: 'image',
         position: { x: 70, y: 10, z: 0, width: 40 },
         animationName: 'slideLeft',
@@ -598,7 +598,7 @@ export const CPA_CANADA_OFFERINGS: OfferingData[] = [
       {
         id: 2,
         name: 'Floating Asset 2',
-        media: environment.GCS_URL + 'home/podcast-microphone.webp',
+        media: environment.ASSETS.gcsUrl + 'home/podcast-microphone.webp',
         mediaType: 'image',
         position: { x: -10, y: 5, z: 0, width: 40 },
         animationName: 'slideRight',
@@ -610,7 +610,7 @@ export const CPA_CANADA_OFFERINGS: OfferingData[] = [
     service: 'Virtual Premieres',
     title: 'Live Webinars',
     description: 'Interactive, hands-on sessions across the full AI stack, with live Q&A.',
-    media: environment.GCS_URL + 'features/premiereHome.mp4',
+    media: environment.ASSETS.gcsUrl + 'features/premiereHome.mp4',
     icon: matVideoCameraFrontOutline,
     mediaType: 'video',
     animation: true,
@@ -619,7 +619,7 @@ export const CPA_CANADA_OFFERINGS: OfferingData[] = [
       {
         id: 1,
         name: 'Floating Asset 1',
-        media: environment.GCS_URL + 'home/premiere-live.webp',
+        media: environment.ASSETS.gcsUrl + 'home/premiere-live.webp',
         mediaType: 'image',
         position: { x: 0, y: 5, z: 1, width: 15 },
         animationName: 'floatInit',
@@ -627,7 +627,7 @@ export const CPA_CANADA_OFFERINGS: OfferingData[] = [
       {
         id: 2,
         name: 'Floating Asset 2',
-        media: environment.GCS_URL + 'home/PoolQuestions.webp',
+        media: environment.ASSETS.gcsUrl + 'home/PoolQuestions.webp',
         mediaType: 'image',
         position: { x: 80, y: 50, z: 1, width: 20 },
         animationName: 'floatInitBounce',
@@ -635,7 +635,7 @@ export const CPA_CANADA_OFFERINGS: OfferingData[] = [
       {
         id: 3,
         name: 'Floating Asset 3',
-        media: environment.GCS_URL + 'home/premiere.webp',
+        media: environment.ASSETS.gcsUrl + 'home/premiere.webp',
         mediaType: 'image',
         position: { x: -10, y: 40, z: 1, width: 30 },
         animationName: 'floatInitSlide',

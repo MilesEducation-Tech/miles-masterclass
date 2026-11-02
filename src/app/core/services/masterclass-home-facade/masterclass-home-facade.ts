@@ -15,7 +15,7 @@ import { Logger } from '@core/services/logger/logger';
 import { withPreviousValue } from '@core/utils/with-previous-value';
 
 /**
- * Absolute URL off `BASE_API_URL`, which is the ORIGIN ROOT (trailing slash,
+ * Absolute URL off `environment.API.baseUrl`, which is the ORIGIN ROOT (trailing slash,
  * no `api/` segment). Built whole, the same way as `WEBINAR_ENDPOINTS`, so
  * `apiUrl()` passes it through untouched and the `web-api/` surface is
  * spelled out where a reviewer can see it. This read never calls `app-api/`.
@@ -30,7 +30,7 @@ import { withPreviousValue } from '@core/utils/with-previous-value';
  * is a bad or expired token on either branch (the backend rechecked this on
  * 2026-10-07; it used to be a 403).
  */
-const TRACKS_PAGE_URL = `${environment.BASE_API_URL}web-api/v1/masterclass/tracks-page/`;
+const TRACKS_PAGE_URL = `${environment.API.baseUrl}web-api/v1/masterclass/tracks-page/`;
 
 /**
  * Rows asked for per list on `tracks-page/`: `tracks.page_size` for the tracks

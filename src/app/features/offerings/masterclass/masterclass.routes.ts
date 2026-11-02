@@ -1,12 +1,14 @@
 import { Route } from '@angular/router';
 import { authGuard } from '@core/guards/auth/auth-guard';
 import { canDeactivateExamGuard } from '@core/guards/can-deactivate-exam-guard';
+import { MasterclassRailFilter } from '@shared/services/masterclass-rail-filter';
 import { CourseCertificateFacade } from '@features/offerings/services/course-certificate-facade';
 import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
 import { CourseEvaluationFacade } from '@features/offerings/services/course-evaluation-facade';
 import { FinalAssessmentFacade } from '@features/offerings/services/final-assessment-facade';
 import { Masterclass } from '@features/offerings/masterclass/pages/masterclass/masterclass';
 import { MasterclassHighlightFacade } from '@features/offerings/masterclass/services/masterclass-highlight-facade';
+import { MasterclassLibraryFacade } from '@features/offerings/masterclass/services/masterclass-library-facade';
 
 /**
  * The landing and course pages are public. Everything a learner does inside a
@@ -15,7 +17,11 @@ import { MasterclassHighlightFacade } from '@features/offerings/masterclass/serv
  * page's chunk never loads.
  */
 export const masterclassRoutes: Route[] = [
-  { path: '', component: Masterclass, providers: [MasterclassHighlightFacade] },
+  {
+    path: '',
+    component: Masterclass,
+    providers: [MasterclassHighlightFacade, MasterclassLibraryFacade, MasterclassRailFilter],
+  },
   {
     path: ':courseId/:courseTitle',
     // One instance for the course page and its chapters, so Watch Now and moving

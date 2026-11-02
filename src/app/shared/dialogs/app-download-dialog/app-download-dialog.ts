@@ -1,12 +1,11 @@
 import { Component } from '@angular/core';
-import { NgIcon, provideIcons } from '@ng-icons/core';
+import { NgIcon } from '@ng-icons/core';
 import { appStoreIcon, googlePlayIcon } from '@core/constants/icon';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { Button } from '../../ui/button/button';
+import { Button } from '@shared/ui/button/button';
 
 import { MASTERCLASS_APP_STORE_URL, MASTERCLASS_PLAY_STORE_URL } from '@core/constants/app-store';
 import { Dialog } from '@shared/ui/dialog/dialog';
-import { heroXMark } from '@ng-icons/heroicons/outline';
 
 interface StoreLink {
   label: string;
@@ -17,7 +16,6 @@ interface StoreLink {
 @Component({
   selector: 'app-app-download-dialog',
   imports: [Button, NgIcon, Dialog],
-  providers: [provideIcons({ heroXMark })],
   templateUrl: './app-download-dialog.html',
 })
 export class AppDownloadDialog {

@@ -56,7 +56,7 @@ import {
 })
 export class UaeCaira {
   private readonly document = inject(DOCUMENT);
-  private readonly S3 = environment.S3_BUCKET_URL;
+  private readonly S3 = environment.ASSETS.s3Url;
 
   /**
    * ponytail: inert. Was the live/next-up webinar from `WebinarFacade`, which

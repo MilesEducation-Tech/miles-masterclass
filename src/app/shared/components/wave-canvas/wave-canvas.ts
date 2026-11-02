@@ -25,7 +25,7 @@ interface WaveConfig {
 })
 export class WaveCanvas {
   readonly canvasRef = viewChild<ElementRef<HTMLCanvasElement>>('wavesCanvas');
-  readonly S3_BUCKET_URL = environment.S3_BUCKET_URL;
+  readonly S3_BUCKET_URL = environment.ASSETS.s3Url;
 
   private readonly destroyRef = inject(DestroyRef);
 

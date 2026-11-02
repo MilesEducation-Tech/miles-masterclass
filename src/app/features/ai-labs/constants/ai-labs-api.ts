@@ -12,14 +12,14 @@ import {
 } from '@features/ai-labs/models/ai-labs.model';
 
 /**
- * Absolute URLs off `BASE_API_URL`, which is the ORIGIN ROOT (trailing slash, no `api/` segment).
+ * Absolute URLs off `environment.API.baseUrl`, which is the ORIGIN ROOT (trailing slash, no `api/` segment).
  * Built whole, as `COURSE_DETAIL_API` does, so `apiUrl()` passes them through untouched and the
  * surface is spelled out where a reviewer can see it. Reads are `web-api/v1/`, writes the shared
  * `api/v1/`; `app-api/` belongs to the mobile app and is never used here.
  *
  * Contract: `docs/AI_LABS_API.md`. Routes join this table with the ticket that binds them.
  */
-const ROOT = environment.BASE_API_URL;
+const ROOT = environment.API.baseUrl;
 
 export const AI_LABS_API = {
   /**

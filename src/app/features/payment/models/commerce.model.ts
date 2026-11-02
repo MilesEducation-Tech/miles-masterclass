@@ -1,5 +1,6 @@
 import { Cart, Decimal } from '@core/models/commerce.model';
 import { CommonResponse, RouteConfig } from '@core/models/http.model';
+import { isObject } from '@core/utils/contract-guards';
 
 /**
  * CAIRA commerce types owned by the payment feature. The cart itself is in
@@ -199,9 +200,6 @@ export interface Coupon {
   /** ISO timestamp; `null` when it never expires. */
   valid_to: string | null;
 }
-
-const isObject = (v: unknown): v is Record<string, unknown> =>
-  typeof v === 'object' && v !== null && !Array.isArray(v);
 
 function isCoupon(v: unknown): v is Coupon {
   return (

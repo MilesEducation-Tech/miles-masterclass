@@ -3,7 +3,7 @@
   panelClass="p-0 max-w-[95vw] rounded-[24px] overflow-hidden"
 >
   <div
-    class="relative w-[95vw] max-w-[min(100%,48rem)] overflow-hidden rounded-[24px] border border-[#8b5cf6] bg-[#04101c] shadow-[0px_24px_48px_-12px_rgba(0,0,0,0.4)] backdrop-blur-[12px]"
+    class="relative w-[min(95vw,48rem)] overflow-hidden rounded-[24px] border border-[#8b5cf6] bg-[#04101c] shadow-[0px_24px_48px_-12px_rgba(0,0,0,0.4)] backdrop-blur-[12px]"
   >
     <!-- Orbit hero. The band is the visible slice of a 530x481.5 orbit box that
        Figma positions at card (181, -116) — the top of the box is clipped by the
@@ -179,14 +179,11 @@
       <button
         app-button
         type="button"
-        class="rounded-full"
-        variant="ghost"
+        variant="close"
         size="icon"
         aria-label="Close"
         (click)="dialogRef.close()"
-      >
-        <ng-icon name="heroXMark" aria-hidden="true" />
-      </button>
+      ></button>
     </div>
   </div>
 </app-dialog>

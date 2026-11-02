@@ -12,7 +12,7 @@ interface ComplianceDocument {
 }
 
 /** CDN folder holding the security-documentation PDFs. */
-const SECURITY_DOCS_BASE = `${environment.S3_BUCKET_URL}static-assests/web-app/security-documentation/`;
+const SECURITY_DOCS_BASE = `${environment.ASSETS.s3Url}static-assests/web-app/security-documentation/`;
 
 @Component({
   selector: 'app-compliance',

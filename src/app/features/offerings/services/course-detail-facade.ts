@@ -12,13 +12,16 @@ import {
   signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, map } from 'rxjs';
 import { NgpDialogManager } from 'ng-primitives/dialog';
+import { MASTERCLASS_BOOKMARK_TOASTS } from '@core/constants/masterclass';
 import { SKIP_LOADING } from '@core/models/http.model';
+import { parseBookmarkToggle } from '@core/models/masterclass-home.model';
 import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { SUBSCRIPTION_DIALOG } from '@core/services/dialog/feature-dialog-tokens';
 import { Logger } from '@core/services/logger/logger';
+import { MasterclassBookmarks } from '@core/services/masterclass-bookmarks/masterclass-bookmarks';
 import { NotificationService } from '@core/services/notification/notification';
 import { withPreviousValue } from '@core/utils/with-previous-value';
 import { Utils } from '@shared/services/utils';
@@ -100,6 +103,7 @@ export class CourseDetailFacade {
   private readonly subscriptionDialog = inject(SUBSCRIPTION_DIALOG);
   private readonly api = inject(ApiClient);
   private readonly notification = inject(NotificationService);
+  private readonly bookmarks = inject(MasterclassBookmarks);
   private readonly document = inject(DOCUMENT);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -251,9 +255,11 @@ export class CourseDetailFacade {
     computation: () => null,
   });
 
-  readonly isBookmarked = computed(
-    () => this.bookmarkOverride() ?? this.course()?.is_bookmarked ?? false,
-  );
+  /** This page's toggle, then the visit's answer from a card, then the server's. */
+  readonly isBookmarked = computed(() => {
+    const course = this.course();
+    return this.bookmarkOverride() ?? (course ? this.bookmarks.isBookmarked(course) : false);
+  });
 
   /** True while the bookmark POST is in flight; the button is disabled meanwhile. */
   readonly bookmarkPending = signal(false);
@@ -584,7 +590,8 @@ export class CourseDetailFacade {
    * Toggle the learner's bookmark. Signed out, it goes to sign-in and comes back
    * here, as the auth guard does. Signed in, it flips at once, POSTs, then
    * re-reads `course-detail/` for the server's answer; a failure flips it back
-   * (the interceptor shows the error).
+   * and says so. The answer goes to `MasterclassBookmarks`, which toasts it, so
+   * the cards and My List follow it.
    */
   toggleBookmark(): void {
     const course = this.course();
@@ -598,16 +605,23 @@ export class CourseDetailFacade {
 
     this.bookmarkOverride.set(!this.isBookmarked());
     this.bookmarkPending.set(true);
-    this.api.call({ ...route, path: route.path.replace(':id', course.id) }).subscribe({
-      next: () => {
-        this.bookmarkPending.set(false);
-        this.detailResource.reload();
-      },
-      error: () => {
-        this.bookmarkPending.set(false);
-        this.bookmarkOverride.set(null);
-      },
-    });
+    this.api
+      .call({ ...route, path: route.path.replace(':id', course.id) })
+      .pipe(map(parseBookmarkToggle))
+      .subscribe({
+        next: (bookmarked) => {
+          this.bookmarkPending.set(false);
+          this.bookmarks.record(course.id, bookmarked, course.name);
+          this.detailResource.reload();
+        },
+        error: (error: unknown) => {
+          this.bookmarkPending.set(false);
+          this.bookmarkOverride.set(null);
+          this.logger.error('[CourseDetailFacade] bookmark failed', error);
+          const { failed } = MASTERCLASS_BOOKMARK_TOASTS;
+          this.notification.error(failed.title, failed.message);
+        },
+      });
   }
 
   /** The course's glossary, authored as HTML in the admin. */

@@ -1,11 +1,9 @@
 import { Component } from '@angular/core';
 import { injectDialogRef } from 'ng-primitives/dialog';
 
-import { VideoJs, VideoSource, VideoConfig } from '../../components/video-js/video-js';
-import { Button } from '../../ui/button/button';
+import { VideoJs, VideoSource, VideoConfig } from '@shared/components/video-js/video-js';
+import { Button } from '@shared/ui/button/button';
 import { Dialog } from '@shared/ui/dialog/dialog';
-import { NgIcon, provideIcons } from '@ng-icons/core';
-import { heroXMark } from '@ng-icons/heroicons/outline';
 
 export interface VideoDialogData {
   title?: string;
@@ -15,12 +13,10 @@ export interface VideoDialogData {
 
 @Component({
   selector: 'app-video-dialog',
-  imports: [VideoJs, Button, Dialog, NgIcon],
-  providers: [provideIcons({ heroXMark })],
+  imports: [VideoJs, Button, Dialog],
   template: `
-    <!-- The panel shrinks to the 50vw player and centres. With the panel's default
-         w-full it spanned the viewport, leaving the player in its left half. -->
-    <app-dialog [ariaLabel]="data.title || 'Video'" panelClass="p-0 w-auto max-w-none">
+    <!-- The panel shrinks to the 50vw player and centres; max-w-none lifts its 32rem cap. -->
+    <app-dialog [ariaLabel]="data.title || 'Video'" panelClass="p-0 max-w-none">
       <div class="h-full w-[50vw] flex flex-col bg-background text-foreground overflow-hidden">
         <!-- Header -->
         <div
@@ -36,14 +32,11 @@ export interface VideoDialogData {
           <button
             app-button
             type="button"
-            class="rounded-full"
             aria-label="Close dialog"
-            variant="ghost"
+            variant="close"
             size="icon"
             (click)="close()"
-          >
-            <ng-icon name="heroXMark" aria-hidden="true" />
-          </button>
+          ></button>
         </div>
 
         <!-- Video Content -->
