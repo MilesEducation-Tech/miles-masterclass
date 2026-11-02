@@ -1,0 +1,125 @@
+<div
+  class="rounded-lg border border-white/10 bg-linear-to-r from-neutral-900 to-accent/15 px-4 py-4 sm:px-6"
+>
+  @if (!isLoggedIn()) {
+    <p class="text-lg font-bold text-white">Your offers</p>
+    <p class="text-sm text-white/60">
+      <button
+        type="button"
+        class="cursor-pointer font-medium text-accent underline underline-offset-2"
+        (click)="login.emit()"
+      >
+        Log in
+      </button>
+      to explore the coupons.
+    </p>
+  } @else if (best(); as top) {
+    <div ngpAccordion ngpAccordionType="single" [ngpAccordionCollapsible]="true">
+      <div ngpAccordionItem ngpAccordionItemValue="coupons">
+        <button
+          ngpAccordionTrigger
+          ngpButton
+          type="button"
+          class="group flex w-full cursor-pointer items-center justify-between gap-4 rounded text-start outline-none data-focus-visible:outline-2 data-focus-visible:outline-solid data-focus-visible:outline-offset-4 data-focus-visible:outline-ring"
+        >
+          <span class="flex min-w-0 items-center gap-4 sm:gap-6">
+            <span
+              class="shrink-0 -rotate-4 -skew-x-12 text-2xl sm:text-3xl font-black text-accent uppercase italic [text-shadow:-0.5px_2px_0_black]"
+            >
+              <ng-container
+                [ngTemplateOutlet]="discount"
+                [ngTemplateOutletContext]="{ $implicit: top }"
+              />
+            </span>
+            <span class="flex min-w-0 flex-col">
+              <span class="line-clamp-2 text-base sm:text-lg font-bold text-white">
+                {{ top.description || 'Your best offer' }}
+              </span>
+              <span class="text-sm text-white/60">
+                Use code <span class="font-mono font-semibold text-white">{{ top.code }}</span>
+              </span>
+            </span>
+          </span>
+          <ng-icon
+            name="heroChevronDown"
+            class="shrink-0 text-xl text-white transition-transform group-data-open:rotate-180 motion-reduce:transition-none"
+            aria-hidden="true"
+          />
+        </button>
+
+        <div ngpAccordionContent class="mt-4 border-t border-white/10 pt-2">
+          <!-- One row of chips that scrolls inside the strip, never the page. -->
+          <ul class="flex gap-4 overflow-x-auto pt-3 pb-1">
+            @for (coupon of coupons(); track coupon.code) {
+              <li
+                class="relative flex w-67 shrink-0 flex-col gap-1 rounded-lg px-4 py-2.5"
+                [class]="
+                  coupon.code === top.code
+                    ? 'border border-white/20 bg-amber-400/15 shadow-[0_4px_12px_rgba(0,0,0,0.1)]'
+                    : 'bg-neutral-700/40'
+                "
+              >
+                @if (coupon.code === top.code) {
+                  <span
+                    class="absolute -top-3 end-3 rounded border border-white bg-amber-400 px-2 py-0.5 text-[10px] text-white drop-shadow-sm"
+                  >
+                    Best value for you
+                  </span>
+                }
+                <div class="flex items-center justify-between gap-3">
+                  <span class="flex min-w-0 flex-col gap-0.5">
+                    <span class="truncate font-mono text-sm font-semibold text-white">
+                      {{ coupon.code }}
+                    </span>
+                    <span class="truncate text-xs text-neutral-400">
+                      @if (coupon.description; as description) {
+                        {{ description }}
+                      } @else {
+                        <ng-container
+                          [ngTemplateOutlet]="discount"
+                          [ngTemplateOutletContext]="{ $implicit: coupon }"
+                        />
+                      }
+                    </span>
+                    @if (coupon.valid_to; as validTo) {
+                      <!-- `valid_to` is the end of a UTC day, so it reads in UTC. -->
+                      <span class="text-xs text-neutral-500">
+                        Valid till {{ validTo | date: 'mediumDate' : 'UTC' }}
+                      </span>
+                    }
+                  </span>
+                  <button
+                    app-button
+                    type="button"
+                    variant="link"
+                    size="sm"
+                    class="shrink-0 px-2 font-bold"
+                    [disabled]="applyingCode() !== null"
+                    [attr.aria-label]="'Apply coupon ' + coupon.code"
+                    (click)="apply(coupon.code)"
+                  >
+                    {{ applyingCode() === coupon.code ? 'Applying…' : 'Apply' }}
+                  </button>
+                </div>
+                @if (failed(); as refused) {
+                  @if (refused.code === coupon.code) {
+                    <p role="alert" class="text-xs text-red-400">{{ refused.message }}</p>
+                  }
+                }
+              </li>
+            }
+          </ul>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+
+<!-- A coupon's own discount: a percentage, or an amount in its currency. -->
+<ng-template #discount let-coupon>
+  @if (coupon.discount_type === 'percentage') {
+    {{ coupon.discount_value | number: '1.0-2' }}% Off
+  } @else {
+    {{ coupon.discount_value | currency: coupon.currency : 'symbol' : '1.0-2' }} Off
+  }
+</ng-template>

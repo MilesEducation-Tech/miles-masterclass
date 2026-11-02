@@ -187,14 +187,17 @@ export interface AddLineResult {
 }
 
 /**
- * A coupon the learner can apply (`GET commerce/coupons/`, captured on UAT 2026-10-14, not in
- * Postman yet). Only the keys the cart shows; the API also sends `discount_type`/`discount_value`,
- * limits, `applies_to` and per-line splits.
+ * A coupon the learner can apply (`GET commerce/coupons/`, Postman `commerce-coupons-v1`). Only the
+ * keys the cart and the plan page show; the API also sends limits, `applies_to` and per-line splits.
  */
 export interface Coupon {
   code: string;
   description: string | null;
-  /** What this coupon takes off THIS cart, worked out by CAIRA. */
+  /** `percentage` or `flat` (seen so far), as on the cart's coupon. */
+  discount_type: string;
+  /** The coupon's own discount: a percentage, or an amount in `currency`. */
+  discount_value: Decimal;
+  /** What this coupon takes off THIS cart, worked out by CAIRA. Meaningless with no cart. */
   discount_amount: Decimal;
   currency: string;
   /** ISO timestamp; `null` when it never expires. */
@@ -205,14 +208,16 @@ function isCoupon(v: unknown): v is Coupon {
   return (
     isObject(v) &&
     typeof v['code'] === 'string' &&
+    typeof v['discount_type'] === 'string' &&
+    typeof v['discount_value'] === 'string' &&
     typeof v['discount_amount'] === 'string' &&
     typeof v['currency'] === 'string'
   );
 }
 
 /**
- * `httpResource` `parse` for `commerce/coupons/`: `data.results`, in CAIRA's order. A market with
- * no cart answers `cart_id: null` and an empty list.
+ * `httpResource` `parse` for `commerce/coupons/`: `data.results`, in CAIRA's order. With no cart the
+ * answer is `cart_id: null` and the `X-Country-Code` market's coupons; with neither, an empty list.
  */
 export function parseCoupons(body: unknown): Coupon[] {
   const results = isObject(body) && isObject(body['data']) ? body['data']['results'] : undefined;

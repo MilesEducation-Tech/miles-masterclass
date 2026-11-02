@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { HttpContext, HttpErrorResponse, httpResource } from '@angular/common/http';
 import { SKIP_LOADING } from '@core/models/http.model';
-import { Observable, catchError, map, tap, throwError } from 'rxjs';
+import { Observable, catchError, map, switchMap, tap, throwError } from 'rxjs';
 import { NotificationService } from '@core/services/notification/notification';
 import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
@@ -255,26 +255,32 @@ export class PaymentFacade {
   });
 
   /**
-   * The coupons the learner can apply (`commerce/coupons/`), each with what it saves on this cart,
-   * in CAIRA's order. OPT-IN: the cart page calls `loadCoupons()`. Gated on the boolean
-   * `isAuthenticated()` and on a cart with a line.
+   * The coupons the learner can apply (`commerce/coupons/`), in CAIRA's order. OPT-IN: the cart
+   * page's coupon dialog and the plan page call `loadCoupons()`. Gated on the boolean
+   * `isAuthenticated()`. The plan page usually has no cart, and the API needs none: the market is
+   * `X-Country-Code`, and `cart_id` (sent when the cart has a line) only adds each coupon's saving
+   * on that cart.
    *
    * Keyed on the cart's id (null while it has no line), not on the cart object: applying a coupon
-   * or an address replaces the cart but changes nothing this list depends on. It is optional UI, so
-   * it stays off the loading bar, and a failed read only logs: the code field still works.
+   * or an address replaces the cart but changes nothing this list depends on. While the cart itself
+   * is being read (the cart page), it waits for the id, so that page reads once. It is optional UI,
+   * so it stays off the loading bar, and a failed read only logs: the code field still works.
    */
   private readonly couponsWanted = signal(false);
   private readonly couponCartId = computed(() => {
     const cart = this.cart.cart();
     return cart && cart.lines.length > 0 ? cart.id : null;
   });
+  private readonly cartReading = computed(() =>
+    ['loading', 'reloading'].includes(this.cart.status()),
+  );
   private readonly couponsResource = httpResource(
     () => {
       const cartId = this.couponCartId();
-      return this.couponsWanted() && this.auth.isAuthenticated() && cartId
+      return this.couponsWanted() && this.auth.isAuthenticated() && !this.cartReading()
         ? {
             url: apiUrl(COMMERCE_ROUTES.coupons.path),
-            params: { cart_id: cartId },
+            params: cartId ? { cart_id: cartId } : undefined,
             headers: { 'X-Country-Code': this.country().toUpperCase() },
             context: new HttpContext().set(SKIP_LOADING, true),
           }
@@ -282,10 +288,35 @@ export class PaymentFacade {
     },
     { parse: parseCoupons },
   );
-  /** Guarded: `value()` throws on an errored resource. */
-  readonly coupons = computed<Coupon[]>(() =>
-    this.couponsResource.hasValue() ? this.couponsResource.value() : [],
+  /**
+   * Guarded: `value()` throws on an errored resource. A new cart id re-reads the list and empties
+   * the resource meanwhile; the last list stays until the new one lands, so the plan page's strip
+   * doesn't vanish halfway through its own Apply (which adds the plan, and so creates the cart id).
+   */
+  private readonly couponList = linkedSignal<{ list: Coupon[] | null; loading: boolean }, Coupon[]>(
+    {
+      source: () => ({
+        list: this.couponsResource.hasValue() ? this.couponsResource.value() : null,
+        loading: this.couponsResource.isLoading(),
+      }),
+      computation: ({ list, loading }, previous) =>
+        list ?? (loading && previous ? previous.value : []),
+    },
   );
+  readonly coupons = this.couponList.asReadonly();
+  /**
+   * The coupon the plan page headlines: the biggest percentage off, or the biggest flat amount when
+   * there is no percentage coupon. A percentage and an amount don't compare, so percentage wins.
+   */
+  readonly bestCoupon = computed<Coupon | null>(() => {
+    const list = this.coupons();
+    const percentage = list.filter((c) => c.discount_type === 'percentage');
+    const pool = percentage.length ? percentage : list;
+    return pool.reduce<Coupon | null>(
+      (best, c) => (!best || Number(c.discount_value) > Number(best.discount_value) ? c : best),
+      null,
+    );
+  });
   readonly couponsLoading = computed(() => this.couponsResource.isLoading());
   private readonly couponsErrorLog = effect(() => {
     const err = this.couponsResource.error();
@@ -551,25 +582,45 @@ export class PaymentFacade {
    * subscription stack is a 409 whose `message` the learner sees.
    */
   addPlanToCart(plan: Plan, onAdded?: () => void): void {
+    this.addLine(plan).subscribe({
+      next: () => {
+        if (onAdded) onAdded();
+        else this.openCartDrawer();
+      },
+      error: (message: string) => this.notification.error('Could not add to cart', message),
+    });
+  }
+
+  /**
+   * Applies a listed coupon from the plan page. D1 on a cart with no line is a 409, so the plan goes
+   * in first unless the cart already has a line (a subscription cart holds one). Emits the cart with
+   * the coupon on it, or errors with the API's `message` for a refused add or a refused code.
+   */
+  applyCouponWithPlan(plan: Plan, code: string): Observable<Cart> {
+    if (this.cart.lineCount() > 0) return this.applyCoupon(code);
+    return this.addLine(plan).pipe(switchMap(() => this.applyCoupon(code)));
+  }
+
+  /** C2: the answer is the whole cart, so it goes straight into `CartStore`. */
+  private addLine(plan: Plan): Observable<Cart> {
     const cartId = this.cart.cart()?.id;
-    this.http
+    return this.http
       .call(COMMERCE_ROUTES.addLine, {
         product_id: plan.product.id,
         plan_id: plan.id,
         ...(cartId ? { cart_id: cartId } : {}),
       })
-      .subscribe({
-        next: ({ data }) => {
-          this.cart.set(data.result);
+      .pipe(
+        map(({ data }) => data.result),
+        tap((cart) => {
+          this.cart.set(cart);
           this.notification.success('Added to cart', `${plan.product.title} is in your cart.`);
-          if (onAdded) onAdded();
-          else this.openCartDrawer();
-        },
-        error: (err) => {
+        }),
+        catchError((err: unknown) => {
           this.logger.error('Failed to add the plan to the cart', err);
-          this.notification.error('Could not add to cart', commerceErrorOf(err).message);
-        },
-      });
+          return throwError(() => commerceErrorOf(err).message);
+        }),
+      );
   }
 
   async openCartDrawer(): Promise<void> {

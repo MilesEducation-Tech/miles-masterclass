@@ -81,6 +81,14 @@
             >
               {{ subscribeLabel() }}
             </button>
+
+            @if (showOffers()) {
+              <app-promo-coupons
+                [plan]="selectedPlan()"
+                (login)="openSignupDialog()"
+                (applied)="goToCart()"
+              />
+            }
           } @else {
             <p
               class="rounded-2xl border border-white/10 bg-surface-deep px-5 py-6 text-sm text-neutral-300"
