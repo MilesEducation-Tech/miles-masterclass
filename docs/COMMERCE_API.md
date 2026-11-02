@@ -146,3 +146,8 @@ One coupon, as returned:
 - **`valid_to` is the end of a UTC day.** Formatted in the viewer's zone, IST reads it as the next day,
   so the dialog formats it in UTC.
 - **Applying is D1 as before.** The list only offers codes; the cart's `coupon` says which one is applied.
+- **The plan page reads it with no cart** (MIL-134). Postman (`commerce-coupons-v1`) says the market is then
+  `X-Country-Code`'s, and only a learner with neither a header nor a cart gets an empty list. Not yet captured on
+  UAT: the IN no-cart call above returned none, which may only mean IN has no coupons. With no cart,
+  `discount_amount` has nothing to save on, so the plan page labels a coupon by `discount_type`/`discount_value`
+  (`percentage` and `flat` seen so far).
