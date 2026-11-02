@@ -56,11 +56,10 @@ function humanise(status: string): string {
  * "Where your labs stand" — the learner's own dashboard, meant to sit under the marketing
  * "How it works" rail on the AI Labs landing page.
  *
- * **Presentational, and not yet mounted anywhere.** The source design injects a progress store and
- * a token service; here everything arrives as inputs. `progress` is the `progress` object of
+ * **Presentational.** The source design injects a progress store and a token service; here
+ * everything arrives as inputs, from the landing page. `progress` is the `progress` object of
  * `web-api/v1/ai-labs/practical-progress/` and `balance` the `tokens` object of `tokens/`, both as
- * sent, so binding is passing them through. Nothing fabricated is shown to a learner in the
- * meantime — `*.stories.ts` is where the design is reviewed, with sample data from `@testing/`.
+ * sent, so binding is passing them through.
  *
  * Self-gating, like `AiLabTokenMeter`: with no totals it renders nothing, so a host page drops it
  * in without an `@if`. A failed read should render nothing too — this is supplementary content on

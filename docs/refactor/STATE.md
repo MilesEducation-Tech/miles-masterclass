@@ -7,6 +7,13 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-11-02, NON-REFACTOR, MIL-117: PR #225 review ("remove testing/mock"), STAGED, NOT COMMITTED.**
+  - Removed `testing/mocks/ai-labs.mock.ts` and the 7 AI Labs stories that were its only users
+    (progress panel, token meter, quiz and top-up dialogs, course, exam and feedback pages).
+  - `testing/mocks/dialog.mock.ts` is back to master's version, so the PR no longer touches `testing/`.
+  - The progress panel's comment no longer points at stories, and no longer says it is unmounted.
+  - **Checks:** lint 0 errors, structure ✔, format ✔, build:prod ✔, storybook ✔.
+
 - 🔧 **2026-11-02, NON-REFACTOR, MIL-117: `origin/master` (`d0a53c28`) merged into the branch, conflicts
   resolved, MERGE NOT YET COMMITTED** (PR #225). The user aborted the rebase and merged instead.
   - **Environment:** master's grouped files and `Environment` type (#203/#205), with the branch's
@@ -6673,6 +6680,7 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-11-02 · NON-REFACTOR · **MIL-117 PR #225 review**: removed `testing/mocks/ai-labs.mock.ts` + its 7 AI Labs stories, `dialog.mock.ts` back to master · lint 0 errors, structure ✔, build:prod ✔, storybook ✔
 - 2026-11-02 · NON-REFACTOR · **MIL-117 merged `origin/master` `d0a53c28`** (merge uncommitted, PR #225): environment = master's typed files + the branch's `AI_LABS` sign-in block; `API.baseUrl`; `AUTH_COOKIES` + `clearAiLabSession`; top-up close button on #217's `close` variant · tsc ✔, lint 0 errors, structure ✔, format ✔, build:prod ✔
 - 2026-10-29 · NON-REFACTOR · **MIL-117 test emails** (uncommitted): row posts `assignment-trigger-email/`, busy while in flight, no auto-retry, disabled/unconfigured hide the row · CDP 4 scenarios · lint 0 errors, structure ✔, build:prod ✔
 - 2026-10-28 · NON-REFACTOR · **MIL-117 guide 2026-10-28** (uncommitted): MCQ facts + pass date + View report, exam report read-back (withheld key), feedback read-back, `cpe_awarded` amount, `max_score`, `practical_attempts` · CDP 7 scenarios + live-shape regression · lint 0 errors, structure ✔, build:prod ✔, storybook ✔
