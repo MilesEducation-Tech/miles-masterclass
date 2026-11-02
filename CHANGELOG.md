@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.16.1](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.16.0...v3.16.1) (2026-11-02)
+
+
+### Bug Fixes
+
+* **shared:** fit dialogs to their card and restore the close button ([#217](https://github.com/MilesEducation-Tech/miles-masterclass/issues/217)) ([5a72f69](https://github.com/MilesEducation-Tech/miles-masterclass/commit/5a72f6972f45613770577905b444e3df8f7c2d1e))
+
 ## [3.16.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.15.1...v3.16.0) (2026-10-30)
 
 
