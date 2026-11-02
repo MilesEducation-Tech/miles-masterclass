@@ -13,10 +13,11 @@ const meta: Meta<ShareDialog> = {
     moduleMetadata({
       providers: [{ provide: Logger, useClass: MockLogger }],
     }),
-    (story) => ({
-      template: `<div style="width: 450px;">${story().template ?? ''}</div>`,
-      props: story().props,
-    }),
+    // Spread, so a story's own `moduleMetadata` (its dialog-ref provider) survives the wrapper.
+    (story) => {
+      const result = story();
+      return { ...result, template: `<div style="width: 450px;">${result.template ?? ''}</div>` };
+    },
   ],
 };
 

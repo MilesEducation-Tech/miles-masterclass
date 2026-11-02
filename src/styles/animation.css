@@ -164,14 +164,3 @@
     translate: 300%;
   }
 }
-
-/* Header nav underline draw-in (NavItem.highlight). Global for the same
-   reason as dropdownFadeIn — the header has no component stylesheet. */
-@keyframes navUnderlineDraw {
-  from {
-    stroke-dashoffset: 1;
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
-}

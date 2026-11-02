@@ -83,23 +83,30 @@ export interface Environment {
     liveEnabled: boolean;
   };
 
+  /**
+   * The Microsoft (Entra) sign-in that fronts Copilot Studio, through the labs
+   * Supabase project's Azure provider (`AiLabAuth`). Public identifiers only:
+   * the Entra client secret lives in the labs Supabase dashboard.
+   */
   AI_LABS: {
+    supabaseUrl: string;
+    /** Publishable anon key of the labs project; RLS-scoped. */
+    supabaseAnonKey: string;
+    /** The labs tenant (mileslabs.ai). */
+    tenantId: string;
+    /** Sent as `domain_hint`, which pins the Microsoft login to the labs tenant. */
+    domainHint: string;
+    /** Resolved against `SITE_URL`; the labs project must allow `SITE_URL + redirectPath`. */
+    redirectPath: string;
+    /** Key the labs Supabase session is kept under in the browser. */
+    storageKey: string;
     /**
-     * Masterclass courses whose chapters are the agent catalogue on /ai-labs.
-     * Per environment because course ids are not portable: a course missing on
-     * an environment answers "MasterClass not found" and its section renders
-     * empty.
+     * The popup callback tells its opener it's done on this same-origin
+     * BroadcastChannel. Named per build so two builds open on one origin
+     * don't hear each other.
      */
-    catalogueCourses: {
-      audit: number;
-      cfoTeams: number;
-    };
-    /**
-     * Gates the evaluation/assessment layer on /ai-labs: the workflow-submission
-     * panel in the agent dialog, the per-card score badge, and the hero
-     * "your progress" strip.
-     */
-    assessmentEnabled: boolean;
+    AI_LABS_CHANNEL: string;
+    AI_LABS_CALLBACK_DONE: string;
   };
 
   /**

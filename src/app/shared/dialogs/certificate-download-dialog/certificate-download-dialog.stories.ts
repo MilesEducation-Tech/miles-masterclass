@@ -7,10 +7,11 @@ const meta: Meta<CertificateDownloadDialog> = {
   component: CertificateDownloadDialog,
   tags: ['autodocs'],
   decorators: [
-    (story) => ({
-      template: `<div style="width: 500px;">${story().template ?? ''}</div>`,
-      props: story().props,
-    }),
+    // Spread, so a story's own `moduleMetadata` (its dialog-ref provider) survives the wrapper.
+    (story) => {
+      const result = story();
+      return { ...result, template: `<div style="width: 500px;">${result.template ?? ''}</div>` };
+    },
   ],
 };
 
@@ -51,6 +52,23 @@ export const NoBadge: Story = {
         provideStoryDialogRef({
           courseId: 190,
           courseType: 'masterclass',
+        }),
+      ],
+    }),
+  ],
+  render: () => ({
+    template: `<div style="width: 500px;"><app-certificate-download-dialog /></div>`,
+  }),
+};
+
+/** A link the caller already holds (AI Labs' `lab_certificate_url`): Download is that link. */
+export const LinkedCertificate: Story = {
+  decorators: [
+    moduleMetadata({
+      providers: [
+        provideStoryDialogRef({
+          certificateUrl: 'https://certificates.milesone.example/ai-labs/lab/certificate.pdf',
+          courseTitle: 'Lease Audit Agent',
         }),
       ],
     }),

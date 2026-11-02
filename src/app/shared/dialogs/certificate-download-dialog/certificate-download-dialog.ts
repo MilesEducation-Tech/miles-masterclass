@@ -39,11 +39,13 @@ export interface DialogBadge {
   description?: string;
 }
 
-export interface CertificateDialogData {
+/** The certificate is fetched on download click from `user-assessment/download_certificate/`. */
+interface FetchedCertificateDialogData {
   /** Required to call `user-assessment/download_certificate/` on download click. */
   courseId: number;
   /** Backend-facing course type, e.g. `masterclass` / `podcast` / `nano_learning` / `webinar`. */
   courseType: string;
+  certificateUrl?: never;
   /** Used to build human-readable filenames for downloads (single PDF + zip entries). */
   courseTitle?: string;
   /**
@@ -59,6 +61,20 @@ export interface CertificateDialogData {
    */
   certificateType?: 'nasba' | 'miles' | 'both';
 }
+
+/**
+ * The caller already holds the certificate's link (AI Labs' `lab_certificate_url`). The NASBA row's
+ * download is that link, opened by the learner's own click: no fetch, so the bucket's CORS doesn't
+ * matter and no popup blocker can eat it.
+ */
+interface LinkedCertificateDialogData {
+  certificateUrl: string;
+  courseTitle?: string;
+  badge?: DialogBadge;
+  certificateType?: undefined;
+}
+
+export type CertificateDialogData = FetchedCertificateDialogData | LinkedCertificateDialogData;
 
 type DownloadCertificateRequest = RouteRequest<typeof MASTERCLASS_ROUTES.downloadCertificate>;
 type DownloadCertificateResponse = CommonResponse<DownloadCertificateItem[]>;
@@ -212,13 +228,15 @@ export class CertificateDownloadDialog implements OnInit {
    * the "No certificate" info notification once — never both.
    */
   download(variant: CertificateVariant = 'nasba'): void {
-    if (!this.isBrowser) return;
+    const data = this.data;
+    // A linked certificate downloads through its own anchor, never this path.
+    if (!this.isBrowser || data.certificateUrl !== undefined) return;
     // Per-variant guard — only blocks the same variant being re-clicked while
     // its fetch is in flight. The other variant stays clickable.
     if (this.isDownloading(variant)) return;
 
     this.setDownloading(variant, true);
-    this.fetchCertificates(variant).subscribe((result) => {
+    this.fetchCertificates(data, variant).subscribe((result) => {
       if (result === FETCH_ERRORED) {
         // Notification already shown inside catchError; just clear loading.
         this.setDownloading(variant, false);
@@ -229,20 +247,23 @@ export class CertificateDownloadDialog implements OnInit {
         this.setDownloading(variant, false);
         return;
       }
-      this.runDownload(result, variant).finally(() => this.setDownloading(variant, false));
+      this.runDownload(data, result, variant).finally(() => this.setDownloading(variant, false));
     });
   }
 
   // ─── Private helpers ──────────────────────────────────────────────────────
 
-  private fetchCertificates(variant: CertificateVariant): Observable<FetchResult> {
+  private fetchCertificates(
+    data: FetchedCertificateDialogData,
+    variant: CertificateVariant,
+  ): Observable<FetchResult> {
     // For webinar-style callers we send the explicit variant the user clicked;
     // for masterclass / podcast we keep the legacy behaviour of omitting
     // `certificate_type` so the backend's default response stays unchanged.
-    const requestType = this.data.certificateType ? variant : undefined;
+    const requestType = data.certificateType ? variant : undefined;
     const body: DownloadCertificateRequest = {
-      course_id: this.data.courseId,
-      course_type: this.data.courseType,
+      course_id: data.courseId,
+      course_type: data.courseType,
       ...(requestType ? { certificate_type: requestType } : {}),
     };
 
@@ -265,19 +286,20 @@ export class CertificateDownloadDialog implements OnInit {
   }
 
   private async runDownload(
+    data: FetchedCertificateDialogData,
     certs: DownloadCertificateItem[],
     variant: CertificateVariant,
   ): Promise<void> {
     const items: BlobDownloadItem[] = certs.map((cert) => ({
       url: pickUrl(cert, variant)!,
       suggestedName: buildPdfFileName(
-        this.data.courseTitle,
+        data.courseTitle,
         cert.field_of_study_name,
         `${variant}-certificate-${cert.certificate_id}`,
       ),
     }));
     try {
-      await downloadFiles(items, this.zipBaseName(variant));
+      await downloadFiles(items, zipBaseName(data, variant));
     } catch (err) {
       this.logger.error('CertificateDownloadDialog.runDownload failed', err);
       this.notification.error(
@@ -288,18 +310,18 @@ export class CertificateDownloadDialog implements OnInit {
       );
     }
   }
+}
 
-  /** Zip filename stem — `{slugified-title}-{variant}` if available, else `{variant}-certificate-{courseId}`. */
-  private zipBaseName(variant: CertificateVariant): string {
-    const title = this.data.courseTitle?.trim();
-    if (title) {
-      return buildPdfFileName(title, null, `${variant}-certificate-${this.data.courseId}`).replace(
-        /\.pdf$/,
-        '',
-      );
-    }
-    return `${variant}-certificate-${this.data.courseId}`;
+/** Zip filename stem — `{slugified-title}-{variant}` if available, else `{variant}-certificate-{courseId}`. */
+function zipBaseName(data: FetchedCertificateDialogData, variant: CertificateVariant): string {
+  const title = data.courseTitle?.trim();
+  if (title) {
+    return buildPdfFileName(title, null, `${variant}-certificate-${data.courseId}`).replace(
+      /\.pdf$/,
+      '',
+    );
   }
+  return `${variant}-certificate-${data.courseId}`;
 }
 
 /** Pull the right URL field off a row based on which variant was clicked. */

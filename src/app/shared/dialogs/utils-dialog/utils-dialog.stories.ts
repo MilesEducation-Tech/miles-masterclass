@@ -8,10 +8,11 @@ const meta: Meta<UtilsDialog> = {
   component: UtilsDialog,
   tags: ['autodocs'],
   decorators: [
-    (story) => ({
-      template: `<div style="width: 500px;">${story().template ?? ''}</div>`,
-      props: story().props,
-    }),
+    // Spread, so a story's own `moduleMetadata` (its dialog-ref provider) survives the wrapper.
+    (story) => {
+      const result = story();
+      return { ...result, template: `<div style="width: 500px;">${result.template ?? ''}</div>` };
+    },
   ],
 };
 

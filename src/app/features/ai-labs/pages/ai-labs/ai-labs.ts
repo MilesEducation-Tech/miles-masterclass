@@ -53,51 +53,37 @@ import {
 import type { SwiperOptions } from 'swiper/types';
 import { Button } from '@shared/ui/button/button';
 import { Carousel } from '@shared/components/carousel/carousel';
-import {
-  AiLabAgentCard,
-  AiLabAgentDialog,
-  AiLabAgentDialogResult,
-} from '@shared/dialogs/ai-lab-agent-dialog/ai-lab-agent-dialog';
 import { AiLabTermsDialog } from '@shared/dialogs/ai-lab-terms-dialog/ai-lab-terms-dialog';
 import {
   UtilsDialog,
   UtilsDialogData,
   UtilsDialogResult,
 } from '@shared/dialogs/utils-dialog/utils-dialog';
-import { DurationPipe } from '@shared/pipes/duration/duration-pipe';
-import { CommonResponse, SKIP_ERROR_NOTIFICATION } from '@core/models/http.model';
-import { MASTERCLASS_ROUTES } from '@core/models/masterclass.model';
-import { ApiClient } from '@core/services/api-client/api-client';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { NotificationService } from '@core/services/notification/notification';
-import { Storage } from '@core/services/storage/storage';
 import { LanguageContext } from '@core/services/language-context/language-context';
 import { Utils } from '@shared/services/utils';
 import {
   AI_LAB_FAQS,
   AI_LAB_FEATURES,
   AI_LAB_TOOLS,
-  AI_LAB_ROUTES,
-  AI_LAB_SECTIONS,
   AI_LAB_STATS,
   AI_LAB_STEPS,
   AI_LAB_TESTIMONIALS,
-  AiLabChapter,
+  AiLabAccountState,
+  AiLabAgentCard,
+  AiLabPracticalAssignment,
   AiLabStat,
-} from '../../models/ai-labs.model';
-import { AiLabSubmission } from '@core/services/ai-lab-submission/ai-lab-submission';
-import { HttpContext } from '@angular/common/http';
+} from '@features/ai-labs/models/ai-labs.model';
+import { AiLabAuth } from '@core/services/ai-lab-auth/ai-lab-auth';
+import { AiLabsFacade } from '@features/ai-labs/services/ai-labs-facade';
+import { AiLabAccount } from '@features/ai-labs/services/ai-lab-account';
+import { AiLabCredits } from '@features/ai-labs/services/ai-lab-credits';
+import { AiLabProgressPanel } from '@features/ai-labs/components/ai-lab-progress-panel/ai-lab-progress-panel';
+import { AiLabTokenMeter } from '@features/ai-labs/components/ai-lab-token-meter/ai-lab-token-meter';
 import { isPlatformBrowser, NgTemplateOutlet } from '@angular/common';
 import { iconCopilot, iconSparkle } from '@core/constants/icon';
 import { environment } from '@env/environment';
-
-/**
- * Remembers that a provisioning request already went out, so a reload during the
- * ~1 minute wait doesn't invite the user to POST a second account. Session-scoped
- * on purpose: the server flag is the real source of truth, this is only what
- * bridges the gap until it flips.
- */
-const ACCOUNT_REQUESTED_KEY = 'ai_lab.account_requested';
 
 /**
  * Number of webp frames in public/ai-labs/frames (0001…NNNN.webp), exported from
@@ -111,6 +97,25 @@ const AI_LAB_REVEAL_FRAMES = 241;
  * pointer is a tap on the card, not a swipe on the deck.
  */
 const FAN_SWIPE_THRESHOLD = 40;
+
+/** Cards in the scroll-driven fan showcase. */
+const FAN_SIZE = 5;
+
+/** Headline counts read as words up to twelve, as the copy did; past that, digits. */
+const COUNT_WORDS: Record<number, string> = {
+  1: 'One',
+  2: 'Two',
+  3: 'Three',
+  4: 'Four',
+  5: 'Five',
+  6: 'Six',
+  7: 'Seven',
+  8: 'Eight',
+  9: 'Nine',
+  10: 'Ten',
+  11: 'Eleven',
+  12: 'Twelve',
+};
 
 /**
  * AI Labs landing page — dark editorial marketing page fronting the prebuilt
@@ -160,10 +165,11 @@ const FAN_SWIPE_THRESHOLD = 40;
 @Component({
   selector: 'app-ai-labs',
   imports: [
+    AiLabProgressPanel,
+    AiLabTokenMeter,
     Button,
     NgIcon,
     NgTemplateOutlet,
-    DurationPipe,
     Carousel, // Micro-interactions (motion.dev) — SSR-safe, reduced-motion aware.
     InViewDirective,
     HoverSpringDirective,
@@ -202,33 +208,24 @@ const FAN_SWIPE_THRESHOLD = 40;
 })
 export class AiLabs {
   /**
-   * ponytail: `AiLabsAuth` (the Microsoft/Entra sign-in that fronts Copilot
-   * Studio) and the platform session service were both removed with the auth
-   * layer. These two stubs exist only so `ai-labs.html` keeps rendering its
-   * signed-out hero — re-inject the real services to bring the flow back.
+   * The Microsoft (Entra) sign-in to the lab itself — "Login to Miles AI Labs" opens it, and once
+   * it lands the hero reads Launch AI Lab / Signed in as / Log out. The Miles session and the lab
+   * account are `AiLabsFacade`'s.
    */
-  protected readonly auth = {
-    isSignedIn: signal(false),
-    signingIn: signal(false),
-    error: signal<string | null>(null),
-    hint: signal<string | null>(null),
-    identity: signal<string | null>(null),
-  };
-  protected readonly milesAuth = {
-    isLoadingProfile: signal(false),
-  };
+  protected readonly auth = inject(AiLabAuth);
+  /** The catalogue and the learner's lab account — see the facade for both reads. */
+  protected readonly facade = inject(AiLabsFacade);
+  /** Copilot Credits, for the floating meter and the progress panel. */
+  protected readonly credits = inject(AiLabCredits);
+  /** Whose lab this is — the sign-in and Launch are checked against it (`AiLabAccount`). */
+  protected readonly labAccount = inject(AiLabAccount);
   private readonly dialogs = inject(NgpDialogManager);
   private readonly router = inject(Router);
   // The showcase's log and progress bar move along the reading direction.
   private readonly rtl = inject(LanguageContext).dir === 'rtl';
   private readonly utils = inject(Utils);
   private readonly destroyRef = inject(DestroyRef);
-  // ponytail: two POSTs used by this page alone, so no facade. Extract one the
-  // moment a second caller needs them.
-  private readonly apiClient = inject(ApiClient);
   private readonly notification = inject(NotificationService);
-  private readonly storage = inject(Storage);
-  protected readonly submission = inject(AiLabSubmission);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   /**
@@ -263,7 +260,6 @@ export class AiLabs {
   private revealRedraw: (() => void) | null = null;
   private framesRequested = false;
 
-  protected readonly sections = AI_LAB_SECTIONS;
   protected readonly copilotIcon = iconCopilot;
   protected readonly sparkleIcon = iconSparkle;
 
@@ -285,125 +281,73 @@ export class AiLabs {
   protected readonly tools = AI_LAB_TOOLS;
 
   /**
-   * Env gate for the whole evaluation/assessment layer — the submit panel, the
-   * per-card score badge, and the hero "your progress" strip. Off until the
-   * grading backend is ready (see environment.ts `AI_LABS.assessmentEnabled`).
+   * The hero tiles — marketing counts, the same for everyone.
+   *
+   * A plain array, not a `computed`: the learner's own figures used to flip in here once they had
+   * submitted something, and that surface now lives in the progress panel below the fold instead.
+   * The assessment layer went with it — the `AI_LABS.assessmentEnabled` env gate, the per-card
+   * score badge and the "Submitted" pill are all gone from this page.
    */
-  protected readonly assessmentEnabled = environment.AI_LABS.assessmentEnabled;
-
-  /** True once the learner has submitted at least one workflow (gated). */
-  protected readonly hasSubmissions = computed(
-    () => this.assessmentEnabled && this.submission.overall().submitted > 0,
-  );
+  protected readonly heroStats: AiLabStat[] = AI_LAB_STATS;
 
   /**
-   * The hero's three count-up tiles. Before the first submission they carry the
-   * marketing counts (`AI_LAB_STATS`); once the learner has submitted anything
-   * they flip to that learner's own progress — submitted, overall score, passed
-   * — which is the "overall score in the hero" surface. Same shape either way,
-   * so the template's `ngxCountUp` strip just re-animates on the switch.
+   * The catalogue the template renders — one rail per section, from `AiLabsFacade.sections`.
+   *
+   * While the first read is out there are no sections yet, so a single unnamed loading rail stands
+   * in for the skeleton. A settled-empty catalogue renders no rail at all.
    */
-  protected readonly heroStats = computed<AiLabStat[]>(() => {
-    const o = this.submission.overall();
-    if (!this.assessmentEnabled || !o.submitted) return AI_LAB_STATS;
-    return [
-      { value: o.submitted, label: 'Agents submitted' },
-      { value: o.avgScore, suffix: '%', label: 'Overall score' },
-      { value: o.passed, label: 'Passed' },
-    ];
+  protected readonly resolvedSections = computed(() => {
+    const sections = this.facade.sections();
+    if (!sections.length && this.facade.catalogueLoading()) {
+      return [{ heading: '', loading: true, cards: [] as AiLabAgentCard[] }];
+    }
+    return sections.map((section) => ({ ...section, loading: false }));
   });
 
   /**
-   * Chapter id → its submitted report, for the per-card score badge. A computed
-   * (not a method) so the template reads a signal by index instead of calling a
-   * method on every change-detection pass.
-   */
-  protected readonly reports = computed(() =>
-    this.assessmentEnabled ? this.submission.submissions() : {},
-  );
-
-  /**
-   * Chapters per course id. `undefined` means still loading; `[]` means the
-   * fetch finished with nothing, whether it failed or the course is genuinely
-   * empty. The distinction that matters is loading vs settled — a settled empty
-   * result is what triggers the static fallback below.
-   */
-  private readonly chapters = signal<Record<number, AiLabChapter[] | undefined>>({});
-
-  /**
-   * The catalogue the template renders. Both origins produce the same card
-   * shape, so the grid and the detail dialog never branch on where a tile came
-   * from.
-   *
-   * The course wins whenever it returns anything. A failed fetch and an empty
-   * course are treated identically — both mean "no live catalogue" — and fall
-   * back to the section's static agents, so the page is never a bare heading
-   * over an empty grid. That fallback is also what renders on UAT, where the
-   * production course ids don't resolve.
-   */
-  protected readonly resolvedSections = computed(() =>
-    this.sections.map((section) => {
-      const loaded = section.courseId === undefined ? undefined : this.chapters()[section.courseId];
-      const chapters = loaded ?? [];
-      // At most three cards per section, whichever source they come from.
-      const cards = (
-        chapters.length
-          ? chapters.map((c, i): AiLabAgentCard => ({
-              name: c.chapter_name,
-              description: c.description,
-              // Static webp artwork, positionally (agents mirror the chapters in
-              // order), not the API's chapter_thumbnail. No fallback: a tile with
-              // no static image (e.g. PBC) is meant to show the gradient placeholder.
-              thumbnail: section.agents?.[i]?.thumbnail,
-              thumbnailAlt: section.agents?.[i]?.thumbnailAlt ?? c.chapter_name,
-              durationSeconds: c.video_duration,
-              questionCount: c.quiz_details?.total_questions,
-              // Lets the detail dialog pull the course-level "about" payload.
-              courseId: section.courseId,
-              // The exercise key: the submit panel and its score store against this.
-              chapterId: c.id,
-            }))
-          : (section.agents ?? []).map((a): AiLabAgentCard => ({
-              name: a.name,
-              // The design sets the shared "Agent" suffix in a lighter weight
-              // than the distinctive name. Chapter titles don't take it.
-              nameSuffix: ' Agent',
-              description: a.description,
-              thumbnail: a.thumbnail,
-              thumbnailAlt: a.thumbnailAlt ?? `${a.name} Agent`,
-            }))
-      ).slice(0, 3);
-
-      return {
-        heading: section.heading,
-        loading: section.courseId !== undefined && loaded === undefined,
-        cards,
-        /**
-         * What the phone's track rail renders (the desktop grid uses `cards`).
-         * Swiper turns `loop` off when a rail has no more slides than it shows,
-         * which three cards at 1.15 per view is — so render the set twice.
-         *
-         * ponytail: this only exists because of the three-card cap above. Lift
-         * the cap and `slides` collapses back to `cards`. Same padding trick the
-         * powered-by marquee uses for its short list.
-         */
-        slides: cards.length < 4 ? [...cards, ...cards] : cards,
-      };
-    }),
-  );
-
-  /**
-   * The fan carousel is a five-card showcase with a fixed spread across the
-   * three tracks: two from the first, two from the second, one from the third.
-   * Falls short only if a track has fewer cards than asked.
+   * The fan carousel is a five-card showcase, dealt round-robin across the sections so one long
+   * section can't fill it alone. A guest's catalogue is a single rail of courses, so it deals
+   * straight from that.
    */
   protected readonly fanCards = computed(() => {
-    const sections = this.resolvedSections();
-    const take = (i: number, n: number) => {
-      const s = sections[i];
-      return s ? s.cards.slice(0, n).map((card) => ({ card, section: s.heading })) : [];
-    };
-    return [...take(0, 2), ...take(1, 2), ...take(2, 1)];
+    const sections = this.resolvedSections().filter((s) => s.cards.length);
+    const fan: { card: AiLabAgentCard; section: string }[] = [];
+    for (let i = 0; fan.length < FAN_SIZE && sections.some((s) => i < s.cards.length); i++) {
+      for (const s of sections) {
+        if (i < s.cards.length && fan.length < FAN_SIZE) {
+          fan.push({ card: s.cards[i], section: s.heading });
+        }
+      }
+    }
+    return fan;
+  });
+
+  /**
+   * How many agents the catalogue holds — every card, not just the fan's five, since the grid below
+   * shows them all. Deduplicated by route in case a lab sits in two sections.
+   */
+  private readonly agentCount = computed(
+    () =>
+      new Set(this.facade.sections().flatMap((s) => s.cards.map((card) => card.route.join('/'))))
+        .size,
+  );
+
+  /** "Five agents" / "One agent"; `null` until the catalogue lands, so no wrong number flashes. */
+  private readonly agentsPhrase = computed(() => {
+    const n = this.agentCount();
+    if (!n) return null;
+    return `${COUNT_WORDS[n] ?? n} ${n === 1 ? 'agent' : 'agents'}`;
+  });
+
+  protected readonly catalogueTitle = computed(
+    () => `${this.agentsPhrase() ?? 'Agents'} across audit, tax, and CFO teams`,
+  );
+
+  protected readonly storiesLine = computed(() => {
+    const agents = this.agentsPhrase();
+    return agents
+      ? `${agents} and not a line of code between them.`
+      : 'Working agents, and not a line of code between them.';
   });
 
   /** Testimonials rail: one centred quote, neighbours shrunk and faded. */
@@ -423,15 +367,22 @@ export class AiLabs {
   };
 
   /**
-   * Catalogue track rails. Phone only — from `md` up the tracks go back to the
-   * 2/3-column grid — so there are no breakpoints to declare here.
+   * Catalogue track rails, now at every width — the desktop grid is gone.
+   *
+   * `rewind` rather than `loop`: loop mode needs more slides than it shows and silently disables
+   * itself below that, which is why the old config had to pad short tracks with a duplicated set.
+   * Rewind just jumps back to the first slide at the end and works with any count.
    */
   protected readonly trackConfig: SwiperOptions = {
-    loop: true,
+    rewind: true,
     spaceBetween: 19,
     slidesPerView: 1.15,
     freeMode: { enabled: false },
     pagination: false,
+    breakpoints: {
+      768: { slidesPerView: 2 },
+      1024: { slidesPerView: 3 },
+    },
   };
 
   /**
@@ -440,43 +391,46 @@ export class AiLabs {
    */
   protected readonly activeFanIndex = signal(0);
 
-  /**
-   * Whether the Microsoft account behind the lab exists yet. Server-owned — the
-   * page never sets it, it only re-reads the profile and waits for it to flip.
-   */
-  protected readonly hasLabAccount = signal(false);
+  /** The lab account exists. Server-owned — read off `account-ensure/`, never set here. */
+  protected readonly hasLabAccount = this.facade.hasLabAccount;
 
-  /** An account request is in flight (create or resend). */
-  protected readonly submitting = signal(false);
+  /** An account request is in flight (create or reset). */
+  protected readonly submitting = this.facade.submitting;
 
-  /** A request went out and the set-password email is on its way. */
-  protected readonly accountRequested = signal(false);
+  /** A create went out and the account is on its way — the poll is running, or will on reload. */
+  protected readonly accountRequested = this.facade.accountRequested;
 
-  private readonly refreshAttempted = signal(false);
+  /** An `account-ensure/` read is in flight — the Refresh button says "Checking…". */
+  protected readonly accountLoading = this.facade.accountLoading;
 
   /**
-   * A refresh finished and the account still isn't there. Without this the
-   * button reads as dead — nothing on screen changes when the answer is "not
-   * yet". Derived rather than timed: `isLoadingProfile` is set synchronously by
-   * `fetchMyProfile`, so this can't flash true between click and response.
+   * The poll ran out (five minutes) and the account still isn't there. Without this the hero reads
+   * as stuck — it swaps "Setting up your lab…" for "taking longer than expected" and keeps Refresh.
    */
   protected readonly stillPending = computed(
-    () => this.refreshAttempted() && !this.hasLabAccount(),
+    () => this.facade.pollTimedOut() && !this.hasLabAccount(),
   );
 
   /**
-   * Guests keep the neutral label: account state isn't knowable until they log
-   * in, so promising them "Create account" would be guessing.
+   * Guests keep the neutral label: account state isn't knowable until they log in, so promising
+   * them "Create account" would be guessing. So does a signed-in learner whose `account-ensure/`
+   * hasn't answered yet, or who isn't eligible — `activate()` says why on click.
    */
   protected readonly ctaLabel = computed(() => {
     if (this.auth.isSignedIn()) return 'Launch AI Lab';
     if (this.auth.signingIn()) return 'Waiting for sign-in…';
+    // Once the request is out the account is on its way, so the CTA becomes the login the emailed
+    // credentials are for — not a second create.
+    const state = this.facade.accountState();
+    if (state?.reason === 'OK' && !this.hasLabAccount() && !this.accountRequested()) {
+      return 'Create AI Lab account';
+    }
     return 'Login to Miles AI Labs';
   });
 
   constructor() {
-    this.accountRequested.set(this.storage.getSession<string>(ACCOUNT_REQUESTED_KEY) === 'true');
-    this.loadChapters();
+    // A lab session from an earlier visit; a no-op on the server.
+    void this.auth.restoreSession();
     // Browser-only, after the canvas is in the DOM. afterNextRender never runs on
     // the server, so the hero SSRs as a static (dark) stage. Sets up the reveal
     // canvas (poster + frame loading) independently of the scroll scrub, so a
@@ -498,75 +452,89 @@ export class AiLabs {
   }
 
   /**
-   * Catalogue fetch. Deliberately NOT gated on `isBrowser` like the library
-   * facades' `resource()` calls: this is a public, indexed marketing page, so
-   * the cards have to be in the server-rendered HTML. Running on the server is
-   * enough to get that — `HttpClient` registers its own pending task, so SSR
-   * waits for the response, and `withHttpTransferCacheOptions` in app.config.ts
-   * serialises it into the page so the browser reuses it instead of refetching.
-   * That config is the whole cache story here; there is nothing to hand-roll.
-   *
-   * One request per section rather than a `forkJoin`, so a slow course can't
-   * hold up the ones that already answered. Errors resolve to an empty section
-   * — `SKIP_ERROR_NOTIFICATION` keeps a catalogue hiccup from throwing a toast
-   * at someone who is just reading the page.
+   * Card click — the page behind the tile: the masterclass course for a guest card, the lab's own
+   * page for a learner's. `route` is relative to the locale prefix.
    */
-  private loadChapters(): void {
-    for (const section of this.sections) {
-      const courseId = section.courseId;
-      if (courseId === undefined) continue;
-
-      this.apiClient
-        .get<CommonResponse<AiLabChapter[]>>(MASTERCLASS_ROUTES.getCourseChapter.path, {
-          params: { id: courseId, course_type: 'masterclass' },
-          context: new HttpContext().set(SKIP_ERROR_NOTIFICATION, true),
-        })
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe({
-          next: (res) => this.setChapters(courseId, res?.data ?? []),
-          error: () => this.setChapters(courseId, []),
-        });
-    }
+  /**
+   * A progress-panel row: its lab's page. The panel only offers the button on rows that carry an
+   * `ai_lab_course_id`, so a row from outside this catalogue never gets here.
+   */
+  protected openAssignment(row: AiLabPracticalAssignment): void {
+    if (!row.ai_lab_course_id) return;
+    const slug = this.utils.slugify(row.ai_lab_course_name ?? row.slug);
+    void this.router.navigate([this.utils.localePath(), 'ai-labs', row.ai_lab_course_id, slug]);
   }
 
-  private setChapters(courseId: number, list: AiLabChapter[]): void {
-    this.chapters.update((map) => ({ ...map, [courseId]: list }));
+  protected viewAgent(card: AiLabAgentCard): void {
+    void this.router.navigate([this.utils.localePath(), ...card.route]);
   }
 
   /**
-   * Card detail. The dialog is read-only; its Launch button routes back through
-   * `activate()` so the login / plan / agreement gate stays in one place.
-   */
-  protected openAgent(card: AiLabAgentCard): void {
-    this.dialogs
-      .open<AiLabAgentCard, AiLabAgentDialogResult>(AiLabAgentDialog, { data: card })
-      .afterClosed.pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((result) => {
-        if (result === 'launch') this.activate();
-      });
-  }
-
-  /**
-   * One handler behind the hero button and every card's Launch button: signed
-   * out starts the popup sign-in, signed in opens Copilot Studio. Keeping it
-   * single means a card click can't diverge from the hero's state — and it's
-   * the single place the two access gates below have to live.
+   * The hero button. Every gate lives here, in order, so the button can't skip one:
    *
-   * The lab is licensed per Miles subscriber, so neither the Entra sign-in nor
-   * the Copilot hand-off may happen until the visitor is (1) signed in to Miles
-   * and (2) on an active plan. The page itself stays public — it's in the guest
-   * nav as a marketing page — so the gate is on the action, not the route.
+   *  1. Signed in to Miles — guests are asked to sign in and brought back.
+   *  2. Eligible — `account-ensure/` says `NO_CAIRA_ENROLLMENT` (point at plans) or
+   *     `MISSING_REQUIRED_FIELDS` (point at the profile, which brings them back).
+   *  3. An account — none yet and none on its way opens the participant agreement, then creates.
+   *     One on its way (provisioning takes minutes) says so rather than offering a second create.
+   *  4. Signed in to the lab (Microsoft) → Launch AI Lab: Copilot Studio, as that account.
+   *  5. Otherwise the account exists → the Microsoft sign-in popup (`AiLabAuth.signIn`). Once it
+   *     lands, the hero reads Launch AI Lab, "Signed in as …" and Log out — upstream's flow.
    *
-   * Every card launches the same Copilot Studio environment — `AiLabAgent` has
-   * no per-agent destination, so there is nothing to pass through yet. Add a
-   * URL (or agent id) to the model and thread it into `launchCopilot` when the
-   * agents get individual deep links.
+   * Every branch answers the click — none returns silently or scrolls to the deferred catalogue.
+   *
+   * The page stays public — it's in the guest nav as a marketing page — so the gate is on the
+   * action, not the route.
    */
   protected activate(): void {
-    // ponytail: inert. This gated on a Miles session, then an active plan,
-    // then a provisioned Microsoft account, before handing off to
-    // `AiLabsAuth.signIn()` / `launchCopilot()`. All three checks and the
-    // hand-off went with the auth layer.
+    if (!this.facade.isAuthenticated()) {
+      this.gatePrompt(
+        'Login Required',
+        'Sign in to your Miles account to access Miles AI Labs.',
+        'Login',
+        () => this.goWithRedirect('/auth/login'),
+      );
+      return;
+    }
+
+    // Signed in to the lab: Launch AI Lab opens Copilot Studio in the learner's own environment,
+    // once the session is checked to be their lab account (`AiLabAccount.launch`).
+    if (this.auth.isSignedIn()) {
+      this.labAccount.launch();
+      return;
+    }
+
+    const state = this.facade.accountState();
+    if (!state) {
+      if (this.accountLoading()) {
+        this.notification.info('One moment', 'Checking your AI Labs account…');
+      } else {
+        this.notification.error(
+          "Couldn't check your AI Labs account",
+          "We're trying again — click once more in a moment.",
+        );
+        this.facade.refresh();
+      }
+      return;
+    }
+
+    if (this.blockedBy(state)) return;
+
+    if (!this.hasLabAccount()) {
+      if (this.accountRequested()) {
+        this.notification.info(
+          'Your AI Lab is being set up',
+          "We'll email your Miles AI Lab email and password — it can take a few minutes. Hit Refresh to check.",
+        );
+      } else {
+        this.openTerms();
+      }
+      return;
+    }
+
+    // The account exists but this browser isn't signed in to it: the Microsoft popup, hinted to the
+    // learner's lab account. Straight from the click — the popup must open before any await.
+    void this.labAccount.signIn();
   }
 
   /** Participant agreement; the POST only happens if the user accepted. */
@@ -580,43 +548,49 @@ export class AiLabs {
   }
 
   /**
-   * The user comes off the auth token, so the body carries only the consent
-   * record — hard-coded `true` because this is only ever reached from an
-   * accepted agreement. Provisioning is asynchronous (~1 minute), so a 200 means
-   * "requested", not "ready": the page moves to the check-your-email state and
-   * waits for the profile flag.
+   * `account-create/` takes no body: the backend builds the account from the learner. The
+   * agreement still gates the click, but its acceptance is no longer sent anywhere — see the plan's
+   * backend question Q5.
    *
-   * Errors are already toasted by the HTTP interceptor, so the error path here
-   * only has to release the button.
+   * Provisioning is asynchronous (two to three minutes), so a 202 means "requested", not "ready":
+   * the facade polls and the hero moves to its waiting state.
    */
   private createAccount(): void {
-    this.submitting.set(true);
-    this.apiClient
-      .post(AI_LAB_ROUTES.createAccount.path, { ai_lab_terms_accepted: true })
+    this.facade
+      .createAccount()
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.submitting.set(false);
-          this.accountRequested.set(true);
-          this.storage.setSession(ACCOUNT_REQUESTED_KEY, 'true');
-          this.notification.success(
-            'Account requested',
-            "We're creating your AI Lab account. Check your email in a minute for the link to set your password.",
-          );
-        },
-        error: () => this.submitting.set(false),
+      .subscribe((state) => {
+        switch (state?.reason) {
+          case 'PROVISIONING_STARTED':
+          case 'PROVISIONING_IN_PROGRESS':
+            this.notification.success(
+              'Account requested',
+              "We're setting up your AI Lab. Check your email in a few minutes for your Miles AI Lab email and password.",
+            );
+            return;
+          case 'ACCOUNT_EXISTS':
+            if (state.entitlement_refresh_required) this.promptSignInAgain();
+            else this.notification.info('Account ready', 'Your AI Lab account already exists.');
+            return;
+          case 'AI_LABS_DISABLED':
+            this.notification.info(
+              'AI Labs unavailable',
+              'AI Labs is switched off right now. Please try again later.',
+            );
+            return;
+          default:
+            if (state && this.blockedBy(state)) return;
+            this.notification.error(
+              'Something went wrong',
+              "We couldn't request your AI Lab account. Please try again.",
+            );
+        }
       });
   }
 
-  /**
-   * Re-reads the profile so the server-owned `is_ai_lab_user` flag can flip the
-   * hero over to sign-in. Deliberately manual: provisioning takes about a
-   * minute, and one button press is cheaper than polling every visitor.
-   */
+  /** Re-reads `account-ensure/` — the hero's manual fallback to the poll. */
   protected refreshStatus(): void {
-    // ponytail: re-read the profile so the server-owned `is_ai_lab_user` flag
-    // could flip the hero over to sign-in. No profile endpoint wired up now.
-    this.refreshAttempted.set(true);
+    this.facade.refresh();
   }
 
   /**
@@ -635,25 +609,100 @@ export class AiLabs {
   }
 
   /**
-   * Same shape as `createAccount`, different endpoint: the backend resets the
-   * AI Lab password and re-sends the set-password email. Only reached through
-   * `confirmResend`.
+   * `account-reset-password/`: AI Labs issues a new password and mails it. Every success replaces the
+   * old one, so it is only reached through `confirmResend`, never on its own.
    */
   private resendEmail(): void {
-    this.submitting.set(true);
-    this.apiClient
-      .post(AI_LAB_ROUTES.resendAccountEmail.path, {})
+    this.facade
+      .resetPassword()
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.submitting.set(false);
-          this.notification.success(
-            'Email sent',
-            'Check your inbox for the link to set a new AI Lab password.',
-          );
-        },
-        error: () => this.submitting.set(false),
+      .subscribe((state) => {
+        switch (state?.reason) {
+          case 'RESET_EMAIL_SENT':
+            this.notification.success(
+              'Email sent',
+              'Check your inbox for your new AI Lab credentials.',
+            );
+            return;
+          // The account exists but its Microsoft side is still being built; nothing was reset.
+          case 'PROVISIONING_IN_PROGRESS':
+            this.notification.info(
+              'Your lab is being set up',
+              'Try again in a few minutes, once your AI Lab is ready.',
+            );
+            return;
+          case 'RESET_EMAIL_RATE_LIMITED':
+            this.notification.info(
+              'Too many requests',
+              "You've asked for several reset emails. Please try again later.",
+            );
+            return;
+          case 'ACCOUNT_NOT_CREATED':
+            this.notification.info(
+              'No account yet',
+              "Your AI Lab account hasn't been created yet, so there is no password to reset.",
+            );
+            return;
+          // Can mean the password was reset and only the email failed — the old one no longer
+          // works, so a retry (which issues another) is the way back in.
+          case 'RESET_EMAIL_FAILED':
+            this.notification.error(
+              'Email not sent',
+              "AI Labs couldn't send your new credentials, and your previous password may no longer work. Please try again — each try issues a new password (up to 3 every 5 minutes).",
+            );
+            return;
+          default:
+            if (state && this.blockedBy(state)) return;
+            this.notification.error(
+              'Email not sent',
+              "AI Labs couldn't send the email. Please try again shortly.",
+            );
+        }
       });
+  }
+
+  /**
+   * The two eligibility refusals every account route can answer, said the same way wherever they
+   * come back. True when one applied, so the caller stops.
+   */
+  private blockedBy(state: AiLabAccountState): boolean {
+    if (state.reason === 'NO_CAIRA_ENROLLMENT' || !state.eligible) {
+      this.gatePrompt(
+        'CAIRA Required',
+        'Miles AI Labs is part of CAIRA. Enrol in CAIRA to get your lab.',
+        'View Plans',
+        () => void this.router.navigate([this.utils.localePath('payment/plan')]),
+      );
+      return true;
+    }
+    if (state.reason === 'MISSING_REQUIRED_FIELDS') {
+      this.gatePrompt(
+        'Complete Your Profile',
+        'Your AI Lab account needs your name and email on your Miles profile. Complete it and we’ll bring you back here.',
+        'Complete Profile',
+        () => this.goWithRedirect('/auth/profile'),
+      );
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * The account exists but this login token predates it, and AI Labs reads the entitlement off the
+   * token. The guide's instruction is a fresh login, so: sign out, then sign in and come back.
+   */
+  private promptSignInAgain(): void {
+    this.gatePrompt(
+      'Sign in again',
+      'Your AI Lab account is ready. Sign in again to finish connecting it to your Miles login.',
+      'Sign in again',
+      () => void this.labAccount.relogin(),
+    );
+  }
+
+  /** `/auth/login` and `/auth/profile` both read `redirect` back — the one convention for both. */
+  private goWithRedirect(path: string): void {
+    void this.router.navigate([path], { queryParams: { redirect: this.router.url } });
   }
 
   /**
@@ -696,13 +745,14 @@ export class AiLabs {
       });
   }
 
-  // ponytail: both drove the Entra session — inert without `AiLabsAuth`.
+  /** Sign in as a different Microsoft account: the picker, not the remembered one. */
   protected switchAccount(): void {
-    // ponytail: inert
+    void this.labAccount.signIn({ switchAccount: true });
   }
 
+  /** The hero's Log out — the lab session only; the Miles login stays. */
   protected signOut(): void {
-    // ponytail: inert
+    void this.auth.signOut();
   }
 
   /**

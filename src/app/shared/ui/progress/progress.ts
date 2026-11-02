@@ -9,7 +9,19 @@ import {
 import { cn } from '../../utils/cn';
 
 const SIZES = { sm: 'h-1', md: 'h-2' } as const;
-const VARIANTS = { primary: 'bg-primary', success: 'bg-success', accent: 'bg-accent' } as const;
+const VARIANTS = {
+  primary: 'bg-primary',
+  success: 'bg-success',
+  accent: 'bg-accent',
+  // Meter states, for a bar that reports consumption rather than progress toward a goal: the
+  // AI Lab token meter warns as the allotment runs down and alarms near the end.
+  info: 'bg-info',
+  warning: 'bg-accent-premium',
+  error: 'bg-destructive',
+} as const;
+
+/** The meter states a consumption bar picks between. */
+export type ProgressVariant = keyof typeof VARIANTS;
 
 /**
  * Progress of a running task. `value` `null` is indeterminate (the primitive drops
