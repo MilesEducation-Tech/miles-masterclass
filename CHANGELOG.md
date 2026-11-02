@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.17.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.16.1...v3.17.0) (2026-11-02)
+
+
+### Features
+
+* **ai-labs:** bring AI Labs to the web app on the milescaira API, from catalogue to certificate ([#227](https://github.com/MilesEducation-Tech/miles-masterclass/issues/227)) ([435b10a](https://github.com/MilesEducation-Tech/miles-masterclass/commit/435b10a367bd8e5e08870e17aff7c5a7567a5166))
+
+
+### Bug Fixes
+
+* **payment:** show the learner's coupons on the plan page ([#226](https://github.com/MilesEducation-Tech/miles-masterclass/issues/226)) ([035d91c](https://github.com/MilesEducation-Tech/miles-masterclass/commit/035d91c2e1477dee06e4b861c39e9bf67ce52126))
+
 ## [3.16.1](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.16.0...v3.16.1) (2026-11-02)
 
 
