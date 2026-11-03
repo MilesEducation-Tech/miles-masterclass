@@ -281,9 +281,10 @@ export type AuthFailure =
  * - `data: { [field]: message | [message] }` — 400: the strict-input refusal of
  *   an undeclared key, or DRF's field-keyed list.
  *
- * Normalised once by `readErrorBody`, so nothing downstream casts an `unknown`.
+ * Normalised once by `readErrorBody`, so nothing downstream casts an `unknown`. The password routes'
+ * failures (`toPasswordFailure`) read the same envelope through it.
  */
-interface AuthErrorBody {
+export interface AuthErrorBody {
   message: string | null;
   code: string | null;
   /** Every string-valued key. A 400 is field → message; elsewhere this is
@@ -296,7 +297,7 @@ const GENERIC = 'Something went wrong. Please try again.';
 /** `message` first, then the DRF/legacy spellings — all live on this API. */
 const MESSAGE_KEYS = ['message', 'detail', 'error'] as const;
 
-function readErrorBody(body: unknown): AuthErrorBody {
+export function readErrorBody(body: unknown): AuthErrorBody {
   if (typeof body === 'string') {
     return { message: body.trim() || null, code: null, fields: {} };
   }

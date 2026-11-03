@@ -1,4 +1,13 @@
-import { Component, computed, inject, linkedSignal, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  afterRenderEffect,
+  computed,
+  inject,
+  linkedSignal,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormField, applyEach, form, hidden, required, validate } from '@angular/forms/signals';
 import { Observable, from, map, switchMap } from 'rxjs';
@@ -24,6 +33,8 @@ import { OnboardingApi } from '@core/services/onboarding-api/onboarding-api';
 import { NotificationService } from '@core/services/notification/notification';
 import { Logger } from '@core/services/logger/logger';
 import { NgpDialogManager } from 'ng-primitives/dialog';
+import { PasswordForm } from '@features/auth/components/password-form/password-form';
+import { PasswordFacade } from '@features/auth/services/password-facade';
 // Type-only: the dialog loads with `import()` when the leave guard fires (§4.4).
 import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
 
@@ -141,7 +152,10 @@ export function rowDefaults(user: UserDetails | null): Record<string, string> {
     Button,
     Spinner,
     TranslocoPipe,
+    PasswordForm,
   ],
+  // The page's own instance: the set-password step lives and dies with this page (see the facade).
+  providers: [PasswordFacade],
   templateUrl: './profile.html',
   host: {
     // Covers a tab close / reload, which the router guard below cannot see.
@@ -157,6 +171,9 @@ export class Profile {
   private readonly notify = inject(NotificationService);
   private readonly logger = inject(Logger);
   private readonly dialogs = inject(NgpDialogManager);
+  /** Onboarding opens on the set-password step (skippable) when the account may have no password. */
+  protected readonly password = inject(PasswordFacade);
+  private readonly questionsHeading = viewChild<ElementRef<HTMLElement>>('questionsHeading');
   // Synchronous: the auth route's resolver merged the `auth.*` dictionary before this page rendered.
   private readonly transloco = inject(TranslocoService);
   private readonly t = (key: string, params?: Record<string, unknown>): string =>
@@ -170,6 +187,14 @@ export class Profile {
     // A first-time learner is filling the onboarding questionnaire; everyone
     // else is editing their profile. The two are different question sets.
     this.onboarding.form.set(this.auth.needsOnboarding() ? 'onboarding' : 'profile');
+    this.password.start(this.isOnboarding());
+
+    // When the password step gives way to the questionnaire, focus moves to its heading: the control
+    // that had it went with the step. In profile mode `step` never changes, so this never runs there.
+    afterRenderEffect(() => {
+      if (this.password.step() !== 'QUESTIONS') return;
+      this.questionsHeading()?.nativeElement.focus({ preventScroll: true });
+    });
   }
 
   // ── Loading state ─────────────────────────────────────────────────────────

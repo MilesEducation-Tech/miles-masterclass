@@ -131,7 +131,53 @@
   },
   "password": {
     "show": "Mostrar contraseña",
-    "hide": "Ocultar contraseña"
+    "hide": "Ocultar contraseña",
+    "tryAgainIn": "Vuelve a intentarlo en",
+    "set": {
+      "title": "Establecer contraseña",
+      "intro": "Establece una contraseña para iniciar sesión con tu correo electrónico la próxima vez.",
+      "new": "Nueva contraseña",
+      "newPlaceholder": "Introduce una nueva contraseña",
+      "hint": "De 8 a 72 caracteres, con al menos una letra y un número.",
+      "confirm": "Confirmar nueva contraseña",
+      "confirmPlaceholder": "Introdúcela de nuevo",
+      "submit": "Establecer contraseña",
+      "skip": "Omitir por ahora",
+      "replaceNote": "Una nueva contraseña sustituye a cualquier contraseña anterior o PIN recibido por correo electrónico."
+    },
+    "refused": {
+      "title": "Contraseña no disponible",
+      "continue": "Continuar"
+    },
+    "code": {
+      "label": "Código del correo electrónico",
+      "sentTo": "Hemos enviado un código a",
+      "reused": "Usa el código que te enviamos hace unos minutos.",
+      "validFor": "Sigue siendo válido durante",
+      "sending": "Enviando un código…",
+      "resendIn": "Reenviar código en",
+      "resend": "Reenviar código",
+      "send": "Enviar un código"
+    },
+    "errors": {
+      "newRequired": "Introduce una nueva contraseña.",
+      "confirmRequired": "Confirma tu nueva contraseña.",
+      "mismatch": "Las contraseñas no coinciden.",
+      "short": "Usa al menos 8 caracteres.",
+      "long": "Usa como máximo 72 caracteres (las letras con tilde y los símbolos cuentan como más de uno).",
+      "letter": "Incluye al menos una letra.",
+      "digit": "Incluye al menos un número.",
+      "codeRequired": "Introduce el código de tu correo electrónico.",
+      "codeLength": "El código tiene {{ length }} dígitos."
+    },
+    "toast": {
+      "setTitle": "Contraseña establecida",
+      "setBody": "La próxima vez, inicia sesión con tu correo electrónico y esta contraseña.",
+      "signedOutTitle": "Sesión cerrada",
+      "signedOutBody": "Inicia sesión con tu correo electrónico y tu nueva contraseña.",
+      "sessionEndedTitle": "Sesión finalizada",
+      "sessionEndedBody": "Vuelve a iniciar sesión para continuar."
+    }
   },
   "forgot": {
     "title": "¿Olvidaste tu contraseña?",

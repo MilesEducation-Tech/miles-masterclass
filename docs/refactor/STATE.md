@@ -7,8 +7,30 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- 🟡 **2026-11-02, NON-REFACTOR — MIL-166 (story 1 of the password epic), password sign-in, sign-up, forgot and
-  reset. PLAN APPROVED, DONE, COMMITTED** as `cdf091cf` (`prompts/password-sign-in.md`), on
+- 🟡 **2026-11-03, NON-REFACTOR — MIL-167 (story 2 of the password epic), onboarding set-password step. PLAN
+  APPROVED, DONE, UNCOMMITTED** (`prompts/onboarding-set-password.md`), on `feat/MIL-167-onboarding-set-password`
+  off `master` (`c882e546`). Story 3 (profile Password section, saved-answer prefill) follows.
+  - **Change:** `/auth/profile` in onboarding opens on "Set Password" (new + confirm, Skip for now) unless
+    `has_password` is `true`; a failed `user-details/` read skips it. `password/` goes with `newPassword` alone;
+    on `verification_required` the step emails a code at once (`password-code/`, no body) and sends
+    `{newPassword, emailCode}` from the login's code boxes. Every documented answer has a state: policy (server
+    message under the field), wrong code (form kept, not signed out), 401 with no code and `signedOut: true`
+    (local sign-out → login keeping `redirect`), the six 403 refusals ("Password not available" + Continue), 429
+    (`retryAfterSeconds`, or a 60 s estimate on `password/`; Skip stays), 503 "could not be set" (new code first).
+  - core: `PASSWORD_ROUTES.code`/`.set`, `PasswordFailure` + `toPasswordFailure` (reusing the now-exported
+    `readErrorBody`), `PasswordApi.requestCode`/`set` (bearer), `UserDetails.has_password?`.
+  - feature: `PasswordFacade` (`@Service({autoProvided: false})`, provided on `Profile` so the password dies with
+    the page), `components/password-form`, `utils/password-policy.ts`, `models/set-password.model.ts`. The
+    profile page is fixed at the card's inner width (`sm:w-[33rem]`) so the card doesn't jump between step and
+    questionnaire, and its title is an `h1` that takes focus after the step.
+  - 36 keys × 5 dictionaries; `docs/AUTH_API.md` §5 and §7.
+  - **Verified (dev 4101, Playwright, stubbed answers, English):** 84 checks green (every row of the prompt's state
+    matrix, bodies, focus, no password in the console); story 1's login (29) and code-flow (26) suites still
+    green; 375 / 768 / 1440 with no sideways scroll, card 576 px in every state at ≥ 768.
+  - **Not verified:** a live UAT run (needs a fresh code sign-in and a test inbox for `password-code/`).
+
+- ✅ **2026-11-02, NON-REFACTOR — MIL-166 (story 1 of the password epic), password sign-in, sign-up, forgot and
+  reset. MERGED as #231 (`c882e546`, 2026-11-03).** Committed as `cdf091cf` (`prompts/password-sign-in.md`), on
   `feat/MIL-166-password-login` off `master` (`fca820d5`); `master` (#229) brought in 2026-11-03. Stories 2 (onboarding set-password) and 3 (profile
   password section, saved-answer prefill) follow on their own branches.
   - **Why:** the backend added five password routes and `has_password` on 2026-10-28 (Postman §2.6–2.10);
@@ -6779,6 +6801,8 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-11-03 · NON-REFACTOR · **MIL-167 set-password step** (uncommitted): onboarding opens on Set Password (skippable), email-code proof on `verification_required`, every `password/` / `password-code/` answer rendered · 84 Playwright checks + story 1 suites green (English) · lint 0 errors, structure ✔, build:prod ✔
+- 2026-11-03 · NON-REFACTOR · **MIL-167 plan** (`prompts/onboarding-set-password.md`): onboarding set-password step, skippable, email-code proof on `verification_required`, full state matrix · MIL-166 merged as #231 (`c882e546`) · awaiting approval
 - 2026-11-03 · NON-REFACTOR · **MIL-166 same-page transitions**: a navigation that keeps the path (password ↔ code, Back/Forward, invoice `?status=`) runs its view transition with no animation (`app.config.ts` + `animation.css`) · 0 animations, ~30 ms (was 323 ms); a path change still slides and fades; no console errors · 81 Playwright checks green · lint 0 errors, build:prod ✔
 - 2026-11-03 · NON-REFACTOR · **MIL-166 tab flicker**: switching Mobile/Email ran a router navigation, so `withViewTransitions()` cross-faded the whole page on every click; the tab now rewrites `?method=` with `Location.replaceState` · 0 view transitions per switch (was 1); reload, Back, Forward and sign-up unchanged · lint 0 errors, build:prod ✔
 - 2026-11-03 · NON-REFACTOR · **MIL-166 required marks** (uncommitted): a red `*` (`text-destructive`, `aria-hidden`) on every required field of the multi-field forms: password view Email/Password, code form Code/Phone/Email (login and sign-up); consent and the single-field screens unmarked · names stay plain, inputs `required` · lint 0 errors, build:prod ✔
