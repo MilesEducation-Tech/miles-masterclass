@@ -1,7 +1,6 @@
 import { isPlatformBrowser } from '@angular/common';
 import { computed, DestroyRef, inject, PLATFORM_ID, Service, signal } from '@angular/core';
 import { PRIMARY_OUTLET, Router, UrlTree } from '@angular/router';
-import { Viewport } from '@core/services/viewport/viewport';
 import {
   JOIN_REFUSAL_KINDS,
   WAITING_FOR_HOST_RETRY_MS,
@@ -11,6 +10,7 @@ import {
   EjectionReason,
   JoinRefusal,
   ZoomCloseReason,
+  ZoomExit,
 } from '@features/offerings/webinar/models/meeting-session.model';
 import { FeedCard, registrationOf } from '@features/offerings/webinar/models/webinar.model';
 import { MeetingSession } from '@features/offerings/webinar/services/meeting-session';
@@ -24,6 +24,9 @@ import { toWebinarError, WebinarError } from '@features/offerings/webinar/utils/
 /**
  * The live room: claims the session, joins Zoom, and decides what the room shows.
  *
+ * Zoom runs as Client View, its full-page web client, on every device: phones
+ * included, since Client View is Zoom's supported mobile path.
+ *
  * The join sequence is deliberately ordered cheapest-refusal-first:
  *
  *   local Web Lock  →  server lease  →  Zoom signature  →  import SDK  →  join
@@ -34,10 +37,10 @@ import { toWebinarError, WebinarError } from '@features/offerings/webinar/utils/
  * ever reaches the import.
  *
  * Every way the sequence can end is a state the page renders: `exit`
- * (ejected, ended, removed, disconnected), `conflict`, `refusal`, the mobile
- * hand-off, or the stage — which itself says whether the learner is waiting for
- * the host to start, waiting to be admitted, attending, or reconnecting. None
- * of them is a spinner that never stops.
+ * (ejected, ended, removed, disconnected), `conflict`, `refusal`, or the stage
+ * — which itself says whether the learner is waiting for the host to start or
+ * being connected, until Zoom's own page covers it. None of them is a spinner
+ * that never stops.
  *
  * Route-scoped on `:id/live`, next to `MeetingSession` and `ZoomMeetingClient`,
  * so all three live exactly as long as the room. The page and `MeetingStage`
@@ -49,15 +52,12 @@ export class LiveSessionFacade {
   private readonly session = inject(MeetingSession);
   private readonly zoom = inject(ZoomMeetingClient);
   private readonly router = inject(Router);
-  private readonly viewport = inject(Viewport);
   private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   private readonly webinarId = signal<string | null>(null);
   /** Set when Zoom itself closed the connection; cleared by the next join. */
   private readonly closed = signal<ZoomCloseReason | null>(null);
-  /** The element the SDK renders into, registered by `MeetingStage` once it renders. */
-  private stageRoot: HTMLElement | null = null;
   /** The next try at Zoom while the host has not started the webinar. */
   private rejoinTimer: ReturnType<typeof setTimeout> | null = null;
   /**
@@ -70,7 +70,7 @@ export class LiveSessionFacade {
   /**
    * The webinar this room is for. Reactive, because on a reload or a deep link
    * neither the feed nor the detail row has landed when the room opens: the
-   * title and the mobile join link fill in as soon as either does.
+   * title and the Zoom app link fill in as soon as either does.
    */
   readonly webinar = computed<FeedCard | null>(() => {
     const id = this.webinarId();
@@ -92,16 +92,7 @@ export class LiveSessionFacade {
   /** The scheduled start, for the waiting-for-host copy. */
   readonly startsAt = computed(() => this.webinar()?.start_date_time ?? null);
 
-  /**
-   * Zoom states Component View is designed for desktop browsers, not mobile.
-   * On anything handheld we do not embed — we hand the learner their own Zoom
-   * link instead. The lease is still claimed first, so the one-session rule
-   * holds on mobile too, and Zoom's webhook still records attendance, so CPE is
-   * unaffected. Phase 3 replaces this branch with Client View.
-   */
-  readonly isMobile = computed(() => this.viewport.isHandheld());
-
-  /** Mobile fallback: the learner's own Zoom join URL. */
+  /** The learner's own Zoom join URL, for a webinar that refuses browser joins. */
   readonly mobileJoinUrl = computed(() => registrationOf(this.webinar())?.join_url ?? null);
 
   readonly conflict = this.session.conflict.asReadonly();
@@ -141,10 +132,15 @@ export class LiveSessionFacade {
 
     // Zoom ended the connection itself. Give the lease back either way: after
     // the host ends the webinar nothing is left to hold, and after a dropped
-    // connection the learner may well rejoin from another device.
-    this.zoom.onConnectionClosed = (reason: ZoomCloseReason) => {
+    // connection the learner may well rejoin from another device. Zoom's own
+    // Leave button is the learner leaving, same as ours.
+    this.zoom.onConnectionClosed = (exit: ZoomExit) => {
+      if (exit === 'left') {
+        void this.leave();
+        return;
+      }
       void this.session.release();
-      this.closed.set(reason);
+      this.closed.set(exit);
     };
 
     this.destroyRef.onDestroy(() => this.stopWaiting());
@@ -195,16 +191,6 @@ export class LiveSessionFacade {
   /** The session token expired mid-join: sign in, then come straight back here. */
   signIn(): void {
     void this.router.navigate(['/auth/login'], { queryParams: { redirect: this.router.url } });
-  }
-
-  /** Called by `MeetingStage` once its SDK container is in the DOM. */
-  attachStage(root: HTMLElement): void {
-    this.stageRoot = root;
-  }
-
-  /** Called by `MeetingStage` on destroy; ignores a stage that was already replaced. */
-  detachStage(root: HTMLElement): void {
-    if (this.stageRoot === root) this.stageRoot = null;
   }
 
   /**
@@ -258,23 +244,7 @@ export class LiveSessionFacade {
       return;
     }
 
-    if (this.isMobile()) {
-      // Hold the lease but do not embed — see `isMobile`.
-      this.zoom.phase.set('idle');
-      return;
-    }
-
-    const root = this.stageRoot;
-    if (!root) {
-      // The stage is not on screen, so there is nowhere to join into. Give
-      // the lease back rather than hold a session nobody can see.
-      await this.session.release();
-      this.zoom.phase.set('idle');
-      this.refusal.set({ kind: 'failed', message: null, opensAt: null });
-      return;
-    }
-
-    const outcome = await this.zoom.join(root, toJoinParams(signature));
+    const outcome = await this.zoom.join(toJoinParams(signature), this.webinarPageUrl());
     if (run !== this.run) return;
     this.waitingForHost.set(outcome === 'not-started');
 
@@ -352,6 +322,14 @@ export class LiveSessionFacade {
   private urlUp(levels: number): UrlTree {
     const segments = this.router.parseUrl(this.router.url).root.children[PRIMARY_OUTLET]?.segments;
     return this.router.createUrlTree((segments ?? []).slice(0, -levels).map((s) => s.path));
+  }
+
+  /**
+   * The webinar's own page, for Client View's `leaveUrl`: where Zoom goes if it
+   * ever leaves the page itself. A path is enough; the SDK prefixes the origin.
+   */
+  private webinarPageUrl(): string {
+    return this.router.serializeUrl(this.urlUp(1));
   }
 }
 

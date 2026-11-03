@@ -8,6 +8,7 @@ import {
   JoinRefusalKind,
   SessionIdRequest,
   SignatureRequest,
+  ZoomExit,
   ZoomJoinOutcome,
 } from '@features/offerings/webinar/models/meeting-session.model';
 import type { KnownWebinarErrorCode } from '@features/offerings/webinar/utils/webinar-error';
@@ -105,6 +106,30 @@ export const ZOOM_ERROR_OUTCOMES: Readonly<Record<number, ZoomJoinOutcome | unde
   /** MEETING_CAPACITY_REACHED. */
   4005: 'full',
 };
+
+/**
+ * Why Client View says our own participant left: the `reasonCode` on its
+ * `onUserLeave` event (SDK 6.10's `LEAVE_REASON_CODE`). A code missing here, or
+ * no code at all, is a dropped connection, which the learner can rejoin.
+ */
+export const ZOOM_LEAVE_REASONS: Readonly<Record<number, ZoomExit | undefined>> = {
+  /** HOST_ENDED_MEETING. */
+  1: 'meeting-ended',
+  /** SELF_LEAVE_FROM_IN_MEETING, _WAITING_ROOM, _WAITING_FOR_HOST_START: Zoom's own Leave button. */
+  2: 'left',
+  3: 'left',
+  4: 'left',
+  /** KICK_OUT_FROM_MEETING, KICK_OUT_FROM_WAITING_ROOM. */
+  6: 'removed',
+  7: 'removed',
+};
+
+/**
+ * Client View's `onMeetingStatus` values. Restated rather than imported: the
+ * SDK's own enum is a value, and a static import would pull the SDK into the
+ * route's chunk.
+ */
+export const ZOOM_MEETING_STATUS = { connected: 2, disconnected: 3, reconnecting: 4 } as const;
 
 /**
  * The room's copy for the refusals only Zoom can give. The server's refusals

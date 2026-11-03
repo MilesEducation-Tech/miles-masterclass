@@ -8,8 +8,8 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 ## Now
 
 - 🟡 **2026-11-02, NON-REFACTOR — MIL-166 (story 1 of the password epic), password sign-in, sign-up, forgot and
-  reset. PLAN APPROVED, DONE, GATES GREEN, NOT COMMITTED** (`prompts/password-sign-in.md`), on
-  `feat/MIL-166-password-login` off `master` (`fca820d5`). Stories 2 (onboarding set-password) and 3 (profile
+  reset. PLAN APPROVED, DONE, COMMITTED** as `cdf091cf` (`prompts/password-sign-in.md`), on
+  `feat/MIL-166-password-login` off `master` (`fca820d5`); `master` (#229) brought in 2026-11-03. Stories 2 (onboarding set-password) and 3 (profile
   password section, saved-answer prefill) follow on their own branches.
   - **Why:** the backend added five password routes and `has_password` on 2026-10-28 (Postman §2.6–2.10);
     the app was OTP-only and `docs/AUTH_API.md` §7 said password sign-in did not exist.
@@ -48,6 +48,25 @@ tracking-tight`) and "Login with your email and password." (`text-sm text-muted-
     request before click, token stripped, PIN with its leading zero, copy, signed in before/after load, same-tab
     link); 375 / 768 / 1440 with no sideways scroll. All in English.
   - **Not verified:** a live UAT password sign-in (risk: the saved 200 example lacks `profile_status`).
+
+- 🔧 **2026-11-03, NON-REFACTOR, MIL-XXX: live webinar room on Zoom's Client View, UNCOMMITTED** on
+  `feat/MIL-XXX-webinar-live-client-view` (`prompts/webinar-live-client-view.md`).
+  - **Why Client View:** Component View (SDK 6.10) ignores `viewSizes` during a screen share (fixed 615px
+    height), keeps a fixed aspect, and is desktop-only. Client View is Zoom's full-page client: phones
+    included, with polls and Q&A built in.
+  - **What changed:** `ZoomMeetingClient` is rebuilt on `ZoomMtg` (imported once,
+    `leaveRedirect: false`, `#zmmtg-root` shown only while joining or joined). Exits come from
+    `onUserLeave` reason codes. The phone hand-off branch and `attachStage` are gone, and `MeetingStage`
+    is a full-screen connecting/waiting surface.
+  - **SDK quirks found:** in webinars, `onUserIsInWaitingRoom` is never delivered, and `onMeetingStatus`
+    stops once a hold state is stored (Zoom saves "false" as a string). `onUserLeave` is always delivered.
+  - **Beacon:** the code is correct. Delivery is verified: the beacon is sent, and the release route
+    answers 204 to a header-less `text/plain` body from the app origin.
+  - **Checks:** lint 0 errors, structure ✔, tsc ✔, build:prod ✔ (1.01 MB / 229 kB initial, Zoom lazy).
+  - **Not verified (live checks skipped by the user, 2026-11-03):** anything in the joined room, which
+    needs a signed-in session and a webinar a host has started. That covers in-place rejoin,
+    `leaveRedirect`, exit screens, polls per size, and a lease actually ending on tab close. Run them on
+    UAT before release (list in the prompt's "Live checks").
 
 - 🔧 **2026-11-02, NON-REFACTOR, MIL-117: PR #225 review ("remove testing/mock"), STAGED, NOT COMMITTED.**
   - Removed `testing/mocks/ai-labs.mock.ts` and the 7 AI Labs stories that were its only users
