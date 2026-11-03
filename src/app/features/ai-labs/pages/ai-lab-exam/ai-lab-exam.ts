@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { NgpLabel } from 'ng-primitives/form-field';
-import { CanDeactivateComponent } from '@core/guards/can-deactivate-exam-guard';
+import { CanDeactivateComponent, leaveConfirmed } from '@core/guards/can-deactivate-exam-guard';
 import { Backward } from '@shared/components/backward/backward';
 // Type-only: both dialogs load with `import()` when opened (AGENTS.md §4.4).
 import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
@@ -181,7 +181,7 @@ export class AiLabExam implements CanDeactivateComponent {
   }
 
   protected onBeforeUnload(event: Event): void {
-    if (this.isInProgress()) event.preventDefault();
+    if (this.isInProgress() && !leaveConfirmed(this)) event.preventDefault();
   }
 
   canDeactivate(): Promise<boolean> | boolean {

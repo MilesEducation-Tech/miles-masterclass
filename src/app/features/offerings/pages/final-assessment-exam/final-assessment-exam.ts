@@ -11,7 +11,7 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-import { CanDeactivateComponent } from '@core/guards/can-deactivate-exam-guard';
+import { CanDeactivateComponent, leaveConfirmed } from '@core/guards/can-deactivate-exam-guard';
 import { NotificationService } from '@core/services/notification/notification';
 import { Backward } from '@shared/components/backward/backward';
 // Type-only: both dialogs load with `import()` when opened (AGENTS.md §4.4).
@@ -102,7 +102,7 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
   }
 
   protected onBeforeUnload(event: Event): void {
-    if (this.isInProgress()) event.preventDefault();
+    if (this.isInProgress() && !leaveConfirmed(this)) event.preventDefault();
   }
 
   canDeactivate(): Promise<boolean> | boolean {

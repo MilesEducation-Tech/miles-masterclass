@@ -7,8 +7,23 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- 🟡 **2026-11-03, NON-REFACTOR — MIL-168 (story 3 of the password epic), profile Password section and
-  saved-answer prefill. PLAN APPROVED, DONE, UNCOMMITTED** (`prompts/profile-password-prefill.md`), on
+- 🟡 **2026-11-03, NON-REFACTOR — MIL-171, "Leave without saving?" asked twice. DONE, UNCOMMITTED**
+  (`prompts/leave-guard-double-prompt.md`), on `fix/MIL-171-leave-guard-double-prompt` off `master` (`f49bbe4a`).
+  - **Cause:** "Back to Home" goes to `/`, whose `canActivate` (`rootRedirectGuard`) redirects; the redirect is a
+    new navigation, and `canDeactivate` runs before `canActivate`, so the leave guard asked again while the page
+    was still on screen. Second form: "Leave" onto a missing chunk reloads (`recoverFromStaleChunk`), and the
+    page's `beforeunload` raised the browser's prompt too.
+  - **Fix:** `canDeactivateExamGuard` keeps a confirmed "Leave" (async `true` only) in a module `WeakSet` until the
+    navigation chain settles (a `Redirect` / `SupersededByNewNavigation` cancel carries it on, the router's
+    `afterNextNavigation` rule). `leaveConfirmed(component)` lets the profile and both exams skip their
+    `beforeunload` during that leave.
+  - **Verified (dev 4101, Playwright, stubbed session, English):** 26 checks green (clean, leave, keep editing,
+    reload, stale chunk, onboarding, masterclass exam Cancel / reload / Exit / stale Exit). The same checks on
+    `master`'s code fail 4 (two prompts twice, the browser prompt after a stale reload on the profile and the exam).
+    The AI-lab exam has the same one-line change but was not run.
+
+- ✅ **2026-11-03, NON-REFACTOR — MIL-168 (story 3 of the password epic), profile Password section and
+  saved-answer prefill. MERGED as #233 (`f49bbe4a`, 2026-11-03)** (`prompts/profile-password-prefill.md`), on
   `feat/MIL-168-profile-password-prefill` off `master` (`02200e2f`). Last story of the epic.
   - **Password section** (profile mode, once `user-details/` has loaded): "Change password" (current + new +
     confirm, `{newPassword, currentPassword}`) when `has_password` is `true`, else "Set a password" (as
@@ -27,7 +42,7 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     `{}`, failed read, PATCH bodies, re-seed after save, every section state, focus, no stray unload prompt);
     story 2's 84 still green; 375 / 768 / 1440, card 311 / 576 / 576 px, no sideways scroll.
   - **Found, not fixed:** with unsaved edits "Back to Home" asks "Leave without saving?" twice (`/` redirects
-    and re-runs the leave guard). Predates this branch; offered as a separate task.
+    and re-runs the leave guard). Predates this branch; fixed in MIL-171.
   - **Not verified:** live UAT (`GET profile/` with a real account, a real change with the current password).
 
 - ✅ **2026-11-03, NON-REFACTOR — MIL-167 (story 2 of the password epic), onboarding set-password step. MERGED as
@@ -6824,6 +6839,7 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-11-03 · NON-REFACTOR · **MIL-171 leave guard asks once** (uncommitted): `canDeactivateExamGuard` remembers a confirmed leave across redirects; `leaveConfirmed` in the three `beforeunload`s · 26 Playwright checks green (4 fail on `master`) · MIL-168 merged as #233 (`f49bbe4a`)
 - 2026-11-03 · NON-REFACTOR · **MIL-168 profile Password section + prefill** (uncommitted): change/set from the profile with an email-code fallback; `GET profile/` read again to pre-fill, per-row re-seed, saved "yes" can be unticked, first-load-only spinner · 63 + 84 Playwright checks green (English) · lint 0 errors, structure ✔, build:prod ✔
 - 2026-11-03 · NON-REFACTOR · **MIL-168 plan** (`prompts/profile-password-prefill.md`): profile Password section (set / change, email-code fallback) and saved-answer prefill · MIL-167 merged as #232 (`a49e7d85`) · awaiting approval
 - 2026-11-03 · NON-REFACTOR · **MIL-167 set-password step** (uncommitted): onboarding opens on Set Password (skippable), email-code proof on `verification_required`, every `password/` / `password-code/` answer rendered · 84 Playwright checks + story 1 suites green (English) · lint 0 errors, structure ✔, build:prod ✔
