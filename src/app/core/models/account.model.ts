@@ -48,6 +48,13 @@ export interface UserDetails {
   /** The stored milestone column — the onboarding gate reads THIS one. */
   is_onboarding_completed: boolean;
   is_profile_completed: boolean;
+  /**
+   * Whether the account holds a password (2026-10-28), recomputed on every read. `true` is
+   * trustworthy; `false` can be wrong (a reset PIN, a password set in another Miles app), so it only
+   * ever means "offer to set one", never "you have none". Optional: an environment that doesn't send
+   * it yet must not fail the whole record.
+   */
+  has_password?: boolean;
 }
 
 /**
@@ -85,7 +92,8 @@ export function isUserDetails(body: unknown): body is UserDetails {
     isNullableString(b['first_name']) &&
     isNullableString(b['full_name']) &&
     typeof b['is_onboarding_completed'] === 'boolean' &&
-    typeof b['is_profile_completed'] === 'boolean'
+    typeof b['is_profile_completed'] === 'boolean' &&
+    (b['has_password'] === undefined || typeof b['has_password'] === 'boolean')
   );
 }
 

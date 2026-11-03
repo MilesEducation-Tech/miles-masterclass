@@ -275,10 +275,11 @@ buckets (the legacy `Screen1`/`Screen2` keying is gone). `visibility: "both"` ap
 | Concern                                 | Where                                      | Pattern                                         |
 | --------------------------------------- | ------------------------------------------ | ----------------------------------------------- |
 | The sign-in POSTs, token state, refresh | `core/services/auth-session/`              | `@Service()` + `ApiClient.call`                 |
-| Forgot / reset (no session)             | `core/services/password-api/`              | `@Service()` + `ApiClient.call`, no bearer      |
+| Forgot / reset, code / set              | `core/services/password-api/`              | `@Service()` + `ApiClient.call`                 |
 | `user-details/`                         | `core/services/account-api/`               | `@Service()` + `httpResource`                   |
 | `questions/`, `PATCH profile/`          | `core/services/onboarding-api/`            | `@Service()` + `httpResource` (+ PATCH methods) |
 | Login and sign-up screen state          | `features/auth/services/auth-facade.ts`    | `@Service({autoProvided: false})`, route-scoped |
+| Set-password step (`PasswordFacade`)    | `features/auth/services/`                  | `@Service({autoProvided: false})`, on `Profile` |
 | Bearer + rotation                       | `core/interceptors/app/app-interceptor.ts` |                                                 |
 | Route gating                            | `core/guards/auth/`                        | functional `CanMatchFn`                         |
 
@@ -377,7 +378,7 @@ all — and forwards its status, `code` and `message` unmodified. Show `message`
 The 403 codes are `lms_managed`, `organisation_managed`, `email_required`, `email_not_confirmed`,
 `account_inactive` and `not_available`: this account cannot hold a password here. A new password is 8 to 72
 **bytes** with a letter and a number; the sign-in floor is 6 characters. `password-code/` and `password/` are
-the profile's set/change flow (not bound yet).
+bound by onboarding's set-password step (below); the profile's change flow reuses them.
 
 **Client rules**
 
@@ -404,7 +405,23 @@ the profile's set/change flow (not bound yet).
   checks permissions, so a stale token in the cookies would turn a valid link into a 401.
 - **`has_password`** on `user-details/` is `true` after a password sign-in or `password/`, and is never reset.
   `false` can be wrong (a reset PIN, or a password set in another Miles app, doesn't set it), so it offers "Set a
-  password" and never says the learner has none.
+  password" and never says the learner has none. It is optional in `UserDetails`: absent reads as "may not have
+  one".
+- **Set-password step** (`/auth/profile`, onboarding only): offered unless `has_password` is `true`, and
+  skippable; a failed `user-details/` read skips it rather than hold onboarding up. `PasswordFacade` is provided
+  on the `Profile` component, so the typed password dies with the page. `password/` goes with `newPassword`
+  alone first (a first password is allowed within 15 minutes of a code sign-in, once); on
+  `verification_required` the step emails a code at once (`password-code/`, no body) and sends
+  `{newPassword, emailCode}`. The code is the email sign-in code, so it uses the login's code boxes.
+- **A 401 with a `code` is a wrong proof**: keep the form. Only a 401 with no `code` ends the session (local
+  sign-out, then `/auth/login` keeping `redirect`). `signedOut: true` on a 200 does the same, with a "log in with
+  your new password" toast.
+- **The six 403 codes** replace the step with "Password not available", the server's message and Continue. Any
+  other 403 stays a retryable error.
+- **429:** `password-code/` gives `retryAfterSeconds` and Resend waits it out; `password/` gives no duration, so
+  Set password waits an estimated 60 seconds. Skip stays enabled through both.
+- **503 "The password could not be set"** spent the emailed code: the code is cleared and Set password waits for a
+  new one.
 
 **Open with the backend**
 

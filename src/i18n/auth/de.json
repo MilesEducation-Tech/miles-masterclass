@@ -131,7 +131,53 @@
   },
   "password": {
     "show": "Passwort anzeigen",
-    "hide": "Passwort verbergen"
+    "hide": "Passwort verbergen",
+    "tryAgainIn": "Erneut versuchen in",
+    "set": {
+      "title": "Passwort festlegen",
+      "intro": "Lege ein Passwort fest, damit du dich nächstes Mal mit deiner E-Mail-Adresse anmelden kannst.",
+      "new": "Neues Passwort",
+      "newPlaceholder": "Neues Passwort eingeben",
+      "hint": "8–72 Zeichen, mit mindestens einem Buchstaben und einer Zahl.",
+      "confirm": "Neues Passwort bestätigen",
+      "confirmPlaceholder": "Erneut eingeben",
+      "submit": "Passwort festlegen",
+      "skip": "Vorerst überspringen",
+      "replaceNote": "Ein neues Passwort ersetzt jedes frühere Passwort und jede per E-Mail erhaltene PIN."
+    },
+    "refused": {
+      "title": "Passwort nicht verfügbar",
+      "continue": "Weiter"
+    },
+    "code": {
+      "label": "E-Mail-Code",
+      "sentTo": "Wir haben einen Code gesendet an",
+      "reused": "Verwende den Code, den wir dir vor ein paar Minuten gesendet haben.",
+      "validFor": "Er ist noch gültig für",
+      "sending": "Code wird gesendet…",
+      "resendIn": "Code erneut senden in",
+      "resend": "Code erneut senden",
+      "send": "Code senden"
+    },
+    "errors": {
+      "newRequired": "Gib ein neues Passwort ein.",
+      "confirmRequired": "Bestätige dein neues Passwort.",
+      "mismatch": "Die Passwörter stimmen nicht überein.",
+      "short": "Verwende mindestens 8 Zeichen.",
+      "long": "Verwende höchstens 72 Zeichen (Umlaute, Akzente und Symbole zählen als mehr als eines).",
+      "letter": "Verwende mindestens einen Buchstaben.",
+      "digit": "Verwende mindestens eine Zahl.",
+      "codeRequired": "Gib den Code aus deiner E-Mail ein.",
+      "codeLength": "Der Code hat {{ length }} Ziffern."
+    },
+    "toast": {
+      "setTitle": "Passwort festgelegt",
+      "setBody": "Melde dich nächstes Mal mit deiner E-Mail-Adresse und diesem Passwort an.",
+      "signedOutTitle": "Abgemeldet",
+      "signedOutBody": "Melde dich mit deiner E-Mail-Adresse und deinem neuen Passwort an.",
+      "sessionEndedTitle": "Sitzung beendet",
+      "sessionEndedBody": "Bitte melde dich erneut an, um fortzufahren."
+    }
   },
   "forgot": {
     "title": "Passwort vergessen?",

@@ -131,7 +131,53 @@
   },
   "password": {
     "show": "Show password",
-    "hide": "Hide password"
+    "hide": "Hide password",
+    "tryAgainIn": "Try again in",
+    "set": {
+      "title": "Set Password",
+      "intro": "Set a password so you can log in with your email next time.",
+      "new": "New password",
+      "newPlaceholder": "Enter a new password",
+      "hint": "8–72 characters, with at least one letter and one number.",
+      "confirm": "Confirm new password",
+      "confirmPlaceholder": "Enter it again",
+      "submit": "Set password",
+      "skip": "Skip for now",
+      "replaceNote": "A new password replaces any earlier password or emailed PIN."
+    },
+    "refused": {
+      "title": "Password not available",
+      "continue": "Continue"
+    },
+    "code": {
+      "label": "Email code",
+      "sentTo": "We've sent a code to",
+      "reused": "Use the code we sent you a few minutes ago.",
+      "validFor": "It's valid for another",
+      "sending": "Sending a code…",
+      "resendIn": "Resend code in",
+      "resend": "Resend code",
+      "send": "Send a code"
+    },
+    "errors": {
+      "newRequired": "Enter a new password.",
+      "confirmRequired": "Confirm your new password.",
+      "mismatch": "The passwords don't match.",
+      "short": "Use at least 8 characters.",
+      "long": "Use at most 72 characters (accented letters and symbols count as more than one).",
+      "letter": "Include at least one letter.",
+      "digit": "Include at least one number.",
+      "codeRequired": "Enter the code from your email.",
+      "codeLength": "The code is {{ length }} digits."
+    },
+    "toast": {
+      "setTitle": "Password set",
+      "setBody": "Next time, log in with your email and this password.",
+      "signedOutTitle": "Signed out",
+      "signedOutBody": "Log in with your email and your new password.",
+      "sessionEndedTitle": "Session ended",
+      "sessionEndedBody": "Please log in again to continue."
+    }
   },
   "forgot": {
     "title": "Forgot your password?",

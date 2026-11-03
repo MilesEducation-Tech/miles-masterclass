@@ -131,7 +131,53 @@
   },
   "password": {
     "show": "Afficher le mot de passe",
-    "hide": "Masquer le mot de passe"
+    "hide": "Masquer le mot de passe",
+    "tryAgainIn": "Réessayez dans",
+    "set": {
+      "title": "Définir un mot de passe",
+      "intro": "Définissez un mot de passe pour vous connecter avec votre e-mail la prochaine fois.",
+      "new": "Nouveau mot de passe",
+      "newPlaceholder": "Saisissez un nouveau mot de passe",
+      "hint": "De 8 à 72 caractères, avec au moins une lettre et un chiffre.",
+      "confirm": "Confirmer le nouveau mot de passe",
+      "confirmPlaceholder": "Saisissez-le à nouveau",
+      "submit": "Définir le mot de passe",
+      "skip": "Plus tard",
+      "replaceNote": "Un nouveau mot de passe remplace tout mot de passe précédent ou code PIN reçu par e-mail."
+    },
+    "refused": {
+      "title": "Mot de passe indisponible",
+      "continue": "Continuer"
+    },
+    "code": {
+      "label": "Code reçu par e-mail",
+      "sentTo": "Nous avons envoyé un code à",
+      "reused": "Utilisez le code que nous vous avons envoyé il y a quelques minutes.",
+      "validFor": "Il reste valable encore",
+      "sending": "Envoi du code…",
+      "resendIn": "Renvoyer le code dans",
+      "resend": "Renvoyer le code",
+      "send": "Envoyer un code"
+    },
+    "errors": {
+      "newRequired": "Saisissez un nouveau mot de passe.",
+      "confirmRequired": "Confirmez votre nouveau mot de passe.",
+      "mismatch": "Les mots de passe ne correspondent pas.",
+      "short": "Utilisez au moins 8 caractères.",
+      "long": "Utilisez 72 caractères au maximum (les lettres accentuées et les symboles comptent pour plus d’un).",
+      "letter": "Incluez au moins une lettre.",
+      "digit": "Incluez au moins un chiffre.",
+      "codeRequired": "Saisissez le code reçu par e-mail.",
+      "codeLength": "Le code comporte {{ length }} chiffres."
+    },
+    "toast": {
+      "setTitle": "Mot de passe défini",
+      "setBody": "La prochaine fois, connectez-vous avec votre e-mail et ce mot de passe.",
+      "signedOutTitle": "Déconnecté",
+      "signedOutBody": "Connectez-vous avec votre e-mail et votre nouveau mot de passe.",
+      "sessionEndedTitle": "Session terminée",
+      "sessionEndedBody": "Veuillez vous reconnecter pour continuer."
+    }
   },
   "forgot": {
     "title": "Mot de passe oublié ?",

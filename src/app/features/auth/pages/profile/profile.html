@@ -1,14 +1,23 @@
-<div class="mx-auto flex max-w-2xl flex-col gap-6 md:p-6">
-  <div class="flex flex-col gap-2">
-    <p class="text-2xl font-bold text-white">
-      {{ (isOnboarding() ? 'auth.profile.titleOnboarding' : 'auth.profile.title') | transloco }}
-    </p>
-    <p class="text-gray-400">
-      {{ (isOnboarding() ? 'auth.profile.introOnboarding' : 'auth.profile.intro') | transloco }}
-    </p>
-  </div>
+<!-- The card sizes to its content, so a fixed width (the card's inner width, as on the forgot and
+     reset pages) keeps it steady when the password step hands over to the questionnaire. -->
+<div class="mx-auto flex max-w-2xl flex-col gap-6 sm:w-[33rem] md:p-6">
+  @if (password.stage() === 'QUESTIONS') {
+    <div class="flex flex-col gap-2">
+      <!-- Focused when the set-password step hands over to the questionnaire. -->
+      <h1 #questionsHeading tabindex="-1" class="text-2xl font-bold text-white outline-none">
+        {{ (isOnboarding() ? 'auth.profile.titleOnboarding' : 'auth.profile.title') | transloco }}
+      </h1>
+      <p class="text-gray-400">
+        {{ (isOnboarding() ? 'auth.profile.introOnboarding' : 'auth.profile.intro') | transloco }}
+      </p>
+    </div>
+  }
 
-  @if (isLoading()) {
+  <!-- Onboarding first offers a password (`PasswordFacade.stage`); `DECIDING` is the moment before
+       `user-details/` says whether the account has one. -->
+  @if (password.stage() === 'PASSWORD') {
+    <app-password-form />
+  } @else if (isLoading() || password.stage() === 'DECIDING') {
     <div class="flex justify-center py-12"><app-spinner /></div>
   } @else if (loadError()) {
     <p class="text-sm text-destructive" role="alert">
