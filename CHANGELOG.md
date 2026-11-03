@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.18.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.17.0...v3.18.0) (2026-11-03)
+
+
+### Features
+
+* **auth:** add a skippable set-password step to onboarding ([#232](https://github.com/MilesEducation-Tech/miles-masterclass/issues/232)) ([a49e7d8](https://github.com/MilesEducation-Tech/miles-masterclass/commit/a49e7d85d0ed08ec5d39b14b26a0021892a3b301))
+* **auth:** add password sign-in, sign-up, forgot and reset pages ([#231](https://github.com/MilesEducation-Tech/miles-masterclass/issues/231)) ([c882e54](https://github.com/MilesEducation-Tech/miles-masterclass/commit/c882e546582392bfa829812863a9e62561a05a28))
+* **offerings:** run the live webinar room on Zoom's full-page Client View ([#229](https://github.com/MilesEducation-Tech/miles-masterclass/issues/229)) ([26b801a](https://github.com/MilesEducation-Tech/miles-masterclass/commit/26b801a82ea4baa6ed847832d692de4204bdb152))
+
 ## [3.17.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.16.1...v3.17.0) (2026-11-02)
 
 
