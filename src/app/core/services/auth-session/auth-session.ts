@@ -7,13 +7,14 @@ import {
   AUTH_ROUTES,
   OtpContact,
   OtpSendResponse,
+  PasswordLoginRequest,
   ProfileStatus,
   SessionResponse,
   isSessionResponse,
-} from '../../models/auth.model';
-import { SKIP_ERROR_NOTIFICATION, SKIP_LOADING } from '../../models/http.model';
-import { ApiClient } from '../api-client/api-client';
-import { Storage } from '../storage/storage';
+} from '@core/models/auth.model';
+import { SKIP_ERROR_NOTIFICATION, SKIP_LOADING } from '@core/models/http.model';
+import { ApiClient } from '@core/services/api-client/api-client';
+import { Storage } from '@core/services/storage/storage';
 import { HttpContext, HttpErrorResponse } from '@angular/common/http';
 import { clearAiLabSession } from '@core/services/ai-lab-auth/ai-lab-session';
 
@@ -55,7 +56,7 @@ const QUIET_BACKGROUND = new HttpContext()
 /**
  * The learner's session against the MilesCAIRA Accounts v1 API.
  *
- * The five `auth-*` routes are COMMANDS, not reads, so this is a plain service
+ * The `auth-*` routes are COMMANDS, not reads, so this is a plain service
  * over `ApiClient` rather than an `httpResource` layer — and `ensureFreshToken`
  * has to be awaitable and serialised, which a resource cannot express.
  *
@@ -162,6 +163,22 @@ export class AuthSession {
     );
     // A new sign-in starts with no lab session. One left on this browser by a previous learner —
     // whose Miles cookies simply expired, so `clear()` never ran — would otherwise carry over.
+    clearAiLabSession(this.storage);
+    this.store(session);
+    return session;
+  }
+
+  /**
+   * Sign in with a password, and store the session. Same body, same storage and the same fresh start
+   * as `verifyOtp`: the backend provisions a password sign-in exactly as it does a code one. The
+   * password is sent as typed and never logged.
+   */
+  async loginWithPassword(body: PasswordLoginRequest): Promise<SessionResponse> {
+    const session = await firstValueFrom(
+      this.api
+        .call(AUTH_ROUTES.passwordLogin, body, { context: QUIET })
+        .pipe(map((res) => res.data)),
+    );
     clearAiLabSession(this.storage);
     this.store(session);
     return session;

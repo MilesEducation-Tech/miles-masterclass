@@ -7,6 +7,48 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🟡 **2026-11-02, NON-REFACTOR — MIL-166 (story 1 of the password epic), password sign-in, sign-up, forgot and
+  reset. PLAN APPROVED, DONE, GATES GREEN, NOT COMMITTED** (`prompts/password-sign-in.md`), on
+  `feat/MIL-166-password-login` off `master` (`fca820d5`). Stories 2 (onboarding set-password) and 3 (profile
+  password section, saved-answer prefill) follow on their own branches.
+  - **Why:** the backend added five password routes and `has_password` on 2026-10-28 (Postman §2.6–2.10);
+    the app was OTP-only and `docs/AUTH_API.md` §7 said password sign-in did not exist.
+  - **Change:**
+    - `/auth/login` defaults to email + password (show/hide toggle, "Forgot password?"), then the muted "Login with
+      OTP" label over two filled `bg-input` circles (Mobile, Email), then "Don't have an account? Create a new
+      account". The view follows the URL: `?method=phone|email` is the code flow, so Back returns to the password
+      view. A tab switch rewrites the entry with `Location.replaceState` rather than navigating: every router
+      navigation runs the app's view transition, which cross-faded the whole page on each tab click (fixed
+      2026-11-03). The password ↔ code switch (and Back/Forward between them) stays a navigation, and any
+      navigation that only rewrites the query string now swaps instantly app-wide: `instantSamePageTransition` in
+      `app.config.ts` tags `<html>` with `same-page-navigation` and `styles/animation.css` turns the transition's
+      animation off (not `skipTransition()`, whose rejected `ready` the router logs in dev). Real page changes
+      keep the slide and fade; the invoice's `?status=` sync no longer cross-fades the page either.
+    - **Restyled to the user's reference, 2026-11-03:** heading "Login or Sign Up" (`text-2xl font-semibold
+tracking-tight`) and "Login with your email and password." (`text-sm text-muted-foreground`), measured to
+      the pixel against it; the code-flow, sign-up, forgot and reset headings take the same style (same card, so
+      the title no longer jumps size). The brand title (`titleLead`/`titleStrong`) left all five dictionaries.
+    - `/auth/signup`: the same page behind `data: { signup: true }`, code-only, Email tab first, its own facade.
+    - `/auth/forgot-password` and `/auth/password/reset#token=…` (new pages). Reset redeems only on click, reads
+      every fragment (a newer link pasted into the tab), rewrites the address bar without it via
+      `Location.replaceState` (a router navigation cut the view transition short), and clears the local session on 200.
+    - core: `AUTH_ROUTES.passwordLogin` (so in `SESSION_MINTING_PATHS`), `AuthSession.loginWithPassword` (same fresh
+      start as `verifyOtp`), `PASSWORD_ROUTES` (`password.model.ts`), `PasswordApi` (no bearer: DRF authenticates
+      before `AllowAny`). `toAuthFailure`'s 401 fallback no longer says "code".
+    - `AuthFacade`: `start(signup)` from the page (a route-provided service is given the ROOT route and can't read
+      `data`), `view`, URL-driven `loginMethod`, `passwordForm` validated on submit (autofill), `routeAfterSession`
+      shared by both ways in. `components/password-input` (reused by stories 2 and 3).
+    - `legacy-redirects.ts`: `/auth/forget-password` → `/auth/forgot-password`; `/auth/signup` no longer redirected.
+    - 45 keys × 5 dictionaries; `docs/AUTH_API.md` §7 rewritten; AGENTS.md §5 row; aliases in every touched file,
+      `structure-baseline.json` pruned.
+  - **Verified (dev 4101, Playwright, stubbed answers), 80 checks green:** every status of all three routes
+    (401 clears and focuses the password; 429 offers a code with the email carried over; 403 terminal; 503,
+    network, a token-only 200 refused); double submit sends once; OTP view, Back, tabs, deep links, `redirect`
+    through every hop; send → verify → `new_user` → profile; sign-up; forgot (only 202 shows "sent"); reset (no
+    request before click, token stripped, PIN with its leading zero, copy, signed in before/after load, same-tab
+    link); 375 / 768 / 1440 with no sideways scroll. All in English.
+  - **Not verified:** a live UAT password sign-in (risk: the saved 200 example lacks `profile_status`).
+
 - 🔧 **2026-11-02, NON-REFACTOR, MIL-117: PR #225 review ("remove testing/mock"), STAGED, NOT COMMITTED.**
   - Removed `testing/mocks/ai-labs.mock.ts` and the 7 AI Labs stories that were its only users
     (progress panel, token meter, quiz and top-up dialogs, course, exam and feedback pages).
@@ -685,10 +727,8 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
       download stories were the `TOAST_COMPONENT` failure. A full probe of all 220 stories (CDP,
       error-display check) is running in the background to confirm the global change regresses
       nothing. Lint 0 errors; `build-storybook` ✔.
-- 🟡 **2026-10-30, NON-REFACTOR — MIL-161 (bug), dialogs: the grey panel round the card, and the close button. PLAN
-  APPROVED, DONE, GATES GREEN, NOT COMMITTED** (`prompts/dialog-panel-close-button.md`), on
-- 🟡 **2026-11-02, NON-REFACTOR — MIL-134 (bug), coupons on the plan page. PLAN APPROVED, DONE, GATES GREEN, NOT
-  COMMITTED** (`prompts/plan-page-coupons.md`), on `fix/MIL-134-plan-page-coupons` off `master` (`d0a53c28`).
+- ✅ **2026-11-02, NON-REFACTOR — MIL-134 (bug), coupons on the plan page. MERGED** as #226 (`035d91c2`)
+  (`prompts/plan-page-coupons.md`), on `fix/MIL-134-plan-page-coupons` off `master` (`d0a53c28`).
   - **Cause:** #127 (MIL-74) removed the plan page's `promo-coupons` because CAIRA had no coupon list then.
     `GET commerce/coupons/` came later and was bound only into the cart's coupon dialog, behind a cart-with-a-line
     gate.
@@ -6720,6 +6760,11 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-11-03 · NON-REFACTOR · **MIL-166 same-page transitions**: a navigation that keeps the path (password ↔ code, Back/Forward, invoice `?status=`) runs its view transition with no animation (`app.config.ts` + `animation.css`) · 0 animations, ~30 ms (was 323 ms); a path change still slides and fades; no console errors · 81 Playwright checks green · lint 0 errors, build:prod ✔
+- 2026-11-03 · NON-REFACTOR · **MIL-166 tab flicker**: switching Mobile/Email ran a router navigation, so `withViewTransitions()` cross-faded the whole page on every click; the tab now rewrites `?method=` with `Location.replaceState` · 0 view transitions per switch (was 1); reload, Back, Forward and sign-up unchanged · lint 0 errors, build:prod ✔
+- 2026-11-03 · NON-REFACTOR · **MIL-166 required marks** (uncommitted): a red `*` (`text-destructive`, `aria-hidden`) on every required field of the multi-field forms: password view Email/Password, code form Code/Phone/Email (login and sign-up); consent and the single-field screens unmarked · names stay plain, inputs `required` · lint 0 errors, build:prod ✔
+- 2026-11-03 · NON-REFACTOR · **MIL-166 restyle** (uncommitted): "Login or Sign Up" heading + subheading, "Login with OTP" a muted label over filled circles (no captions), same heading on every auth screen · 81 Playwright checks green (English) · lint 0 errors, structure ✔, format ✔, build:prod 230.28 kB gzip
+- 2026-11-02 · NON-REFACTOR · **MIL-166 password sign-in** (uncommitted, `prompts/password-sign-in.md`): password view, OTP chooser, `/auth/signup`, forgot + reset pages, `PASSWORD_ROUTES`/`PasswordApi`, `loginWithPassword` · 80 Playwright checks · lint 0 errors, structure ✔, build:prod ✔
 - 2026-11-02 · NON-REFACTOR · **MIL-117 PR #225 review**: removed `testing/mocks/ai-labs.mock.ts` + its 7 AI Labs stories, `dialog.mock.ts` back to master · lint 0 errors, structure ✔, build:prod ✔, storybook ✔
 - 2026-11-02 · NON-REFACTOR · **MIL-117 merged `origin/master` `d0a53c28`** (merge uncommitted, PR #225): environment = master's typed files + the branch's `AI_LABS` sign-in block; `API.baseUrl`; `AUTH_COOKIES` + `clearAiLabSession`; top-up close button on #217's `close` variant · tsc ✔, lint 0 errors, structure ✔, format ✔, build:prod ✔
 - 2026-10-29 · NON-REFACTOR · **MIL-117 test emails** (uncommitted): row posts `assignment-trigger-email/`, busy while in flight, no auto-retry, disabled/unconfigured hide the row · CDP 4 scenarios · lint 0 errors, structure ✔, build:prod ✔

@@ -2,15 +2,15 @@
 
 How this app signs a learner in, and the rules the backend imposes on it.
 
-**Contract source:** the Postman collection in `postman/Merged Masterclass Backend - All APIs/`
-(a YAML tree, one file per request), folders `01. Authentication and Session` and
-`02. Account, Profile and Reference Content`. Each request's description quotes
-`ACCOUNTS_API_CONTRACT_V1.md` verbatim, and its `.resources/<request>.resources/examples/` holds one
-saved response per documented status. The collection is generated backend-side and marked
-do-not-hand-edit — treat it as the source of truth and this file as the frontend's reading of it.
+**Contract source:** the Postman collection `postman/Merged_Masterclass_Backend_All_APIs.postman_collection.json`,
+folders `01. Authentication and Session` and `02. Account, Profile and Reference Content`. Each request's
+description quotes `ACCOUNTS_API_CONTRACT_V1.md` verbatim, and each request saves one example response per
+documented status. The collection is generated backend-side and marked do-not-hand-edit — treat it as the source
+of truth and this file as the frontend's reading of it.
 
-Re-audited against the collection on 2026-09-27 (MIL-5 auth fixes, MIL-6 profile rebind), and again on
-2026-10-10 when the backend enveloped every response (see "The envelope" below).
+Re-audited against the collection on 2026-09-27 (MIL-5 auth fixes, MIL-6 profile rebind), on 2026-10-10 when
+the backend enveloped every response (see "The envelope" below), and on 2026-11-02 for the password routes
+(MIL-166, §7).
 
 **The envelope.** Since 2026-10-10 every body, success and error alike, on every route is
 `{success, message, data}` (verified live on UAT). Everything this document calls "the body" or "the 200" is
@@ -31,13 +31,14 @@ All under `{API.baseUrl}api/v1/account/`. Every path has a trailing slash; omitt
 
 ### Sign-in — no auth, `AllowAny`
 
-| Route                      | Body                                    | 200                                                         |
-| -------------------------- | --------------------------------------- | ----------------------------------------------------------- |
-| `POST auth-identify/`      | `{identifier}`                          | `{methods, defaultMethod, communicationId, …masks}`         |
-| `POST auth-otp-send/`      | `{email}` _or_ `{mobile, country_code}` | `{channel, cooldownSeconds}`                                |
-| `POST auth-otp-verify/`    | the same, plus `code`                   | `{accessToken, refreshToken, profile_status, is_test_user}` |
-| `POST auth-token-refresh/` | `{refreshToken}` _or_ `{}`              | same four keys, **rotated**                                 |
-| `POST auth-logout/`        | _(none — bearer **required**)_          | 2xx; 401 without a bearer                                   |
+| Route                       | Body                                    | 200                                                         |
+| --------------------------- | --------------------------------------- | ----------------------------------------------------------- |
+| `POST auth-identify/`       | `{identifier}`                          | `{methods, defaultMethod, communicationId, …masks}`         |
+| `POST auth-otp-send/`       | `{email}` _or_ `{mobile, country_code}` | `{channel, cooldownSeconds}`                                |
+| `POST auth-otp-verify/`     | the same, plus `code`                   | `{accessToken, refreshToken, profile_status, is_test_user}` |
+| `POST auth-password-login/` | `{identifier, password}`                | the same session as `auth-otp-verify/` — see §7             |
+| `POST auth-token-refresh/`  | `{refreshToken}` _or_ `{}`              | same four keys, **rotated**                                 |
+| `POST auth-logout/`         | _(none — bearer **required**)_          | 2xx; 401 without a bearer                                   |
 
 On identify, `identifier` is an email, phone number (E.164) or username — the SSO works out which.
 
@@ -168,8 +169,8 @@ sends them to the wrong team. A 403 with any other body is **not** terminal. The
 `code`, so `toAuthFailure()` tells them apart by copy. `toAuthFailure()` in `auth.model.ts` is the only
 place that knows this mapping.
 
-Logout is the one auth route that needs `Authorization: Bearer`, so the interceptor's skip list
-(`SESSION_MINTING_PATHS`) holds only the other four. Refresh clears the session **only on 401**;
+Logout is the one sign-in route that needs `Authorization: Bearer`, so the interceptor's skip list
+(`SESSION_MINTING_PATHS`) holds all the others. Refresh clears the session **only on 401**;
 502/503 keep the tokens.
 
 **Unknown fields are rejected.** Every auth route uses a strict serializer: posting an undeclared
@@ -220,7 +221,8 @@ of them — was **deleted**; a client still calling it gets 404, and a PATCH on 
   "enrolled_status": "Yes",
   "enrolled_course": [{ "course_name": "cpa", "is_enrolled": true, "is_alumni": false, "…": "…" }],
   "user_data_fully_filled": true,
-  "career_counselling_booked": false
+  "career_counselling_booked": false,
+  "has_password": false
 }
 ```
 
@@ -270,14 +272,15 @@ buckets (the legacy `Screen1`/`Screen2` keying is gone). `visibility: "both"` ap
 
 ## 5. How it is built here
 
-| Concern                                      | Where                                      | Pattern                                         |
-| -------------------------------------------- | ------------------------------------------ | ----------------------------------------------- |
-| The five sign-in POSTs, token state, refresh | `core/services/auth-session/`              | `@Service()` + `ApiClient.call`                 |
-| `user-details/`                              | `core/services/account-api/`               | `@Service()` + `httpResource`                   |
-| `questions/`, `PATCH profile/`               | `core/services/onboarding-api/`            | `@Service()` + `httpResource` (+ PATCH methods) |
-| Login screen state                           | `features/auth/services/auth-facade.ts`    | `@Service({autoProvided: false})`, route-scoped |
-| Bearer + rotation                            | `core/interceptors/app/app-interceptor.ts` |                                                 |
-| Route gating                                 | `core/guards/auth/`                        | functional `CanMatchFn`                         |
+| Concern                                 | Where                                      | Pattern                                         |
+| --------------------------------------- | ------------------------------------------ | ----------------------------------------------- |
+| The sign-in POSTs, token state, refresh | `core/services/auth-session/`              | `@Service()` + `ApiClient.call`                 |
+| Forgot / reset (no session)             | `core/services/password-api/`              | `@Service()` + `ApiClient.call`, no bearer      |
+| `user-details/`                         | `core/services/account-api/`               | `@Service()` + `httpResource`                   |
+| `questions/`, `PATCH profile/`          | `core/services/onboarding-api/`            | `@Service()` + `httpResource` (+ PATCH methods) |
+| Login and sign-up screen state          | `features/auth/services/auth-facade.ts`    | `@Service({autoProvided: false})`, route-scoped |
+| Bearer + rotation                       | `core/interceptors/app/app-interceptor.ts` |                                                 |
+| Route gating                            | `core/guards/auth/`                        | functional `CanMatchFn`                         |
 
 **Commands vs reads.** Mutations go through `ApiClient.call()` against the `RouteConfig` registries
 in `auth.model.ts` / `account.model.ts`; reads are `httpResource`s. This follows Angular's own
@@ -357,24 +360,55 @@ When a real token is obtainable, capture `identify`, `otp-send`, `otp-verify`, `
 
 ---
 
-## 7. Password sign-in is not available, and that is a backend gap
+## 7. Passwords
 
-`auth-identify/` legitimately answers `password` in `methods`, and the Miles SSO implements
-`POST /auth/password/login` (`{identifier, password}`; password 8-128 chars; always
-`401 Invalid credentials` on failure, never distinguishing a missing account from a wrong password).
+Added to the contract on 2026-10-28 (§2.6–2.10 of the collection): five routes onto the Miles SSO's password
+API, all under `api/v1/account/`. The SSO owns every rule — lockouts, the policy, who may hold a password at
+all — and forwards its status, `code` and `message` unmodified. Show `message` as-is; branch on `code`.
 
-**The MilesCAIRA backend does not proxy it.** It proxies five auth routes — identify, otp-send,
-otp-verify, token-refresh, logout — and password login is not among them. The gap is visible in the
-backend's own settings: `DEFAULT_THROTTLE_RATES` reserves a `web_login_password` scope at 10/min
-which the contract records as declared on _"nothing in this repository"_.
+| Route                        | Auth   | Body                                                   | 2xx                                                                               | Errors                                                                                                                                                                |
+| ---------------------------- | ------ | ------------------------------------------------------ | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST auth-password-login/`  | none   | `{identifier, password}`                               | 200: the same session as `auth-otp-verify/`                                       | 400; **401 "Invalid credentials"** for an unknown account and a wrong password alike; **429** after 5 failures in 15 minutes, locking password sign-in only; 502; 503 |
+| `POST auth-password-forgot/` | none   | `{identifier}`, an email                               | **always 202** with one fixed message, `data: null`                               | 400 (not an email); 502; 503                                                                                                                                          |
+| `POST auth-password-reset/`  | none   | `{token}`                                              | 200 `{username, password}`: a six-digit PIN, shown once; every session signed out | 400, one fixed message for an invalid, expired, used or ineligible link; 429; 502; 503                                                                                |
+| `POST password-code/`        | bearer | none                                                   | 202 `{maskedEmail, cooldownSeconds, reused?, validForSeconds?}`                   | 403 with a `code`; 429 with `data.retryAfterSeconds`                                                                                                                  |
+| `POST password/`             | bearer | `{newPassword}`, plus `emailCode` or `currentPassword` | 200 `{signedOutOtherSessions, signedOut}`                                         | 400 `password_policy` / `verification_required`; 401 `email_code_incorrect` / `current_password_incorrect`; 403 with a `code`; 429; 503                               |
 
-So this client offers **OTP only**: it sends a code whenever `methods` contains any `*_otp` method,
-and treats an account with none as enterprise SSO. That degrades safely: every documented identifier
-kind also carries an OTP method — email → `email_otp`, phone → `phone_otp`, username → `email_otp` —
-so sign-in works in all of them.
+The 403 codes are `lms_managed`, `organisation_managed`, `email_required`, `email_not_confirmed`,
+`account_inactive` and `not_available`: this account cannot hold a password here. A new password is 8 to 72
+**bytes** with a letter and a number; the sign-in floor is 6 characters. `password-code/` and `password/` are
+the profile's set/change flow (not bound yet).
 
-**The backend ask is one route:** `POST api/v1/account/auth-password-login/` proxying
-`POST /auth/password/login` and returning the same session body as `auth-otp-verify/` (including the
-merged `profile_status` and `is_test_user`). When it lands, add it to `AUTH_ROUTES` (it mints a
-session, so it belongs in `SESSION_MINTING_PATHS` too) and render the password field for accounts
-whose `defaultMethod` is `password`.
+**Client rules**
+
+- **Password sign-in mints a session**, so it is in `AUTH_ROUTES` and, by derivation, in
+  `SESSION_MINTING_PATHS`: no bearer, no refresh first. `AuthSession.loginWithPassword()` stores it exactly as
+  `verifyOtp()` does, `isSessionResponse` included. The other routes live in `PASSWORD_ROUTES`
+  (`core/models/password.model.ts`).
+- **No identify first.** For an email, `auth-identify/` always offers `password` and answers the same for known
+  and unknown accounts, so it would add a round trip and tell the password form nothing.
+- **Passwords, PINs, reset tokens and codes** are never logged, cached, or kept in a URL, storage or a persisted
+  form state. A password is a JSON string sent exactly as typed: never trimmed, never a number.
+- **The login page validates on submit**, not by disabling Log in: Chrome withholds autofilled values from script
+  until the page is interacted with, so a button gated on validity can sit dead over filled fields.
+- **A password 429 offers a code instead**, because the lock never covers code sign-in. No countdown: the 429 can
+  also be a shared upstream limit, so a duration would be a guess.
+- **Forgot** (`/auth/forgot-password`): only the 202 shows "Check your email", and it is the same for every
+  account. A 400, 502, 503 or a dropped connection means nothing was sent, so the form stays with the reason.
+  The old `/auth/forget-password` redirects there permanently (`src/legacy-redirects.ts`).
+- **Reset** (`/auth/password/reset#token=…`): the token rides in the fragment, which never reaches a server. The
+  page reads it, rewrites the address bar without it, and calls the route only when the learner clicks — a
+  redeemed link is spent even when the response is lost, and mail scanners open links first. On 200 the local
+  session is cleared, since the SSO has signed the account out everywhere.
+- **Forgot and reset send no bearer** (`SKIP_AUTH_TOKEN`). Both are `AllowAny`, but DRF authenticates before it
+  checks permissions, so a stale token in the cookies would turn a valid link into a 401.
+- **`has_password`** on `user-details/` is `true` after a password sign-in or `password/`, and is never reset.
+  `false` can be wrong (a reset PIN, or a password set in another Miles app, doesn't set it), so it offers "Set a
+  password" and never says the learner has none.
+
+**Open with the backend**
+
+1. The saved 200 example of `auth-password-login/` shows only the token keys. If the live body lacks
+   `profile_status` and `is_test_user`, `isSessionResponse` refuses it and the learner sees "Something went
+   wrong". Confirm on UAT.
+2. The reset email must link to this app's `/auth/password/reset#token=…` (the fragment, not a query string).

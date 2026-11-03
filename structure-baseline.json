@@ -119,10 +119,6 @@
       "count": 2,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
-    "src/app/core/models/auth.model.ts": {
-      "count": 1,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
     "src/app/core/models/badge.model.ts": {
       "count": 1,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
@@ -177,10 +173,6 @@
     },
     "src/app/core/services/api-client/api-client.ts": {
       "count": 1,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/core/services/auth-session/auth-session.ts": {
-      "count": 4,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
     "src/app/core/services/country-context/country-context.ts": {
@@ -264,10 +256,6 @@
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
     "src/app/features/auth/auth.routes.ts": {
-      "count": 3,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/features/auth/pages/login/login.ts": {
       "count": 1,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },

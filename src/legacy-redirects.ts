@@ -193,12 +193,11 @@ const RULES: readonly Rule[] = [
   [/^\/partnerships\/hscpa\/?$/, () => '/{c}/{p}/partners/hawaii-society-of-cpas', true],
   [/^\/partnerships\/?$/, () => '/{c}/{p}', false],
 
-  // ---- retired auth routes (301) -----------------------------------------
-  // Sign-in is OTP-only against the MilesCAIRA Accounts API, so there is no
-  // password to forget; and `auth-identify/` answers identically for a known
-  // and an unknown identifier, which makes login and signup the same screen.
-  // Permanent, because neither route is coming back.
-  [/^\/auth\/(signup|forget-password)\/?$/, () => '/auth/login', true],
+  // ---- renamed auth route (permanent) -------------------------------------
+  // The old forgot-password URL. Password sign-in returned in 2026-11 with the
+  // page at `/auth/forgot-password`; `/auth/signup` is a live route again, so it
+  // is no longer redirected.
+  [/^\/auth\/forget-password\/?$/, () => '/auth/forgot-password', true],
 ];
 
 /** True for any path we might rewrite — everything else is left untouched. */
@@ -207,7 +206,7 @@ function isLegacyPath(path: string): boolean {
     /^\/(accounting|partnerships)(\/|$)/.test(path) ||
     // v3-prefixed but stale `premiere` name: /<cc>/accounting/premiere/...
     /^\/[a-z]{2}\/accounting\/premiere(\/|$)/.test(path) ||
-    /^\/auth\/(signup|forget-password)\/?$/.test(path)
+    /^\/auth\/forget-password\/?$/.test(path)
   );
 }
 
