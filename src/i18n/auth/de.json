@@ -121,7 +121,8 @@
       "body": "Ihre Antworten wurden noch nicht gespeichert und gehen verloren, wenn Sie die Seite jetzt verlassen.",
       "keepEditing": "Weiter bearbeiten",
       "confirm": "Verlassen"
-    }
+    },
+    "answersLoadError": "Deine gespeicherten Antworten konnten nicht geladen werden. Du kannst das Formular trotzdem ausfüllen und speichern."
   },
   "signup": {
     "title": "Konto erstellen",
@@ -168,7 +169,8 @@
       "letter": "Verwende mindestens einen Buchstaben.",
       "digit": "Verwende mindestens eine Zahl.",
       "codeRequired": "Gib den Code aus deiner E-Mail ein.",
-      "codeLength": "Der Code hat {{ length }} Ziffern."
+      "codeLength": "Der Code hat {{ length }} Ziffern.",
+      "currentRequired": "Gib dein aktuelles Passwort ein."
     },
     "toast": {
       "setTitle": "Passwort festgelegt",
@@ -176,7 +178,25 @@
       "signedOutTitle": "Abgemeldet",
       "signedOutBody": "Melde dich mit deiner E-Mail-Adresse und deinem neuen Passwort an.",
       "sessionEndedTitle": "Sitzung beendet",
-      "sessionEndedBody": "Bitte melde dich erneut an, um fortzufahren."
+      "sessionEndedBody": "Bitte melde dich erneut an, um fortzufahren.",
+      "changedTitle": "Passwort geändert",
+      "changedBody": "Verwende bei der nächsten Anmeldung dein neues Passwort.",
+      "otherDevices": "Andere Geräte wurden abgemeldet."
+    },
+    "section": {
+      "title": "Passwort",
+      "setCopy": "Lege ein Passwort fest, um dich mit deiner E-Mail-Adresse anzumelden.",
+      "changeCopy": "Du meldest dich mit deiner E-Mail-Adresse und einem Passwort an.",
+      "set": "Passwort festlegen",
+      "change": "Passwort ändern",
+      "cancel": "Abbrechen"
+    },
+    "change": {
+      "current": "Aktuelles Passwort",
+      "currentPlaceholder": "Aktuelles Passwort eingeben",
+      "forgot": "Aktuelles Passwort vergessen?",
+      "useCurrent": "Stattdessen mein aktuelles Passwort verwenden",
+      "submit": "Passwort ändern"
     }
   },
   "forgot": {

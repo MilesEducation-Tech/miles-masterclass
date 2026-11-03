@@ -24,6 +24,7 @@ import {
   AnswerMap,
   AnswerValue,
   Question,
+  SavedAnswers,
   UserDetails,
   readAccountError,
 } from '@core/models/account.model';
@@ -108,18 +109,54 @@ export function controlOf(question: Question): Control {
   }
 }
 
+/** A row with nothing in it. A single-select holds one value (`''` = none chosen), a multi-select a list. */
+function blankRow(code: string, control: Control): AnswerField {
+  return { code, text: '', choices: control === 'single' ? '' : [], flag: false };
+}
+
 /**
- * Codes the user record can answer on the learner's behalf — the ONLY pre-fill
- * this form has, because `GET profile/` is not read (product decision
- * 2026-10-10). `user-details/` carries the name and nothing else, so every other
- * question starts blank, including ones the learner answered before.
- *
- * The questionnaire OWNS the form — `full_name` is a question like any other
- * and renders from `questions/` alone. This only decides what a blank one
- * starts out showing.
+ * What a row starts out showing: the saved answer, coerced to its control. A select keeps only saved
+ * values that are still options (a retired one is not sent back), and a single-select takes the
+ * list's first. A blank `full_name` takes the user record's name — the one question
+ * `user-details/` can answer on the learner's behalf.
  */
-export function rowDefaults(user: UserDetails | null): Record<string, string> {
-  return user?.full_name ? { full_name: user.full_name } : {};
+export function seedRow(
+  { question, control, options }: Entry,
+  saved: AnswerValue | null | undefined,
+  user: UserDetails | null,
+): AnswerField {
+  const row = blankRow(question.code, control);
+  switch (control) {
+    case 'single':
+    case 'multi': {
+      const known = new Set(options.map((o) => o.value));
+      const values = asList(saved ?? undefined).filter((v) => known.has(v));
+      return { ...row, choices: control === 'single' ? (values[0] ?? '') : values };
+    }
+    case 'boolean':
+      return { ...row, flag: saved === true };
+    default: {
+      const text = typeof saved === 'string' || typeof saved === 'number' ? String(saved) : '';
+      const name = question.code === 'full_name' ? (user?.full_name ?? '') : '';
+      return { ...row, text: text || name };
+    }
+  }
+}
+
+/** Whether a row holds nothing the learner could have meant. `false` IS an answer, so not booleans. */
+function isBlank(row: AnswerField, control: Control): boolean {
+  if (control === 'boolean') return false;
+  if (control === 'single' || control === 'multi') return asList(row.choices).length === 0;
+  return row.text === '';
+}
+
+function sameRow(a: AnswerField, b: AnswerField | undefined): boolean {
+  return (
+    b !== undefined &&
+    a.text === b.text &&
+    a.flag === b.flag &&
+    JSON.stringify(asList(a.choices)) === JSON.stringify(asList(b.choices))
+  );
 }
 
 /**
@@ -131,8 +168,8 @@ export function rowDefaults(user: UserDetails | null): Record<string, string> {
  * which are required and which are revealed by an earlier answer.
  *
  *   - `questions/` says what to render.
- *   - `user-details/` pre-fills the name (see `rowDefaults`) and nothing else;
- *     `GET profile/` is not read. Every write is `PATCH profile/`.
+ *   - `GET profile/` pre-fills every saved answer, and `user-details/` a blank
+ *     name (see `seedRow`). Every write is `PATCH profile/`.
  *
  * Built on signal forms: the model is one row per question, the schema is
  * applied per item by `applyEach`, and `required` / `hidden` are driven by the
@@ -154,7 +191,7 @@ export function rowDefaults(user: UserDetails | null): Record<string, string> {
     TranslocoPipe,
     PasswordForm,
   ],
-  // The page's own instance: the set-password step lives and dies with this page (see the facade).
+  // The page's own instance: the password step and section live and die with this page (see the facade).
   providers: [PasswordFacade],
   templateUrl: './profile.html',
   host: {
@@ -174,6 +211,11 @@ export class Profile {
   /** Onboarding opens on the set-password step (skippable) when the account may have no password. */
   protected readonly password = inject(PasswordFacade);
   private readonly questionsHeading = viewChild<ElementRef<HTMLElement>>('questionsHeading');
+  private readonly passwordHeading = viewChild<ElementRef<HTMLElement>>('passwordHeading');
+  // `read`: the ref sits on a component's host, which would otherwise give the component.
+  private readonly passwordToggle = viewChild('passwordToggle', {
+    read: ElementRef<HTMLElement>,
+  });
   // Synchronous: the auth route's resolver merged the `auth.*` dictionary before this page rendered.
   private readonly transloco = inject(TranslocoService);
   private readonly t = (key: string, params?: Record<string, unknown>): string =>
@@ -195,13 +237,35 @@ export class Profile {
       if (this.password.step() !== 'QUESTIONS') return;
       this.questionsHeading()?.nativeElement.focus({ preventScroll: true });
     });
+
+    // The Password section's form closed (Cancel or a success): back to the button that opened it.
+    afterRenderEffect(() => {
+      if (this.password.timesClosed() === 0) return;
+      this.passwordToggle()?.nativeElement.focus({ preventScroll: true });
+    });
+
+    // A refusal replaced the section's form with the server's message: its heading takes focus.
+    afterRenderEffect(() => {
+      if (!this.password.refusal() || this.isOnboarding()) return;
+      this.passwordHeading()?.nativeElement.focus({ preventScroll: true });
+    });
   }
 
   // ── Loading state ─────────────────────────────────────────────────────────
 
+  /**
+   * Until each read has answered once. Their reloads after a save keep the form on screen: a
+   * spinner there swapped the whole form out (and the focus with it) after every save.
+   */
   readonly isLoading = computed(
-    () => this.onboarding.questions.isLoading() || this.account.user.isLoading(),
+    () =>
+      (this.onboarding.questions.isLoading() && !this.onboarding.questions.hasValue()) ||
+      (this.account.user.isLoading() && !this.account.user.hasValue()) ||
+      (this.onboarding.answers.isLoading() && !this.onboarding.answers.hasValue()),
   );
+
+  /** Not fatal: the form still renders (blank, plus the name) and saves. */
+  readonly answersError = computed(() => !!this.onboarding.answers.error());
 
   /**
    * `hasValue()` first: reading `value()` on a resource in its error state throws.
@@ -215,6 +279,10 @@ export class Profile {
 
   private readonly user = computed(() =>
     this.account.user.hasValue() ? this.account.user.value() : null,
+  );
+
+  private readonly saved = computed<SavedAnswers>(() =>
+    this.onboarding.answers.hasValue() ? this.onboarding.answers.value() : {},
   );
 
   // ── The questionnaire ─────────────────────────────────────────────────────
@@ -241,29 +309,34 @@ export class Profile {
     () => new Map(this.entries().map((entry) => [entry.question.code, entry])),
   );
 
+  /** What each row starts out showing, from the three reads. */
+  private readonly seeds = computed(() =>
+    this.entries().map((entry) => seedRow(entry, this.saved()[entry.question.code], this.user())),
+  );
+
   /**
    * The form model: one row per question, written straight through by the form
    * — which is `linkedSignal`.
    *
-   * It re-seeds when `questions/` or `user-details/` reloads, and `user-details/`
-   * reloads after EVERY save. With nothing else to seed from, a plain re-seed
-   * would blank what the learner just saved; so an existing row is KEPT, and the
-   * user record only fills a name that is still blank.
+   * It re-seeds whenever a read lands, and all three reload after a save. A row
+   * the learner changed is KEPT, so a late read never overwrites their typing;
+   * a row they left alone, or left blank, takes the newer seed. That is also how
+   * a save shows the truth: an answer cleared on screen was never sent (blanks
+   * aren't — see `toAnswerMap`), so it comes back from `GET profile/`.
    */
   private readonly model = linkedSignal({
-    source: () => ({ entries: this.entries(), defaults: rowDefaults(this.user()) }),
-    computation: ({ entries, defaults }, previous?: { value: AnswerField[] }): AnswerField[] => {
+    source: () => ({ entries: this.entries(), seeds: this.seeds() }),
+    computation: (
+      { entries, seeds },
+      previous?: { source: { seeds: AnswerField[] }; value: AnswerField[] },
+    ): AnswerField[] => {
       const kept = new Map(previous?.value.map((row) => [row.code, row]));
-      return entries.map(({ question, control }) => {
-        const code = question.code;
-        // A single-select holds one value (`''` = none chosen), a multi-select a list.
-        const row = kept.get(code) ?? {
-          code,
-          text: '',
-          choices: control === 'single' ? '' : [],
-          flag: false,
-        };
-        return row.text || !defaults[code] ? row : { ...row, text: defaults[code] };
+      const before = new Map(previous?.source.seeds.map((row) => [row.code, row]));
+      return entries.map(({ question, control }, index) => {
+        const row = kept.get(question.code);
+        const seed = seeds[index];
+        if (!row || isBlank(row, control) || sameRow(row, before.get(question.code))) return seed;
+        return row;
       });
     },
   });
@@ -383,11 +456,11 @@ export class Profile {
    * (even a single-select), booleans give a boolean, numbers give a number.
    *
    * A hidden question is never sent — its answer is not one the learner was
-   * asked for. A blank is NEVER sent: the form does not read what is already
-   * saved (no `GET profile/`), so a blank here may sit over a stored answer the
-   * learner cannot see, and PATCH is partial — an omitted code keeps its value.
-   * The same goes for a checkbox: it shows unticked even when `true` is stored,
-   * so only a tick is sent — a saved "yes" can be set but not taken back here.
+   * asked for. A blank is NEVER sent: `null` is refused and the contract has no
+   * way to clear an answer yet, and PATCH is partial — an omitted code keeps its
+   * value (which the next read then shows again). A checkbox is sent when it is
+   * ticked, or when it was saved `true`: unticking a saved "yes" sends `false`,
+   * while a question never answered stays unanswered.
    */
   private toAnswerMap(): AnswerMap {
     const rows = this.model();
@@ -407,7 +480,7 @@ export class Profile {
           break;
         }
         case 'boolean':
-          if (row.flag) out[code] = true;
+          if (row.flag || this.saved()[code] === true) out[code] = row.flag;
           break;
         case 'number': {
           const text = row.text.trim();
@@ -453,8 +526,13 @@ export class Profile {
       // code is ever sent as null. PATCH is partial by definition: a code left
       // out keeps whatever it had.
       const result = await this.onboarding.saveAnswers(answers);
-      // Name answers may have changed what `user-details/` reports.
+      // Name answers may have changed what `user-details/` reports, and the
+      // saved answers re-seed the rows (see `model`).
       this.account.user.reload();
+      this.onboarding.answers.reload();
+      // Saved, so not "unsaved changes": a partial save stays on this page, and
+      // leaving it afterwards must not ask "Leave without saving?".
+      this.form().reset();
 
       // The write always succeeds; the milestone advances only when every
       // required, shown question has an answer. A non-empty `missing` is NOT an

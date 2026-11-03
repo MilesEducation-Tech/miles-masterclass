@@ -8,6 +8,7 @@ import {
   ProfileForm,
   QuestionsResponse,
   SaveAnswersResponse,
+  SavedAnswers,
 } from '../../models/account.model';
 import { CommonResponse } from '../../models/http.model';
 import { ApiClient, apiUrl } from '../api-client/api-client';
@@ -16,13 +17,9 @@ import { AuthSession } from '../auth-session/auth-session';
 /**
  * The onboarding / profile questionnaire.
  *
- * `questions/` says what to render, reactive on `form()`, so switching between
- * the onboarding and profile questionnaires re-fetches with no plumbing.
- *
- * `GET profile/` (the saved answers) is deliberately NOT read — product decision
- * 2026-10-10: the form is pre-filled from `user-details/` alone, which carries
- * the name and nothing else, so a saved answer does not show when the learner
- * comes back. `PATCH profile/` is still the only write.
+ * `questions/` says what to render and `GET profile/` what the learner saved, both reactive on
+ * `form()`, so switching between the onboarding and profile questionnaires re-fetches with no
+ * plumbing. `PATCH profile/` is the only write.
  *
  * Same three resource rules as `AccountApi` — gate on the boolean, never set
  * the bearer here, `undefined` means idle.
@@ -41,6 +38,15 @@ export class OnboardingApi {
         ? { url: apiUrl(ACCOUNT_ROUTES.questions.path), params: { form: this.form() } }
         : undefined,
     { parse: (raw) => (raw as CommonResponse<QuestionsResponse>).data },
+  );
+
+  /** The saved answers, keyed by question code — see `SavedAnswers` for what else the map holds. */
+  readonly answers = httpResource(
+    () =>
+      this.auth.isAuthenticated()
+        ? { url: apiUrl(ACCOUNT_ROUTES.answers.path), params: { form: this.form() } }
+        : undefined,
+    { parse: (raw): SavedAnswers => (raw as CommonResponse<SavedAnswers | null>).data ?? {} },
   );
 
   /**

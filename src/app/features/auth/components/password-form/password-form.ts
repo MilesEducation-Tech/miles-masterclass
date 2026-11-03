@@ -1,4 +1,11 @@
-import { Component, ElementRef, afterRenderEffect, inject, viewChild } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  afterRenderEffect,
+  inject,
+  untracked,
+  viewChild,
+} from '@angular/core';
 import { FormField } from '@angular/forms/signals';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { NgpDescription, NgpLabel } from 'ng-primitives/form-field';
@@ -11,7 +18,11 @@ import { Field } from '@shared/ui/field/field';
 import { InputOtp } from '@shared/ui/input-otp/input-otp';
 import { Spinner } from '@shared/ui/spinner/spinner';
 
-/** The set-password step: new password and confirmation, and the emailed code when the server asks. */
+/**
+ * Setting or changing a password: onboarding's step (with its heading and Skip) or the profile's
+ * section (Cancel), new password and confirmation, the current password when changing one, and the
+ * emailed code when the server asks.
+ */
 @Component({
   selector: 'app-password-form',
   imports: [
@@ -31,14 +42,19 @@ import { Spinner } from '@shared/ui/spinner/spinner';
 export class PasswordForm {
   protected readonly facade = inject(PasswordFacade);
 
-  private readonly heading = viewChild.required<ElementRef<HTMLElement>>('heading');
+  private readonly heading = viewChild<ElementRef<HTMLElement>>('heading');
 
   constructor() {
-    // The heading takes focus when the step appears and when a refusal replaces the form: either
-    // way the control that had focus is gone, and a screen reader starts again from the new heading.
+    // Onboarding: the heading takes focus when the step appears and when a refusal replaces the
+    // form — either way the control that had focus is gone. The profile: the learner just asked for
+    // this form, so its first field.
     afterRenderEffect(() => {
       this.facade.refusal();
-      this.heading().nativeElement.focus({ preventScroll: true });
+      untracked(() => {
+        if (this.facade.isOnboarding())
+          this.heading()?.nativeElement.focus({ preventScroll: true });
+        else this.facade.focusFirstField();
+      });
     });
   }
 }

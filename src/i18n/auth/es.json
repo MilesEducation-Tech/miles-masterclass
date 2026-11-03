@@ -121,7 +121,8 @@
       "body": "Tus respuestas aún no se han guardado y se perderán si sales ahora.",
       "keepEditing": "Seguir editando",
       "confirm": "Salir"
-    }
+    },
+    "answersLoadError": "No pudimos cargar tus respuestas guardadas. Aun así, puedes completar y guardar el formulario."
   },
   "signup": {
     "title": "Crea tu cuenta",
@@ -168,7 +169,8 @@
       "letter": "Incluye al menos una letra.",
       "digit": "Incluye al menos un número.",
       "codeRequired": "Introduce el código de tu correo electrónico.",
-      "codeLength": "El código tiene {{ length }} dígitos."
+      "codeLength": "El código tiene {{ length }} dígitos.",
+      "currentRequired": "Introduce tu contraseña actual."
     },
     "toast": {
       "setTitle": "Contraseña establecida",
@@ -176,7 +178,25 @@
       "signedOutTitle": "Sesión cerrada",
       "signedOutBody": "Inicia sesión con tu correo electrónico y tu nueva contraseña.",
       "sessionEndedTitle": "Sesión finalizada",
-      "sessionEndedBody": "Vuelve a iniciar sesión para continuar."
+      "sessionEndedBody": "Vuelve a iniciar sesión para continuar.",
+      "changedTitle": "Contraseña cambiada",
+      "changedBody": "Usa tu nueva contraseña la próxima vez que inicies sesión.",
+      "otherDevices": "Se cerró la sesión en tus otros dispositivos."
+    },
+    "section": {
+      "title": "Contraseña",
+      "setCopy": "Establece una contraseña para iniciar sesión con tu correo electrónico.",
+      "changeCopy": "Inicias sesión con tu correo electrónico y una contraseña.",
+      "set": "Establecer una contraseña",
+      "change": "Cambiar contraseña",
+      "cancel": "Cancelar"
+    },
+    "change": {
+      "current": "Contraseña actual",
+      "currentPlaceholder": "Introduce tu contraseña actual",
+      "forgot": "¿Olvidaste tu contraseña actual?",
+      "useCurrent": "Usar mi contraseña actual",
+      "submit": "Cambiar contraseña"
     }
   },
   "forgot": {

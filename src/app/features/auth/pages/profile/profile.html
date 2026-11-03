@@ -24,6 +24,9 @@
       {{ 'auth.profile.loadError' | transloco }}
     </p>
   } @else {
+    @if (answersError()) {
+      <p class="text-sm text-muted-foreground">{{ 'auth.profile.answersLoadError' | transloco }}</p>
+    }
     <!-- Every field below is server-driven: `questions/` decides which exist,
          their order, their options, which are required and which are revealed
          by an earlier answer. `section` is a grouping label and does not affect
@@ -167,5 +170,57 @@
         {{ (isOnboarding() ? 'auth.profile.continue' : 'auth.profile.saveChanges') | transloco }}
       </button>
     </form>
+  }
+
+  <!-- Outside the questionnaire's form: forms don't nest. Only once `user-details/` says whether the
+       account has a password (`PasswordFacade.showsSection`). -->
+  @if (password.showsSection() && !isLoading()) {
+    <section
+      aria-labelledby="password-section-title"
+      class="flex flex-col gap-4 rounded-lg border border-white/15 p-4"
+    >
+      <div class="flex flex-col gap-1">
+        <h2
+          #passwordHeading
+          id="password-section-title"
+          tabindex="-1"
+          class="text-lg font-semibold text-white outline-none"
+        >
+          {{ 'auth.password.section.title' | transloco }}
+        </h2>
+        @if (!password.refusal()) {
+          <p class="text-sm text-gray-400">
+            {{
+              (password.mode() === 'CHANGE'
+                ? 'auth.password.section.changeCopy'
+                : 'auth.password.section.setCopy'
+              ) | transloco
+            }}
+          </p>
+        }
+      </div>
+      @if (password.refusal(); as message) {
+        <!-- One of the six 403s: this account can't hold a password here. -->
+        <p class="text-sm text-gray-400" role="alert">{{ message }}</p>
+      } @else if (password.isOpen()) {
+        <app-password-form />
+      } @else {
+        <button
+          #passwordToggle
+          app-button
+          type="button"
+          variant="outline"
+          class="self-start"
+          (click)="password.openSection()"
+        >
+          {{
+            (password.mode() === 'CHANGE'
+              ? 'auth.password.section.change'
+              : 'auth.password.section.set'
+            ) | transloco
+          }}
+        </button>
+      }
+    </section>
   }
 </div>

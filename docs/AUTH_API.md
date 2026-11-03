@@ -57,7 +57,7 @@ application is asking and a caller must not be able to claim to be another one.
 | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GET user-details/`                       | 8 routing fields (names, milestones, `Pathway`, enrolment). **GET only** — the old `user_details/` row and its PATCH were deleted 2026-09-24. |
 | `GET questions/?form=onboarding\|profile` | `{Questions: [...]}`, flat, sorted by `display_order`.                                                                                        |
-| `GET/PATCH profile/?form=…`               | Questionnaire answers **only**. See §4. The app writes (`PATCH`) but does **not read** it — the form pre-fills from `user-details/` only.     |
+| `GET/PATCH profile/?form=…`               | Questionnaire answers **only**. See §4. Read to pre-fill the form (`OnboardingApi.answers`); `PATCH` is the only write.                       |
 | `GET web/maintainance-status/`            | Public. `{is_maintenance, force_logout_all_user}`. Not bound yet — the old `web/app-status/` had no reader and was removed.                   |
 
 ---
@@ -189,10 +189,15 @@ the top (401/429/502/503), a `code` for the two 403s (read off the top level or 
 `api/v1/account/profile/` **changed meaning on 2026-09-09.** It used to serve the user row; it now
 serves questionnaire answers and nothing else, and `PATCH profile/` is the only profile write. The user record is the read-only `user-details/`.
 
-- **This app does not call `GET profile/`** (product decision 2026-10-10). The onboarding and profile
-  forms pre-fill from `user-details/`, which carries the name and nothing else, so a saved answer does not
-  show when the learner returns. To keep a save from erasing what it cannot see, the form never sends a
-  blank and sends a checkbox only when it is ticked (a saved "yes" cannot be taken back from the form).
+- **The onboarding and profile forms pre-fill from `GET profile/`** (read again since 2026-11-02; the
+  2026-10-10 decision had dropped it). The map is joined on the `questions/` codes, so its non-answer keys
+  (`email`, `phone_number`, `profile_picture`…) are ignored; a select keeps only saved values that are still
+  options. `user-details/` fills `full_name` only when nothing is saved. A failed read is not fatal: the form
+  renders blank with a notice, and saves.
+- **Saving:** a blank is never sent (`null` is refused and there is no way to clear an answer yet), so a
+  cleared optional answer comes back from the next read. A checkbox is sent when ticked or when it was saved
+  `true`, so a saved "yes" can be taken back. After a save both reads reload in place and the form is no
+  longer dirty.
 - `GET profile/` is a **bare flat map keyed by question code** — the value is the answer itself, not
   an object describing it. `{}` is a normal empty state, not a 404. Key order is display order.
   Flattened on 2026-09-10, so `type` is no longer reported here — join `questions/` on `code`.
@@ -416,8 +421,13 @@ bound by onboarding's set-password step (below); the profile's change flow reuse
 - **A 401 with a `code` is a wrong proof**: keep the form. Only a 401 with no `code` ends the session (local
   sign-out, then `/auth/login` keeping `redirect`). `signedOut: true` on a 200 does the same, with a "log in with
   your new password" toast.
-- **The six 403 codes** replace the step with "Password not available", the server's message and Continue. Any
-  other 403 stays a retryable error.
+- **The six 403 codes** replace the step with "Password not available", the server's message and Continue (in
+  the profile, the section shows only the message). Any other 403 stays a retryable error.
+- **Profile Password section** (profile mode, once `user-details/` has loaded): "Change password" sends
+  `{newPassword, currentPassword}` when `has_password` is `true`, otherwise "Set a password" goes as onboarding
+  does. "Forgot your current password?" switches the proof to the emailed code. `current_password_incorrect`
+  keeps the form; a 200 toasts (with "Other devices were signed out." when `signedOutOtherSessions`) and reloads
+  `user-details/`. A session that ends here returns to `/auth/profile` after sign-in.
 - **429:** `password-code/` gives `retryAfterSeconds` and Resend waits it out; `password/` gives no duration, so
   Set password waits an estimated 60 seconds. Skip stays enabled through both.
 - **503 "The password could not be set"** spent the emailed code: the code is cleared and Set password waits for a
