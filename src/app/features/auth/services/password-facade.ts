@@ -14,16 +14,23 @@ import { PasswordApi } from '@core/services/password-api/password-api';
 import { PASSWORD_RETRY_FALLBACK_SECONDS } from '@features/auth/constants/auth';
 import {
   OnboardingStep,
+  PasswordMode,
   PasswordProof,
   ProfileStage,
   SetPasswordModel,
 } from '@features/auth/models/set-password.model';
 import { passwordPolicyBreach } from '@features/auth/utils/password-policy';
 
-const EMPTY: SetPasswordModel = { newPassword: '', confirmPassword: '', emailCode: '' };
+const EMPTY: SetPasswordModel = {
+  currentPassword: '',
+  newPassword: '',
+  confirmPassword: '',
+  emailCode: '',
+};
 
 /**
- * The set-password step that opens onboarding.
+ * Setting a password: the step that opens onboarding, and the profile's Password section (set, or
+ * change with the current password).
  *
  * Provided on the `Profile` component, not on the route: it lives exactly as long as the page, so a
  * typed password can't outlive it (contract §2.6) and nothing has to be reset by hand.
@@ -49,7 +56,9 @@ export class PasswordFacade {
 
   // ── What the page shows ───────────────────────────────────────────────────
 
-  private readonly isOnboarding = signal(false);
+  private readonly onboarding = signal(false);
+  /** Onboarding's step, or the profile's section: the form picks its copy and buttons from this. */
+  readonly isOnboarding = this.onboarding.asReadonly();
   readonly step = signal<OnboardingStep>('PASSWORD');
   /** Set before the session is dropped, so the page doesn't flash the questionnaire on its way out. */
   private readonly isLeaving = signal(false);
@@ -67,6 +76,24 @@ export class PasswordFacade {
     return user.isLoading() ? 'DECIDING' : 'QUESTIONS';
   });
 
+  /** `has_password: true` is trustworthy; anything else may or may not have one, so it offers to set. */
+  readonly mode = computed<PasswordMode>(() =>
+    this.account.user.hasValue() && this.account.user.value().has_password === true
+      ? 'CHANGE'
+      : 'SET',
+  );
+
+  /**
+   * The profile's section needs `user-details/`: without it "set" and "change" can't be told apart,
+   * and asking for a current password the learner may not have is worse than not offering one.
+   */
+  readonly showsSection = computed(
+    () => !this.onboarding() && !this.isLeaving() && this.account.user.hasValue(),
+  );
+  readonly isOpen = signal(false);
+  /** Counts the times the section's form closed, so the page can put focus back on its button. */
+  readonly timesClosed = signal(0);
+
   // ── The form ──────────────────────────────────────────────────────────────
 
   readonly proof = signal<PasswordProof>('NONE');
@@ -74,6 +101,10 @@ export class PasswordFacade {
 
   /** Checked on submit, not by disabling the button, so a refusal always says why. */
   readonly form = form<SetPasswordModel>(this.model, (schema) => {
+    required(schema.currentPassword, {
+      when: () => this.proof() === 'CURRENT_PASSWORD',
+      message: this.t('auth.password.errors.currentRequired'),
+    });
     required(schema.newPassword, { message: this.t('auth.password.errors.newRequired') });
     validate(schema.newPassword, ({ value }) => {
       const breach = value() ? passwordPolicyBreach(value()) : null;
@@ -113,6 +144,12 @@ export class PasswordFacade {
     computation: () => null,
   });
 
+  /** `current_password_incorrect`, under Current password until it is retyped. */
+  readonly currentError = linkedSignal<string, string | null>({
+    source: () => this.model().currentPassword,
+    computation: () => null,
+  });
+
   /** `email_code_incorrect`, under the code until a new one is typed. */
   readonly codeError = linkedSignal<string, string | null>({
     source: () => this.model().emailCode,
@@ -123,7 +160,10 @@ export class PasswordFacade {
   readonly error = signal<string | null>(null);
   /** `verification_required`'s message: what the server needs, shown as guidance, not as an error. */
   readonly proofNote = signal<string | null>(null);
-  /** A 403 refusal: this account can't hold a password here, and the form gives way to Continue. */
+  /**
+   * A 403 refusal: this account can't hold a password here. Onboarding's form gives way to Continue;
+   * the profile's section shows only the message.
+   */
   readonly refusal = signal<string | null>(null);
 
   readonly isSubmitting = signal(false);
@@ -154,7 +194,10 @@ export class PasswordFacade {
   );
   readonly canSubmit = computed(
     () =>
-      !this.isSubmitting() && !this.isRequestingCode() && !this.codeSpent() && this.retryIn() === 0,
+      !this.isSubmitting() &&
+      !this.isRequestingCode() &&
+      !(this.codeSpent() && this.proof() === 'EMAIL_CODE') &&
+      this.retryIn() === 0,
   );
 
   constructor() {
@@ -165,7 +208,46 @@ export class PasswordFacade {
 
   /** The page says whether this is onboarding: it already owns that decision. */
   start(isOnboarding: boolean): void {
-    this.isOnboarding.set(isOnboarding);
+    this.onboarding.set(isOnboarding);
+  }
+
+  /** The profile's "Set a password" / "Change password". */
+  openSection(): void {
+    this.proof.set(this.mode() === 'CHANGE' ? 'CURRENT_PASSWORD' : 'NONE');
+    this.error.set(null);
+    this.proofNote.set(null);
+    this.isOpen.set(true);
+  }
+
+  /** The section's Cancel. */
+  cancelSection(): void {
+    if (this.isSubmitting()) return;
+    this.closeSection();
+  }
+
+  /** "Forgot your current password?": prove it with an emailed code instead, sent at once. */
+  async useEmailCode(): Promise<void> {
+    this.model.update((m) => ({ ...m, currentPassword: '', emailCode: '' }));
+    this.form.currentPassword().reset();
+    this.form.emailCode().reset();
+    this.error.set(null);
+    this.proof.set('EMAIL_CODE');
+    await this.requestCode();
+  }
+
+  /** Back from the emailed code to the current password. */
+  useCurrentPassword(): void {
+    this.clearCode();
+    this.error.set(null);
+    this.proofNote.set(null);
+    this.proof.set('CURRENT_PASSWORD');
+  }
+
+  /** The field a fresh form starts on. */
+  focusFirstField(): void {
+    const field =
+      this.proof() === 'CURRENT_PASSWORD' ? this.form.currentPassword : this.form.newPassword;
+    field().focusBoundControl();
   }
 
   /** "Skip for now", and the refusal's Continue. Nothing is sent; a reload offers the step again. */
@@ -185,26 +267,45 @@ export class PasswordFacade {
 
     this.isSubmitting.set(true);
     this.error.set(null);
-    const { newPassword, emailCode } = this.model();
+    const { currentPassword, newPassword, emailCode } = this.model();
+    const mode = this.mode();
     let failure: PasswordFailure | null = null;
     try {
-      // The password exactly as typed; the code only once the server asked for one, since an
-      // absent proof is omitted rather than sent empty.
+      // Passwords exactly as typed, and one proof at most: an absent proof is omitted, never sent
+      // empty.
+      const proof = this.proof();
       const result = await this.passwords.set(
-        this.proof() === 'EMAIL_CODE' ? { newPassword, emailCode } : { newPassword },
+        proof === 'EMAIL_CODE'
+          ? { newPassword, emailCode }
+          : proof === 'CURRENT_PASSWORD'
+            ? { newPassword, currentPassword }
+            : { newPassword },
       );
       this.wipe();
       if (result.signedOut) {
         await this.leave('signedOut');
         return;
       }
-      // No "other devices were signed out": a brand-new account has none.
-      this.notify.success(
-        this.t('auth.password.toast.setTitle'),
-        this.t('auth.password.toast.setBody'),
-      );
       this.account.user.reload();
-      this.step.set('QUESTIONS');
+      if (this.onboarding()) {
+        // No "other devices were signed out": a brand-new account has none.
+        this.notify.success(
+          this.t('auth.password.toast.setTitle'),
+          this.t('auth.password.toast.setBody'),
+        );
+        this.step.set('QUESTIONS');
+      } else {
+        const changed = mode === 'CHANGE';
+        this.notify.success(
+          this.t(`auth.password.toast.${changed ? 'changedTitle' : 'setTitle'}`),
+          this.t(
+            result.signedOutOtherSessions
+              ? 'auth.password.toast.otherDevices'
+              : `auth.password.toast.${changed ? 'changedBody' : 'setBody'}`,
+          ),
+        );
+        this.closeSection();
+      }
     } catch (err) {
       failure = this.toFailure(err);
     } finally {
@@ -268,11 +369,19 @@ export class PasswordFacade {
         this.clearCode();
         this.codeError.set(failure.message);
         return;
+      case 'current_password_incorrect':
+        this.model.update((m) => ({ ...m, currentPassword: '' }));
+        this.form.currentPassword().reset();
+        // After the clear: the message resets whenever the field changes.
+        this.currentError.set(failure.message);
+        this.form.currentPassword().focusBoundControl();
+        return;
       case 'session_expired':
         await this.leave('sessionEnded');
         return;
       case 'refused':
         this.wipe();
+        this.isOpen.set(false);
         this.refusal.set(failure.message);
         return;
       case 'rate_limited': {
@@ -296,8 +405,9 @@ export class PasswordFacade {
   }
 
   /**
-   * Out of a session that no longer works, to sign in. `redirect` stays, and so does the onboarding:
-   * a `new_user` is sent back here after, and a learner who now has a password skips this step.
+   * Out of a session that no longer works, to sign in. Onboarding keeps its `redirect`: a `new_user` is
+   * sent back here after, and one who now has a password skips the step. The profile asks to come
+   * back to itself, since sign-in otherwise lands on home.
    */
   private async leave(reason: 'signedOut' | 'sessionEnded'): Promise<void> {
     this.isLeaving.set(true);
@@ -306,7 +416,19 @@ export class PasswordFacade {
       this.t(`auth.password.toast.${reason}Title`),
       this.t(`auth.password.toast.${reason}Body`),
     );
-    await this.router.navigate(['/auth/login'], { queryParamsHandling: 'preserve' });
+    await (this.onboarding()
+      ? this.router.navigate(['/auth/login'], { queryParamsHandling: 'preserve' })
+      : this.router.navigate(['/auth/login'], { queryParams: { redirect: '/auth/profile' } }));
+  }
+
+  /**
+   * The section's form away. What was sent stays (masked address, cooldown, a spent code): those are
+   * the server's state, and a code sent a minute ago is still the one in the inbox.
+   */
+  private closeSection(): void {
+    this.wipe();
+    this.isOpen.set(false);
+    this.timesClosed.update((n) => n + 1);
   }
 
   /** Passwords and code out of memory, and the fields back to untouched. */
@@ -322,7 +444,12 @@ export class PasswordFacade {
 
   /** In the order the learner reads them. A field that isn't on screen has no control to focus. */
   private focusFirstError(): void {
-    const fields = [this.form.newPassword, this.form.confirmPassword, this.form.emailCode];
+    const fields = [
+      this.form.currentPassword,
+      this.form.newPassword,
+      this.form.confirmPassword,
+      this.form.emailCode,
+    ];
     fields
       .find((field) => field().invalid())?.()
       .focusBoundControl();

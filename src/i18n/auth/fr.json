@@ -121,7 +121,8 @@
       "body": "Vos réponses n'ont pas encore été enregistrées et seront perdues si vous quittez maintenant.",
       "keepEditing": "Continuer la modification",
       "confirm": "Quitter"
-    }
+    },
+    "answersLoadError": "Impossible de charger vos réponses enregistrées. Vous pouvez tout de même remplir et enregistrer le formulaire."
   },
   "signup": {
     "title": "Créez votre compte",
@@ -168,7 +169,8 @@
       "letter": "Incluez au moins une lettre.",
       "digit": "Incluez au moins un chiffre.",
       "codeRequired": "Saisissez le code reçu par e-mail.",
-      "codeLength": "Le code comporte {{ length }} chiffres."
+      "codeLength": "Le code comporte {{ length }} chiffres.",
+      "currentRequired": "Saisissez votre mot de passe actuel."
     },
     "toast": {
       "setTitle": "Mot de passe défini",
@@ -176,7 +178,25 @@
       "signedOutTitle": "Déconnecté",
       "signedOutBody": "Connectez-vous avec votre e-mail et votre nouveau mot de passe.",
       "sessionEndedTitle": "Session terminée",
-      "sessionEndedBody": "Veuillez vous reconnecter pour continuer."
+      "sessionEndedBody": "Veuillez vous reconnecter pour continuer.",
+      "changedTitle": "Mot de passe modifié",
+      "changedBody": "Utilisez votre nouveau mot de passe lors de votre prochaine connexion.",
+      "otherDevices": "Vos autres appareils ont été déconnectés."
+    },
+    "section": {
+      "title": "Mot de passe",
+      "setCopy": "Définissez un mot de passe pour vous connecter avec votre e-mail.",
+      "changeCopy": "Vous vous connectez avec votre e-mail et un mot de passe.",
+      "set": "Définir un mot de passe",
+      "change": "Changer le mot de passe",
+      "cancel": "Annuler"
+    },
+    "change": {
+      "current": "Mot de passe actuel",
+      "currentPlaceholder": "Saisissez votre mot de passe actuel",
+      "forgot": "Mot de passe actuel oublié ?",
+      "useCurrent": "Utiliser plutôt mon mot de passe actuel",
+      "submit": "Changer le mot de passe"
     }
   },
   "forgot": {

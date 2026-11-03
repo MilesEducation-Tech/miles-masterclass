@@ -7,9 +7,32 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- 🟡 **2026-11-03, NON-REFACTOR — MIL-167 (story 2 of the password epic), onboarding set-password step. PLAN
-  APPROVED, DONE, UNCOMMITTED** (`prompts/onboarding-set-password.md`), on `feat/MIL-167-onboarding-set-password`
-  off `master` (`c882e546`). Story 3 (profile Password section, saved-answer prefill) follows.
+- 🟡 **2026-11-03, NON-REFACTOR — MIL-168 (story 3 of the password epic), profile Password section and
+  saved-answer prefill. PLAN APPROVED, DONE, UNCOMMITTED** (`prompts/profile-password-prefill.md`), on
+  `feat/MIL-168-profile-password-prefill` off `master` (`02200e2f`). Last story of the epic.
+  - **Password section** (profile mode, once `user-details/` has loaded): "Change password" (current + new +
+    confirm, `{newPassword, currentPassword}`) when `has_password` is `true`, else "Set a password" (as
+    onboarding). "Forgot your current password?" switches to the emailed code (sent at once) and back.
+    `current_password_incorrect` keeps the form; a 200 toasts (+ "Other devices were signed out."), reloads
+    `user-details/`, closes the form and returns focus to the card's button; a 403 leaves only the message; a
+    session that ends returns to `/auth/profile` after sign-in. `PasswordFacade` gained the profile mode; the
+    form takes its copy and buttons from `isOnboarding()`; the section is markup in `profile.html`.
+  - **Prefill:** `OnboardingApi.answers` (`GET profile/?form=`, `SavedAnswers`), joined on the `questions/`
+    codes (non-answer keys ignored, retired options dropped); `seedRow` per control; `user-details/` fills a
+    blank `full_name`. Rows the learner left alone or blank follow newer reads; edited rows are kept. A saved
+    "yes" can be unticked (`false` is sent). After a save both reads reload in place (the page spinner is
+    first-load only now) and the form is reset, so leaving after a partial save no longer prompts.
+  - 16 keys × 5 dictionaries; `docs/AUTH_API.md` §1, §4, §7.
+  - **Verified (dev 4101, Playwright, stubbed answers, English):** 63 checks green (prefill per control type,
+    `{}`, failed read, PATCH bodies, re-seed after save, every section state, focus, no stray unload prompt);
+    story 2's 84 still green; 375 / 768 / 1440, card 311 / 576 / 576 px, no sideways scroll.
+  - **Found, not fixed:** with unsaved edits "Back to Home" asks "Leave without saving?" twice (`/` redirects
+    and re-runs the leave guard). Predates this branch; offered as a separate task.
+  - **Not verified:** live UAT (`GET profile/` with a real account, a real change with the current password).
+
+- ✅ **2026-11-03, NON-REFACTOR — MIL-167 (story 2 of the password epic), onboarding set-password step. MERGED as
+  #232 (`a49e7d85`, 2026-11-03)** (`prompts/onboarding-set-password.md`), on `feat/MIL-167-onboarding-set-password`
+  off `master` (`c882e546`).
   - **Change:** `/auth/profile` in onboarding opens on "Set Password" (new + confirm, Skip for now) unless
     `has_password` is `true`; a failed `user-details/` read skips it. `password/` goes with `newPassword` alone;
     on `verification_required` the step emails a code at once (`password-code/`, no body) and sends
@@ -6801,6 +6824,8 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-11-03 · NON-REFACTOR · **MIL-168 profile Password section + prefill** (uncommitted): change/set from the profile with an email-code fallback; `GET profile/` read again to pre-fill, per-row re-seed, saved "yes" can be unticked, first-load-only spinner · 63 + 84 Playwright checks green (English) · lint 0 errors, structure ✔, build:prod ✔
+- 2026-11-03 · NON-REFACTOR · **MIL-168 plan** (`prompts/profile-password-prefill.md`): profile Password section (set / change, email-code fallback) and saved-answer prefill · MIL-167 merged as #232 (`a49e7d85`) · awaiting approval
 - 2026-11-03 · NON-REFACTOR · **MIL-167 set-password step** (uncommitted): onboarding opens on Set Password (skippable), email-code proof on `verification_required`, every `password/` / `password-code/` answer rendered · 84 Playwright checks + story 1 suites green (English) · lint 0 errors, structure ✔, build:prod ✔
 - 2026-11-03 · NON-REFACTOR · **MIL-167 plan** (`prompts/onboarding-set-password.md`): onboarding set-password step, skippable, email-code proof on `verification_required`, full state matrix · MIL-166 merged as #231 (`c882e546`) · awaiting approval
 - 2026-11-03 · NON-REFACTOR · **MIL-166 same-page transitions**: a navigation that keeps the path (password ↔ code, Back/Forward, invoice `?status=`) runs its view transition with no animation (`app.config.ts` + `animation.css`) · 0 animations, ~30 ms (was 323 ms); a path change still slides and fades; no console errors · 81 Playwright checks green · lint 0 errors, build:prod ✔

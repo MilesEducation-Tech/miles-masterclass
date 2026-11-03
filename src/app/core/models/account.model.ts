@@ -115,11 +115,16 @@ export type AnswerValue = string | number | boolean | string[];
  * by question code — the value is the answer itself, not an object describing
  * it. Text gives a string, select formats give a list, booleans give
  * `true`/`false`, numbers give a number.
- *
- * `GET profile/` serves the same map, but this app does not read it (product
- * decision 2026-10-10: the form is pre-filled from `user-details/` only).
  */
 export type AnswerMap = Record<string, AnswerValue>;
+
+/**
+ * `GET profile/`: the same map as saved, read to pre-fill the form (again since 2026-11-02; the
+ * 2026-10-10 decision had dropped it). `null` is an unanswered question and `{}` the normal empty
+ * state. It also carries keys that answer no question (`email`, `phone_number`, `country_name`,
+ * `show_referral_code`, `profile_picture`…): join it on the `questions/` codes, never iterate it.
+ */
+export type SavedAnswers = Record<string, AnswerValue | null>;
 
 /**
  * How a question is answered — drives which control renders.
@@ -262,6 +267,16 @@ export const ACCOUNT_ROUTES = {
   } as RouteConfig<
     void,
     CommonResponse<QuestionsResponse>,
+    Record<string, never>,
+    { form: ProfileForm }
+  >,
+
+  answers: {
+    path: 'api/v1/account/profile/',
+    method: 'GET',
+  } as RouteConfig<
+    void,
+    CommonResponse<SavedAnswers | null>,
     Record<string, never>,
     { form: ProfileForm }
   >,

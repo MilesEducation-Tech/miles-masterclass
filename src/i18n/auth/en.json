@@ -121,7 +121,8 @@
       "body": "Your answers have not been saved yet and will be lost if you leave now.",
       "keepEditing": "Keep editing",
       "confirm": "Leave"
-    }
+    },
+    "answersLoadError": "We couldn't load your saved answers. You can still fill in and save the form."
   },
   "signup": {
     "title": "Create your account",
@@ -168,7 +169,8 @@
       "letter": "Include at least one letter.",
       "digit": "Include at least one number.",
       "codeRequired": "Enter the code from your email.",
-      "codeLength": "The code is {{ length }} digits."
+      "codeLength": "The code is {{ length }} digits.",
+      "currentRequired": "Enter your current password."
     },
     "toast": {
       "setTitle": "Password set",
@@ -176,7 +178,25 @@
       "signedOutTitle": "Signed out",
       "signedOutBody": "Log in with your email and your new password.",
       "sessionEndedTitle": "Session ended",
-      "sessionEndedBody": "Please log in again to continue."
+      "sessionEndedBody": "Please log in again to continue.",
+      "changedTitle": "Password changed",
+      "changedBody": "Use your new password next time you log in.",
+      "otherDevices": "Other devices were signed out."
+    },
+    "section": {
+      "title": "Password",
+      "setCopy": "Set a password so you can log in with your email.",
+      "changeCopy": "You log in with your email and a password.",
+      "set": "Set a password",
+      "change": "Change password",
+      "cancel": "Cancel"
+    },
+    "change": {
+      "current": "Current password",
+      "currentPlaceholder": "Enter your current password",
+      "forgot": "Forgot your current password?",
+      "useCurrent": "Use my current password instead",
+      "submit": "Change password"
     }
   },
   "forgot": {
