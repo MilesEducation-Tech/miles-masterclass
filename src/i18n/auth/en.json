@@ -4,9 +4,8 @@
     "background": "Background"
   },
   "login": {
-    "titleLead": "Step Into the",
-    "titleStrong": "World of Miles Masterclass",
-    "intro": "Log in now to explore Master Classes, AI learning pathways, and practical tools that help you stay ahead and earn valuable CPE credits.",
+    "title": "Login or Sign Up",
+    "intro": "Login with your email and password.",
     "tabs": {
       "Mobile": "Mobile",
       "Email": "Email"
@@ -40,7 +39,30 @@
       "countryCodeInvalid": "Invalid Country code",
       "identifierRequired": "Please enter your email or phone number",
       "ssoOnly": "This account signs in through your organisation. Please use your company sign-in page."
-    }
+    },
+    "password": {
+      "label": "Password",
+      "placeholder": "Enter password",
+      "forgot": "Forgot password?",
+      "submit": "Log in",
+      "otpInstead": "Log in with a one-time code instead",
+      "errors": {
+        "emailRequired": "Please enter your email",
+        "required": "Please enter your password",
+        "min": "Your password has at least {{ min }} characters"
+      }
+    },
+    "or": "or",
+    "otpChooser": {
+      "label": "Login with OTP",
+      "phone": "Login with OTP on your mobile",
+      "email": "Login with OTP by email"
+    },
+    "otpTitle": "Login with OTP",
+    "otpIntro": "We'll send a one-time code to your mobile or email.",
+    "usePassword": "Use password instead",
+    "noAccount": "Don't have an account?",
+    "createAccount": "Create a new account"
   },
   "otp": {
     "title": "OTP Verification",
@@ -100,5 +122,44 @@
       "keepEditing": "Keep editing",
       "confirm": "Leave"
     }
+  },
+  "signup": {
+    "title": "Create your account",
+    "intro": "We'll send a one-time code to verify you. After that, you can set a password.",
+    "haveAccount": "Already have an account?",
+    "login": "Log in"
+  },
+  "password": {
+    "show": "Show password",
+    "hide": "Hide password"
+  },
+  "forgot": {
+    "title": "Forgot your password?",
+    "intro": "Enter your account email and we'll send you a link to set a new password. It works even if you've never set one.",
+    "submit": "Email me a link",
+    "back": "Back to login",
+    "sentTitle": "Check your email",
+    "sentFallback": "If this email has a Miles Masterclass account, we've emailed you a link to set your password.",
+    "spam": "Don't see it? Check your spam folder. The link works once, for 30 minutes.",
+    "stuck": "Still stuck?",
+    "contact": "Contact support"
+  },
+  "reset": {
+    "title": "Get your new password",
+    "intro": "This link gives your account a new password, shown only once. Reveal it when you're ready to copy it.",
+    "reveal": "Show my new password",
+    "busy": "Preparing your new password…",
+    "note": "Revealing it signs your account out on every device.",
+    "missing": "This link is incomplete. Request a new one.",
+    "tryAgain": "Try again",
+    "requestNew": "Request a new link",
+    "doneTitle": "Your new password",
+    "doneIntro": "Copy it now: it won't be shown again. Use it with your email to log in.",
+    "username": "Username",
+    "password": "Password",
+    "copy": "Copy password",
+    "copied": "Copied",
+    "logIn": "Log in now",
+    "doneNote": "This password replaces any earlier one, and you've been signed out on every device."
   }
 }

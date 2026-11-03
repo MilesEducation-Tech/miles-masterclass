@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 
-import { CommonResponse, RouteConfig } from './http.model';
+import { CommonResponse, RouteConfig } from '@core/models/http.model';
 
 /**
  * MilesCAIRA Accounts v1 — sign-in.
@@ -127,13 +127,23 @@ export type OtpVerifyRequest = OtpContact & {
   code: string;
 };
 
+/**
+ * `auth-password-login/`. `identifier` may be an email, phone or username (the SSO works out which);
+ * this app offers email, because the forgot flow takes nothing else. `password` goes exactly as
+ * typed: never trimmed, and always a string (a numeric PIN would lose a leading zero).
+ */
+export interface PasswordLoginRequest {
+  identifier: string;
+  password: string;
+}
+
 /** Optional by design: a browser may send `{}` and let the httpOnly
  *  `miles_sso_refresh` cookie be forwarded upstream instead. */
 export interface RefreshRequest {
   refreshToken?: string;
 }
 
-/** Returned by BOTH `auth-otp-verify/` and `auth-token-refresh/`. */
+/** Returned by `auth-otp-verify/`, `auth-password-login/` and `auth-token-refresh/`. */
 export interface SessionResponse {
   accessToken: string;
   refreshToken: string;
@@ -161,12 +171,23 @@ export const AUTH_ROUTES = {
     method: 'POST',
   } as RouteConfig<OtpVerifyRequest, CommonResponse<SessionResponse>>,
 
+  /**
+   * The same session as `verifyOtp`: the backend provisions a password sign-in exactly as it does a
+   * code one. 401 "Invalid credentials" is one answer for an unknown account and a wrong password;
+   * 429 locks PASSWORD sign-in after 5 failures in 15 minutes and never blocks a code. The other
+   * password routes need no session minted, so they live in `password.model.ts`.
+   */
+  passwordLogin: {
+    path: 'api/v1/account/auth-password-login/',
+    method: 'POST',
+  } as RouteConfig<PasswordLoginRequest, CommonResponse<SessionResponse>>,
+
   refresh: {
     path: 'api/v1/account/auth-token-refresh/',
     method: 'POST',
   } as RouteConfig<RefreshRequest, CommonResponse<SessionResponse>>,
 
-  /** No body, and — unlike the other four — it REQUIRES `Authorization: Bearer`.
+  /** No body, and — unlike the others — it REQUIRES `Authorization: Bearer`.
    *  Without it the answer is 401 "Authorization header with a Bearer token is
    *  required.", which is why it is not in `SESSION_MINTING_PATHS`. */
   logout: {
@@ -176,7 +197,7 @@ export const AUTH_ROUTES = {
 } as const;
 
 /**
- * The four routes that MINT or rotate a session, for the interceptor's skip
+ * The routes that MINT or rotate a session, for the interceptor's skip
  * list: no bearer, no refresh first. Refreshing before the call that mints the
  * session is nonsense, and refreshing before the refresh is recursion.
  *
@@ -216,7 +237,8 @@ export function isSessionResponse(body: unknown): body is SessionResponse {
 // ── Failures ────────────────────────────────────────────────────────────────
 
 /**
- * The documented outcomes of `auth-otp-verify/`, as a discriminated union.
+ * The documented outcomes of the sign-in routes (`auth-otp-verify/`, `auth-password-login/`), as a
+ * discriminated union.
  *
  * Six of these render genuinely different screens — two are terminal and send
  * the user to two DIFFERENT teams — so a bare `string` message cannot drive the
@@ -225,7 +247,8 @@ export function isSessionResponse(body: unknown): body is SessionResponse {
  * "deactivated" sends them to the wrong place.
  */
 export type AuthFailure =
-  /** 401 — wrong or expired code. Let them retype. */
+  /** 401 — the credential was refused: a wrong or expired code, or a password sign-in's
+   *  "Invalid credentials" (one answer for an unknown account and a wrong password). Let them retype. */
   | { kind: 'bad_code'; message: string }
   /** 429 — too many failures; the identifier is locked. Do not retry. */
   | { kind: 'locked'; message: string }
@@ -249,7 +272,7 @@ export type AuthFailure =
   | { kind: 'unknown'; message: string };
 
 /**
- * The error bodies the collection documents for the five auth routes, all inside
+ * The error bodies the collection documents for the auth routes, all inside
  * the `{success: false, message, data}` envelope:
  *
  * - `message` — the learner-facing copy on every status (401 / 429 / 502 / 503).
@@ -324,7 +347,10 @@ export function toAuthFailure(err: HttpErrorResponse): AuthFailure {
         fields: body.fields,
       };
     case 401:
-      return { kind: 'bad_code', message: message('That code is incorrect or expired.') };
+      return {
+        kind: 'bad_code',
+        message: message('Those details were not accepted. Please try again.'),
+      };
     case 429:
       return { kind: 'locked', message: message('Too many attempts. Try again later.') };
     case 403:

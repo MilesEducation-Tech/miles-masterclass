@@ -1,273 +1,370 @@
 <div class="flex flex-col space-y-6">
-  @if (authFacade.loginStep() === 'OTP') {
-    <div class="flex flex-col space-y-3">
-      <p class="sub-title">{{ 'auth.otp.title' | transloco }}</p>
-      <!-- The channel comes from the send response, not from the country code:
-           India routes over WhatsApp and everywhere else over SMS, but only the
-           response knows which one actually happened. -->
-      <p class="description text-sm!">
-        {{ authFacade.otpSentTo() }}
-        <strong>{{ authFacade.maskedIdentifier() }}</strong>
-      </p>
-      <!-- Offered immediately and never gated on the countdown: most non-delivery
-           is a typo, and a corrected number is a different identifier, so it is
-           under no cooldown and no lock. Making people wait 90s to fix a typo is
-           the one thing guaranteed not to help. -->
-      <button
-        app-button
-        type="button"
-        class="w-max h-auto p-0"
-        variant="link"
-        (click)="authFacade.goBackToLogin()"
-      >
-        {{
-          (authFacade.loginMethod() === 'PHONE' ? 'auth.otp.editPhone' : 'auth.otp.editEmail')
-            | transloco
-        }}
-      </button>
+  @if (authFacade.view() === 'PASSWORD') {
+    <div class="flex flex-col gap-2">
+      <h1 class="text-2xl font-semibold tracking-tight text-foreground">
+        {{ 'auth.login.title' | transloco }}
+      </h1>
+      <p class="text-sm text-muted-foreground">{{ 'auth.login.intro' | transloco }}</p>
     </div>
-  } @else {
-    <div class="flex flex-col space-y-3">
-      <p class="sub-title">
-        {{ 'auth.login.titleLead' | transloco }}
-        <strong>{{ 'auth.login.titleStrong' | transloco }}</strong>
-      </p>
-      <p class="description text-sm!">{{ 'auth.login.intro' | transloco }}</p>
-    </div>
-  }
-  <form class="space-y-4! flex flex-col mt-2" (submit)="$event.preventDefault(); onSubmit()">
-    @if (authFacade.loginStep() === 'LOGIN') {
-      <app-tabs
-        [value]="authFacade.selectedTabLabel() ?? ''"
-        (valueChange)="authFacade.selectLoginMethod($event)"
-      >
-        @for (tab of authFacade.loginMethodTabs; track tab) {
-          <app-tab [value]="tab" [label]="'auth.login.tabs.' + tab | transloco" />
-        }
-      </app-tabs>
-      <div class="flex space-x-2">
-        @if (authFacade.loginMethod() === 'PHONE') {
-          <div class="w-[140px]">
-            <app-field [errors]="authFacade.loginForm.country_code().errors()">
-              <label ngpLabel for="country_code">{{ 'auth.login.code' | transloco }}</label>
-
-              <app-combobox
-                id="country_code"
-                dir="ltr"
-                [placeholder]="'auth.login.searchCode' | transloco"
-                [options]="authFacade.countryCodes()"
-                [formField]="authFacade.loginForm.country_code"
-              />
-            </app-field>
-          </div>
-          <app-field class="w-full" [errors]="authFacade.loginForm.identifier().errors()">
-            <label ngpLabel for="identifier">{{ 'auth.login.phone' | transloco }}</label>
-
-            <input
-              app-input
-              id="identifier"
-              type="tel"
-              [formField]="authFacade.loginForm.identifier"
-              [placeholder]="'auth.login.phonePlaceholder' | transloco"
-              inputmode="numeric"
-            />
-          </app-field>
-        } @else {
-          <app-field class="w-full" [errors]="authFacade.loginForm.identifier().errors()">
-            <label ngpLabel for="identifier">{{ 'auth.login.email' | transloco }}</label>
-
-            <input
-              app-input
-              id="identifier"
-              type="email"
-              [formField]="authFacade.loginForm.identifier"
-              [placeholder]="'auth.login.emailPlaceholder' | transloco"
-            />
-          </app-field>
-        }
-      </div>
-      <!-- The mandatory terms checkbox is deliberately not rendered on either tab.
-           Acceptance is implied by the "By signing up or logging in…" notice below,
-           and `terms` is held accepted in the model so submit behaviour is unchanged. -->
-      <hr class="border-white/10" />
-      <!-- `text-justify` flushes both edges of this dense consent paragraph, so the
-           line before the long support address fills the width instead of leaving a
-           gap. Keeps the address unbroken on one line. -->
-      <app-field
-        class="flex-row items-start gap-3 font-normal text-sm! leading-tight! description"
-        [errors]="authFacade.loginForm.consent().errors()"
-      >
-        <app-checkbox id="consent" [formField]="authFacade.loginForm.consent" />
-        <div class="flex flex-col gap-0.5">
-          <span ngpLabel
-            >{{ authFacade.consentLabel() }}
-            <!--  class="font-normal text-sm! leading-tight! description" -->
-            <span labelLink>
-              @if (authFacade.loginMethod() === 'PHONE') {
-                <!-- Kept on one line: the address wraps whole to the next line, and the
-                 label's `text-justify` spreads the short line before it so no gap is
-                 left after "contact". -->
-                <a
-                  [href]="'mailto:' + authFacade.supportEmail"
-                  class="text-accent underline whitespace-nowrap"
-                  >{{ authFacade.supportEmail }}</a
-                >. {{ 'auth.login.consent.notCondition' | transloco }}
-                <a
-                  [routerLink]="legalLinks().privacy"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="text-accent underline"
-                  >{{ 'auth.login.privacyPolicy' | transloco }}</a
-                >
-                {{ 'auth.login.consent.and' | transloco }}
-                <a
-                  [routerLink]="legalLinks().terms"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="text-accent underline"
-                  >{{ 'auth.login.termsOfService' | transloco }}</a
-                >.
-              }
-            </span>
-          </span>
-        </div>
-      </app-field>
-      <hr class="border-white/10" />
-      <p class="description text-sm! text-center font-normal leading-tight!">
-        {{ 'auth.login.agree.lead' | transloco }}
-        <!-- `whitespace-nowrap` keeps each policy name intact — without it the line
-             breaks mid-link, e.g. "Terms of" / "Service". -->
-        <a
-          [routerLink]="legalLinks().terms"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="text-accent underline whitespace-nowrap"
-          >{{ 'auth.login.termsOfService' | transloco }}</a
+    <!-- `novalidate`, and Log in is not gated on validity: the facade reads the fields and validates
+         on submit (see `loginWithPassword`), so a password manager's fill always counts. -->
+    <form
+      class="flex flex-col gap-4"
+      novalidate
+      (submit)="$event.preventDefault(); authFacade.loginWithPassword()"
+    >
+      <app-field [errors]="authFacade.passwordForm.email().errors()">
+        <!-- A red `*` on every required field of a multi-field form. Hidden from screen readers: the
+             input itself carries `required`, so they hear "required" rather than "star". -->
+        <label ngpLabel for="password-email"
+          >{{ 'auth.login.email' | transloco }}
+          <span aria-hidden="true" class="text-destructive">*</span></label
         >
-        {{ 'auth.login.agree.and' | transloco }}
-        <a
-          [routerLink]="legalLinks().privacy"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="text-accent underline whitespace-nowrap"
-          >{{ 'auth.login.privacyPolicy' | transloco }}</a
-        >.
-      </p>
-    } @else {
-      <app-field [errors]="authFacade.otpForm.otp().errors()">
-        <span ngpLabel>{{ 'auth.otp.label' | transloco }}</span>
-
-        <app-input-otp
-          id="otp"
-          [length]="authFacade.otpLength"
-          [autoFocus]="true"
-          [formField]="authFacade.otpForm.otp"
-          placeholder=""
-          (complete)="onSubmit()"
+        <input
+          app-input
+          id="password-email"
+          type="email"
+          inputmode="email"
+          autocomplete="username"
+          [formField]="authFacade.passwordForm.email"
+          [placeholder]="'auth.login.emailPlaceholder' | transloco"
         />
       </app-field>
-    }
-    <!-- Send and verify opt out of the interceptor's error toast so this facade can
-         render each failure specifically — but nothing rendered `error()`, so a
-         wrong OTP gave the user no feedback at all. Same pattern as the webinar
-         registration form. -->
-    @if (authFacade.error()) {
-      <p class="text-sm text-destructive" role="alert">{{ authFacade.error() }}</p>
-    }
-    <!-- Five wrong codes lock the identifier and nothing in the 401 body reports
-         the tally, so this is counted client-side. It warns; it never blocks — the
-         server owns the lock, and the contract gives no duration to promise. -->
-    @if (authFacade.loginStep() === 'OTP' && authFacade.attemptsRemaining(); as remaining) {
-      <p class="text-sm text-destructive" role="alert">
-        {{
-          (remaining === 1 ? 'auth.otp.attemptsLeft.one' : 'auth.otp.attemptsLeft.other')
-            | transloco: { count: remaining }
-        }}
-      </p>
-    }
-    <!-- The cooldown gates *sending* a code, never redeeming one: on the OTP step
-         this button is Verify, and a user holding a valid code must be able to
-         submit it immediately. Only Resend waits out the minute. -->
-    <button
-      app-button
-      class="w-full mt-2"
-      type="submit"
-      variant="default"
-      [disabled]="
-        authFacade.isTerminal() ||
-        (authFacade.loginStep() === 'OTP'
-          ? authFacade.otpForm().invalid() || authFacade.isLoading() || authFacade.isLockedOut()
-          : authFacade.loginForm().invalid() || authFacade.isLoading() || !authFacade.canSendOtp())
-      "
-    >
-      @if (authFacade.isLoading()) {
-        <app-spinner></app-spinner>
+      <div class="flex flex-col gap-2">
+        <app-field [errors]="authFacade.passwordForm.password().errors()">
+          <label ngpLabel for="password"
+            >{{ 'auth.login.password.label' | transloco }}
+            <span aria-hidden="true" class="text-destructive">*</span></label
+          >
+          <app-password-input
+            inputId="password"
+            autocomplete="current-password"
+            [field]="authFacade.passwordForm.password"
+            [placeholder]="'auth.login.password.placeholder' | transloco"
+          />
+        </app-field>
+        <!-- Keeps `redirect`, drops `method`: the learner still returns where they were headed. -->
+        <a
+          routerLink="/auth/forgot-password"
+          queryParamsHandling="merge"
+          [queryParams]="{ method: null }"
+          class="self-end text-sm text-accent underline-offset-4 hover:underline"
+          >{{ 'auth.login.password.forgot' | transloco }}</a
+        >
+      </div>
+      @if (authFacade.passwordError(); as message) {
+        <p class="text-sm text-destructive" role="alert">{{ message }}</p>
       }
-      {{
-        (authFacade.loginStep() === 'OTP' ? 'auth.otp.verify' : 'auth.login.sendOtp') | transloco
-      }}
-    </button>
-    @if (authFacade.loginStep() === 'LOGIN' && !authFacade.canSendOtp()) {
-      <!-- The cooldown is per identifier and survives "Change Mobile", so it can
-           be active on this step too. Without this the button is simply dead with
-           no explanation. -->
-      <p class="text-sm text-muted-foreground text-center">
-        {{ 'auth.login.requestNewCodeIn' | transloco }}
-        <strong class="text-foreground">{{ authFacade.resendTimerDisplay() }}</strong>
-      </p>
-    }
-    @if (authFacade.loginStep() === 'OTP') {
-      <div class="flex flex-col items-center gap-1 text-sm text-muted-foreground">
-        <!-- Every resend invalidates the code already in flight, so the moment a
-             second one exists the user has to be told which to type. -->
-        @if (authFacade.showUseLatestHint()) {
-          <span>{{ 'auth.otp.useLatest' | transloco }}</span>
+      <!-- After a 429 the account's password sign-in is locked, but a code still works. -->
+      @if (authFacade.offerOtpInstead()) {
+        <button
+          app-button
+          type="button"
+          variant="outline"
+          class="w-full"
+          (click)="authFacade.useOtp('EMAIL')"
+        >
+          {{ 'auth.login.password.otpInstead' | transloco }}
+        </button>
+      }
+      <button
+        app-button
+        class="w-full"
+        type="submit"
+        variant="default"
+        [disabled]="authFacade.isLoading() || authFacade.isTerminal()"
+      >
+        @if (authFacade.isLoading()) {
+          <app-spinner />
         }
-        @if (authFacade.isLockedOut()) {
-          <!-- Locked: no resend can help, and Verify is dead too. Email is the
-               only way through, and it is a different identifier so it is not
-               covered by this lock. -->
-          <span>
-            {{ 'auth.otp.tryAgainIn' | transloco }}
-            <strong class="text-foreground">{{ authFacade.resendTimerDisplay() }}</strong>
-          </span>
-          @if (authFacade.loginMethod() === 'PHONE') {
-            <button
-              app-button
-              type="button"
-              class="h-auto p-0"
-              variant="link"
-              (click)="authFacade.signInWithEmailInstead()"
-            >
-              {{ 'auth.otp.emailInstead' | transloco }}
-            </button>
-          }
-        } @else if (!authFacade.canSendOtp()) {
-          <span>
-            {{ 'auth.otp.resendIn' | transloco }}
-            <strong class="text-foreground">{{ authFacade.resendTimerDisplay() }}</strong>
-          </span>
+        {{ 'auth.login.password.submit' | transloco }}
+      </button>
+    </form>
+
+    <div class="flex items-center gap-3" aria-hidden="true">
+      <div app-separator class="flex-1"></div>
+      <span class="text-xs uppercase tracking-wider text-muted-foreground">{{
+        'auth.login.or' | transloco
+      }}</span>
+      <div app-separator class="flex-1"></div>
+    </div>
+
+    <!-- Each icon opens the code flow on that channel: a navigation (`?method=`), so Back returns
+         here. The label names the pair for assistive technology too. -->
+    <div class="flex flex-col items-center gap-3">
+      <p id="otp-chooser-label" class="text-base text-muted-foreground">
+        {{ 'auth.login.otpChooser.label' | transloco }}
+      </p>
+      <div class="flex items-center gap-1" role="group" aria-labelledby="otp-chooser-label">
+        <button
+          app-button
+          type="button"
+          variant="secondary"
+          size="icon"
+          class="rounded-full bg-input data-hover:bg-input/70 data-press:bg-input/60"
+          [disabled]="authFacade.isLoading()"
+          [attr.aria-label]="'auth.login.otpChooser.phone' | transloco"
+          (click)="authFacade.useOtp('PHONE')"
+        >
+          <ng-icon name="heroDevicePhoneMobile" class="text-xl" aria-hidden="true" />
+        </button>
+        <button
+          app-button
+          type="button"
+          variant="secondary"
+          size="icon"
+          class="rounded-full bg-input data-hover:bg-input/70 data-press:bg-input/60"
+          [disabled]="authFacade.isLoading()"
+          [attr.aria-label]="'auth.login.otpChooser.email' | transloco"
+          (click)="authFacade.useOtp('EMAIL')"
+        >
+          <ng-icon name="heroEnvelope" class="text-xl" aria-hidden="true" />
+        </button>
+      </div>
+    </div>
+
+    <p class="text-center text-sm text-muted-foreground">
+      {{ 'auth.login.noAccount' | transloco }}
+      <a
+        routerLink="/auth/signup"
+        queryParamsHandling="merge"
+        [queryParams]="{ method: null }"
+        class="font-medium text-accent underline-offset-4 hover:underline"
+        >{{ 'auth.login.createAccount' | transloco }}</a
+      >
+    </p>
+  } @else {
+    @if (authFacade.loginStep() === 'OTP') {
+      <div class="flex flex-col gap-2">
+        <h1 class="text-2xl font-semibold tracking-tight text-foreground">
+          {{ 'auth.otp.title' | transloco }}
+        </h1>
+        <!-- The channel comes from the send response, not from the country code:
+             India routes over WhatsApp and everywhere else over SMS, but only the
+             response knows which one actually happened. -->
+        <p class="text-sm text-muted-foreground">
+          {{ authFacade.otpSentTo() }}
+          <strong class="text-foreground">{{ authFacade.maskedIdentifier() }}</strong>
+        </p>
+        <!-- Offered immediately and never gated on the countdown: most non-delivery
+             is a typo, and a corrected number is a different identifier, so it is
+             under no cooldown and no lock. Making people wait 90s to fix a typo is
+             the one thing guaranteed not to help. -->
+        <button
+          app-button
+          type="button"
+          class="w-max h-auto p-0"
+          variant="link"
+          (click)="authFacade.goBackToLogin()"
+        >
+          {{
+            (authFacade.loginMethod() === 'PHONE' ? 'auth.otp.editPhone' : 'auth.otp.editEmail')
+              | transloco
+          }}
+        </button>
+      </div>
+    } @else {
+      <div class="flex flex-col gap-2">
+        @if (authFacade.isSignup()) {
+          <h1 class="text-2xl font-semibold tracking-tight text-foreground">
+            {{ 'auth.signup.title' | transloco }}
+          </h1>
+          <p class="text-sm text-muted-foreground">{{ 'auth.signup.intro' | transloco }}</p>
         } @else {
-          @switch (authFacade.resendAction()) {
-            @case ('resend') {
-              <div class="flex items-center">
-                <span>{{ 'auth.otp.notReceived' | transloco }}&nbsp;</span>
-                <button
-                  app-button
-                  type="button"
-                  class="h-auto p-0"
-                  variant="link"
-                  [disabled]="authFacade.isLoading()"
-                  (click)="authFacade.resendOtp()"
+          <h1 class="text-2xl font-semibold tracking-tight text-foreground">
+            {{ 'auth.login.otpTitle' | transloco }}
+          </h1>
+          <p class="text-sm text-muted-foreground">{{ 'auth.login.otpIntro' | transloco }}</p>
+        }
+      </div>
+    }
+    <form class="space-y-4! flex flex-col mt-2" (submit)="$event.preventDefault(); onSubmit()">
+      @if (authFacade.loginStep() === 'LOGIN') {
+        <app-tabs
+          [value]="authFacade.selectedTabLabel() ?? ''"
+          (valueChange)="authFacade.selectLoginMethod($event)"
+        >
+          @for (tab of authFacade.loginMethodTabs; track tab) {
+            <app-tab [value]="tab" [label]="'auth.login.tabs.' + tab | transloco" />
+          }
+        </app-tabs>
+        <div class="flex space-x-2">
+          @if (authFacade.loginMethod() === 'PHONE') {
+            <div class="w-[140px]">
+              <app-field [errors]="authFacade.loginForm.country_code().errors()">
+                <label ngpLabel for="country_code"
+                  >{{ 'auth.login.code' | transloco }}
+                  <span aria-hidden="true" class="text-destructive">*</span></label
                 >
-                  {{ 'auth.otp.resend' | transloco }}
-                </button>
-              </div>
-            }
-            <!-- There is no 'sms' case: `auth-otp-send/` does not declare a
-                 `channel` field, so asking for a specific channel is a 400. A
-                 plain resend is the whole of what the API offers. -->
-            @case ('email') {
+
+                <app-combobox
+                  id="country_code"
+                  dir="ltr"
+                  [placeholder]="'auth.login.searchCode' | transloco"
+                  [options]="authFacade.countryCodes()"
+                  [formField]="authFacade.loginForm.country_code"
+                />
+              </app-field>
+            </div>
+            <app-field class="w-full" [errors]="authFacade.loginForm.identifier().errors()">
+              <label ngpLabel for="identifier"
+                >{{ 'auth.login.phone' | transloco }}
+                <span aria-hidden="true" class="text-destructive">*</span></label
+              >
+
+              <input
+                app-input
+                id="identifier"
+                type="tel"
+                [formField]="authFacade.loginForm.identifier"
+                [placeholder]="'auth.login.phonePlaceholder' | transloco"
+                inputmode="numeric"
+              />
+            </app-field>
+          } @else {
+            <app-field class="w-full" [errors]="authFacade.loginForm.identifier().errors()">
+              <label ngpLabel for="identifier"
+                >{{ 'auth.login.email' | transloco }}
+                <span aria-hidden="true" class="text-destructive">*</span></label
+              >
+
+              <input
+                app-input
+                id="identifier"
+                type="email"
+                [formField]="authFacade.loginForm.identifier"
+                [placeholder]="'auth.login.emailPlaceholder' | transloco"
+              />
+            </app-field>
+          }
+        </div>
+        <!-- The mandatory terms checkbox is deliberately not rendered on either tab.
+             Acceptance is implied by the "By signing up or logging in…" notice below,
+             and `terms` is held accepted in the model so submit behaviour is unchanged. -->
+        <hr class="border-white/10" />
+        <!-- `text-justify` flushes both edges of this dense consent paragraph, so the
+             line before the long support address fills the width instead of leaving a
+             gap. Keeps the address unbroken on one line. -->
+        <app-field
+          class="flex-row items-start gap-3 font-normal text-sm! leading-tight! description"
+          [errors]="authFacade.loginForm.consent().errors()"
+        >
+          <app-checkbox id="consent" [formField]="authFacade.loginForm.consent" />
+          <div class="flex flex-col gap-0.5">
+            <span ngpLabel
+              >{{ authFacade.consentLabel() }}
+              <!--  class="font-normal text-sm! leading-tight! description" -->
+              <span labelLink>
+                @if (authFacade.loginMethod() === 'PHONE') {
+                  <!-- Kept on one line: the address wraps whole to the next line, and the
+                   label's `text-justify` spreads the short line before it so no gap is
+                   left after "contact". -->
+                  <a
+                    [href]="'mailto:' + authFacade.supportEmail"
+                    class="text-accent underline whitespace-nowrap"
+                    >{{ authFacade.supportEmail }}</a
+                  >. {{ 'auth.login.consent.notCondition' | transloco }}
+                  <a
+                    [routerLink]="legalLinks().privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-accent underline"
+                    >{{ 'auth.login.privacyPolicy' | transloco }}</a
+                  >
+                  {{ 'auth.login.consent.and' | transloco }}
+                  <a
+                    [routerLink]="legalLinks().terms"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-accent underline"
+                    >{{ 'auth.login.termsOfService' | transloco }}</a
+                  >.
+                }
+              </span>
+            </span>
+          </div>
+        </app-field>
+      } @else {
+        <app-field [errors]="authFacade.otpForm.otp().errors()">
+          <span ngpLabel>{{ 'auth.otp.label' | transloco }}</span>
+
+          <app-input-otp
+            id="otp"
+            [length]="authFacade.otpLength"
+            [autoFocus]="true"
+            [formField]="authFacade.otpForm.otp"
+            placeholder=""
+            (complete)="onSubmit()"
+          />
+        </app-field>
+      }
+      <!-- Send and verify opt out of the interceptor's error toast so this facade can
+           render each failure specifically — but nothing rendered `error()`, so a
+           wrong OTP gave the user no feedback at all. Same pattern as the webinar
+           registration form. -->
+      @if (authFacade.error()) {
+        <p class="text-sm text-destructive" role="alert">{{ authFacade.error() }}</p>
+      }
+      <!-- Five wrong codes lock the identifier and nothing in the 401 body reports
+           the tally, so this is counted client-side. It warns; it never blocks — the
+           server owns the lock, and the contract gives no duration to promise. -->
+      @if (authFacade.loginStep() === 'OTP' && authFacade.attemptsRemaining(); as remaining) {
+        <p class="text-sm text-destructive" role="alert">
+          {{
+            (remaining === 1 ? 'auth.otp.attemptsLeft.one' : 'auth.otp.attemptsLeft.other')
+              | transloco: { count: remaining }
+          }}
+        </p>
+      }
+      <!-- The cooldown gates *sending* a code, never redeeming one: on the OTP step
+           this button is Verify, and a user holding a valid code must be able to
+           submit it immediately. Only Resend waits out the minute. -->
+      <button
+        app-button
+        class="w-full mt-2"
+        type="submit"
+        variant="default"
+        [disabled]="
+          authFacade.isTerminal() ||
+          (authFacade.loginStep() === 'OTP'
+            ? authFacade.otpForm().invalid() || authFacade.isLoading() || authFacade.isLockedOut()
+            : authFacade.loginForm().invalid() ||
+              authFacade.isLoading() ||
+              !authFacade.canSendOtp())
+        "
+      >
+        @if (authFacade.isLoading()) {
+          <app-spinner></app-spinner>
+        }
+        {{
+          (authFacade.loginStep() === 'OTP' ? 'auth.otp.verify' : 'auth.login.sendOtp') | transloco
+        }}
+      </button>
+      @if (authFacade.loginStep() === 'LOGIN' && !authFacade.canSendOtp()) {
+        <!-- The cooldown is per identifier and survives "Change Mobile", so it can
+             be active on this step too. Without this the button is simply dead with
+             no explanation. -->
+        <p class="text-sm text-muted-foreground text-center">
+          {{ 'auth.login.requestNewCodeIn' | transloco }}
+          <strong class="text-foreground">{{ authFacade.resendTimerDisplay() }}</strong>
+        </p>
+      }
+      @if (authFacade.loginStep() === 'OTP') {
+        <div class="flex flex-col items-center gap-1 text-sm text-muted-foreground">
+          <!-- Every resend invalidates the code already in flight, so the moment a
+               second one exists the user has to be told which to type. -->
+          @if (authFacade.showUseLatestHint()) {
+            <span>{{ 'auth.otp.useLatest' | transloco }}</span>
+          }
+          @if (authFacade.isLockedOut()) {
+            <!-- Locked: no resend can help, and Verify is dead too. Email is the
+                 only way through, and it is a different identifier so it is not
+                 covered by this lock. -->
+            <span>
+              {{ 'auth.otp.tryAgainIn' | transloco }}
+              <strong class="text-foreground">{{ authFacade.resendTimerDisplay() }}</strong>
+            </span>
+            @if (authFacade.loginMethod() === 'PHONE') {
               <button
                 app-button
                 type="button"
@@ -278,13 +375,93 @@
                 {{ 'auth.otp.emailInstead' | transloco }}
               </button>
             }
+          } @else if (!authFacade.canSendOtp()) {
+            <span>
+              {{ 'auth.otp.resendIn' | transloco }}
+              <strong class="text-foreground">{{ authFacade.resendTimerDisplay() }}</strong>
+            </span>
+          } @else {
+            @switch (authFacade.resendAction()) {
+              @case ('resend') {
+                <div class="flex items-center">
+                  <span>{{ 'auth.otp.notReceived' | transloco }}&nbsp;</span>
+                  <button
+                    app-button
+                    type="button"
+                    class="h-auto p-0"
+                    variant="link"
+                    [disabled]="authFacade.isLoading()"
+                    (click)="authFacade.resendOtp()"
+                  >
+                    {{ 'auth.otp.resend' | transloco }}
+                  </button>
+                </div>
+              }
+              <!-- There is no 'sms' case: `auth-otp-send/` does not declare a
+                   `channel` field, so asking for a specific channel is a 400. A
+                   plain resend is the whole of what the API offers. -->
+              @case ('email') {
+                <button
+                  app-button
+                  type="button"
+                  class="h-auto p-0"
+                  variant="link"
+                  (click)="authFacade.signInWithEmailInstead()"
+                >
+                  {{ 'auth.otp.emailInstead' | transloco }}
+                </button>
+              }
+            }
           }
-        }
-      </div>
+        </div>
+      }
+    </form>
+    @if (!authFacade.isSignup()) {
+      <button
+        app-button
+        type="button"
+        variant="link"
+        class="h-auto w-max self-center p-0"
+        (click)="authFacade.usePassword()"
+      >
+        <ng-icon name="heroArrowLeft" class="rtl:-scale-x-100" aria-hidden="true" />
+        {{ 'auth.login.usePassword' | transloco }}
+      </button>
+    } @else if (authFacade.loginStep() === 'LOGIN') {
+      <p class="text-center text-sm text-muted-foreground">
+        {{ 'auth.signup.haveAccount' | transloco }}
+        <a
+          routerLink="/auth/login"
+          queryParamsHandling="merge"
+          [queryParams]="{ method: null }"
+          class="font-medium text-accent underline-offset-4 hover:underline"
+          >{{ 'auth.signup.login' | transloco }}</a
+        >
+      </p>
     }
-  </form>
-  <!-- <div class="hidden">
-    <button app-button type="button" class="w-full" variant="primary">Signup with password</button>
-    <button app-button type="button" class="w-full" variant="secondary">Signup with OTP</button>
-  </div> -->
+  }
+  <!-- Both ways in imply the terms, so the line sits under whichever form is showing (not under
+       the code-entry step, which follows a send that already carried it). -->
+  @if (authFacade.view() === 'PASSWORD' || authFacade.loginStep() === 'LOGIN') {
+    <p class="description text-sm! text-center font-normal leading-tight!">
+      {{ 'auth.login.agree.lead' | transloco }}
+      <!-- `whitespace-nowrap` keeps each policy name intact — without it the line
+             breaks mid-link, e.g. "Terms of" / "Service". -->
+      <a
+        [routerLink]="legalLinks().terms"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="text-accent underline whitespace-nowrap"
+        >{{ 'auth.login.termsOfService' | transloco }}</a
+      >
+      {{ 'auth.login.agree.and' | transloco }}
+      <a
+        [routerLink]="legalLinks().privacy"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="text-accent underline whitespace-nowrap"
+        >{{ 'auth.login.privacyPolicy' | transloco }}</a
+      >.
+    </p>
+  }
 </div>

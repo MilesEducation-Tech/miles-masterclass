@@ -4,9 +4,8 @@
     "background": "Arrière-plan"
   },
   "login": {
-    "titleLead": "Entrez dans le",
-    "titleStrong": "monde de Miles Masterclass",
-    "intro": "Connectez-vous pour découvrir les Master Classes, des parcours d'apprentissage en IA et des outils pratiques qui vous aident à garder une longueur d'avance et à obtenir de précieux crédits CPE.",
+    "title": "Connexion ou inscription",
+    "intro": "Connectez-vous avec votre e-mail et votre mot de passe.",
     "tabs": {
       "Mobile": "Mobile",
       "Email": "E-mail"
@@ -40,7 +39,30 @@
       "countryCodeInvalid": "Indicatif invalide",
       "identifierRequired": "Veuillez saisir votre e-mail ou votre numéro de téléphone",
       "ssoOnly": "Ce compte se connecte via votre organisation. Veuillez utiliser la page de connexion de votre entreprise."
-    }
+    },
+    "password": {
+      "label": "Mot de passe",
+      "placeholder": "Saisissez votre mot de passe",
+      "forgot": "Mot de passe oublié ?",
+      "submit": "Se connecter",
+      "otpInstead": "Se connecter plutôt avec un code à usage unique",
+      "errors": {
+        "emailRequired": "Veuillez saisir votre e-mail",
+        "required": "Veuillez saisir votre mot de passe",
+        "min": "Votre mot de passe comporte au moins {{ min }} caractères"
+      }
+    },
+    "or": "ou",
+    "otpChooser": {
+      "label": "Se connecter avec un code",
+      "phone": "Se connecter avec un code sur votre mobile",
+      "email": "Se connecter avec un code par e-mail"
+    },
+    "otpTitle": "Se connecter avec un code",
+    "otpIntro": "Nous enverrons un code à usage unique sur votre mobile ou par e-mail.",
+    "usePassword": "Utiliser plutôt le mot de passe",
+    "noAccount": "Vous n'avez pas de compte ?",
+    "createAccount": "Créer un nouveau compte"
   },
   "otp": {
     "title": "Vérification du code",
@@ -100,5 +122,44 @@
       "keepEditing": "Continuer la modification",
       "confirm": "Quitter"
     }
+  },
+  "signup": {
+    "title": "Créez votre compte",
+    "intro": "Nous vous enverrons un code à usage unique pour vous vérifier. Ensuite, vous pourrez définir un mot de passe.",
+    "haveAccount": "Vous avez déjà un compte ?",
+    "login": "Se connecter"
+  },
+  "password": {
+    "show": "Afficher le mot de passe",
+    "hide": "Masquer le mot de passe"
+  },
+  "forgot": {
+    "title": "Mot de passe oublié ?",
+    "intro": "Saisissez l'e-mail de votre compte et nous vous enverrons un lien pour définir un nouveau mot de passe. Cela fonctionne même si vous n'en avez jamais défini.",
+    "submit": "M'envoyer un lien",
+    "back": "Retour à la connexion",
+    "sentTitle": "Consultez vos e-mails",
+    "sentFallback": "Si cet e-mail est associé à un compte Miles Masterclass, nous vous avons envoyé un lien pour définir votre mot de passe.",
+    "spam": "Vous ne le voyez pas ? Vérifiez vos courriers indésirables. Le lien fonctionne une fois, pendant 30 minutes.",
+    "stuck": "Toujours bloqué ?",
+    "contact": "Contacter le support"
+  },
+  "reset": {
+    "title": "Obtenez votre nouveau mot de passe",
+    "intro": "Ce lien attribue à votre compte un nouveau mot de passe, affiché une seule fois. Affichez-le lorsque vous êtes prêt à le copier.",
+    "reveal": "Afficher mon nouveau mot de passe",
+    "busy": "Préparation de votre nouveau mot de passe…",
+    "note": "L'afficher déconnecte votre compte sur tous les appareils.",
+    "missing": "Ce lien est incomplet. Demandez-en un nouveau.",
+    "tryAgain": "Réessayer",
+    "requestNew": "Demander un nouveau lien",
+    "doneTitle": "Votre nouveau mot de passe",
+    "doneIntro": "Copiez-le maintenant : il ne sera plus affiché. Utilisez-le avec votre e-mail pour vous connecter.",
+    "username": "Nom d'utilisateur",
+    "password": "Mot de passe",
+    "copy": "Copier le mot de passe",
+    "copied": "Copié",
+    "logIn": "Se connecter maintenant",
+    "doneNote": "Ce mot de passe remplace tout mot de passe précédent, et vous avez été déconnecté sur tous les appareils."
   }
 }

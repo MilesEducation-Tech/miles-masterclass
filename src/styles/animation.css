@@ -40,6 +40,16 @@
   animation-name: fade-out, slide-to-right;
 }
 
+/* A navigation that stays on the page and only rewrites its query string swaps without the page
+   animation: `<html>` carries `same-page-navigation` for that one transition (app.config.ts).
+   The group too: its default animation is invisible here, but it would hold the transition, and
+   the clicks it swallows, for 250ms. After the rules above, which it overrides at equal specificity. */
+:root.same-page-navigation::view-transition-group(root),
+:root.same-page-navigation::view-transition-old(root),
+:root.same-page-navigation::view-transition-new(root) {
+  animation: none;
+}
+
 @keyframes slide-in {
   from {
     transform: translateX(100%);

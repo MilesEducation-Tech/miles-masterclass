@@ -4,9 +4,8 @@
     "background": "Hintergrund"
   },
   "login": {
-    "titleLead": "Willkommen in der",
-    "titleStrong": "Welt von Miles Masterclass",
-    "intro": "Melden Sie sich jetzt an und entdecken Sie Master Classes, KI-Lernpfade und praktische Tools, mit denen Sie immer einen Schritt voraus sind und wertvolle CPE-Credits sammeln.",
+    "title": "Anmelden oder registrieren",
+    "intro": "Melden Sie sich mit Ihrer E-Mail-Adresse und Ihrem Passwort an.",
     "tabs": {
       "Mobile": "Mobil",
       "Email": "E-Mail"
@@ -40,7 +39,30 @@
       "countryCodeInvalid": "Ungültige Vorwahl",
       "identifierRequired": "Bitte geben Sie Ihre E-Mail-Adresse oder Telefonnummer ein",
       "ssoOnly": "Dieses Konto meldet sich über Ihre Organisation an. Bitte verwenden Sie die Anmeldeseite Ihres Unternehmens."
-    }
+    },
+    "password": {
+      "label": "Passwort",
+      "placeholder": "Passwort eingeben",
+      "forgot": "Passwort vergessen?",
+      "submit": "Anmelden",
+      "otpInstead": "Stattdessen mit einem Einmalcode anmelden",
+      "errors": {
+        "emailRequired": "Bitte geben Sie Ihre E-Mail-Adresse ein",
+        "required": "Bitte geben Sie Ihr Passwort ein",
+        "min": "Ihr Passwort hat mindestens {{ min }} Zeichen"
+      }
+    },
+    "or": "oder",
+    "otpChooser": {
+      "label": "Mit Code anmelden",
+      "phone": "Mit Code auf Ihrem Mobiltelefon anmelden",
+      "email": "Mit Code per E-Mail anmelden"
+    },
+    "otpTitle": "Mit Code anmelden",
+    "otpIntro": "Wir senden einen Einmalcode an Ihr Mobiltelefon oder Ihre E-Mail-Adresse.",
+    "usePassword": "Stattdessen Passwort verwenden",
+    "noAccount": "Noch kein Konto?",
+    "createAccount": "Neues Konto erstellen"
   },
   "otp": {
     "title": "Code-Bestätigung",
@@ -100,5 +122,44 @@
       "keepEditing": "Weiter bearbeiten",
       "confirm": "Verlassen"
     }
+  },
+  "signup": {
+    "title": "Konto erstellen",
+    "intro": "Wir senden Ihnen einen Einmalcode zur Bestätigung. Danach können Sie ein Passwort festlegen.",
+    "haveAccount": "Sie haben bereits ein Konto?",
+    "login": "Anmelden"
+  },
+  "password": {
+    "show": "Passwort anzeigen",
+    "hide": "Passwort verbergen"
+  },
+  "forgot": {
+    "title": "Passwort vergessen?",
+    "intro": "Geben Sie die E-Mail-Adresse Ihres Kontos ein, und wir senden Ihnen einen Link, um ein neues Passwort festzulegen. Das funktioniert auch, wenn Sie noch nie eines festgelegt haben.",
+    "submit": "Link per E-Mail senden",
+    "back": "Zurück zur Anmeldung",
+    "sentTitle": "Prüfen Sie Ihr Postfach",
+    "sentFallback": "Wenn zu dieser E-Mail-Adresse ein Miles Masterclass-Konto gehört, haben wir Ihnen einen Link zum Festlegen Ihres Passworts gesendet.",
+    "spam": "Nicht gefunden? Prüfen Sie Ihren Spam-Ordner. Der Link funktioniert einmal, 30 Minuten lang.",
+    "stuck": "Kommen Sie nicht weiter?",
+    "contact": "Support kontaktieren"
+  },
+  "reset": {
+    "title": "Ihr neues Passwort abrufen",
+    "intro": "Dieser Link gibt Ihrem Konto ein neues Passwort, das nur einmal angezeigt wird. Zeigen Sie es an, wenn Sie bereit sind, es zu kopieren.",
+    "reveal": "Mein neues Passwort anzeigen",
+    "busy": "Ihr neues Passwort wird vorbereitet…",
+    "note": "Beim Anzeigen wird Ihr Konto auf allen Geräten abgemeldet.",
+    "missing": "Dieser Link ist unvollständig. Fordern Sie einen neuen an.",
+    "tryAgain": "Erneut versuchen",
+    "requestNew": "Neuen Link anfordern",
+    "doneTitle": "Ihr neues Passwort",
+    "doneIntro": "Kopieren Sie es jetzt, es wird nicht noch einmal angezeigt. Melden Sie sich damit und mit Ihrer E-Mail-Adresse an.",
+    "username": "Benutzername",
+    "password": "Passwort",
+    "copy": "Passwort kopieren",
+    "copied": "Kopiert",
+    "logIn": "Jetzt anmelden",
+    "doneNote": "Dieses Passwort ersetzt jedes frühere, und Sie wurden auf allen Geräten abgemeldet."
   }
 }

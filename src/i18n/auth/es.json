@@ -4,9 +4,8 @@
     "background": "Fondo"
   },
   "login": {
-    "titleLead": "Entra en el",
-    "titleStrong": "mundo de Miles Masterclass",
-    "intro": "Inicia sesión para explorar las Master Classes, rutas de aprendizaje con IA y herramientas prácticas que te ayudan a mantenerte a la vanguardia y obtener valiosos créditos CPE.",
+    "title": "Inicia sesión o regístrate",
+    "intro": "Inicia sesión con tu correo electrónico y tu contraseña.",
     "tabs": {
       "Mobile": "Móvil",
       "Email": "Correo"
@@ -40,7 +39,30 @@
       "countryCodeInvalid": "Código de país no válido",
       "identifierRequired": "Introduce tu correo electrónico o número de teléfono",
       "ssoOnly": "Esta cuenta inicia sesión a través de tu organización. Usa la página de inicio de sesión de tu empresa."
-    }
+    },
+    "password": {
+      "label": "Contraseña",
+      "placeholder": "Introduce tu contraseña",
+      "forgot": "¿Olvidaste tu contraseña?",
+      "submit": "Iniciar sesión",
+      "otpInstead": "Iniciar sesión con un código de un solo uso",
+      "errors": {
+        "emailRequired": "Introduce tu correo electrónico",
+        "required": "Introduce tu contraseña",
+        "min": "Tu contraseña tiene al menos {{ min }} caracteres"
+      }
+    },
+    "or": "o",
+    "otpChooser": {
+      "label": "Iniciar sesión con código",
+      "phone": "Iniciar sesión con un código en tu móvil",
+      "email": "Iniciar sesión con un código por correo electrónico"
+    },
+    "otpTitle": "Iniciar sesión con código",
+    "otpIntro": "Te enviaremos un código de un solo uso a tu móvil o correo electrónico.",
+    "usePassword": "Usar contraseña",
+    "noAccount": "¿No tienes una cuenta?",
+    "createAccount": "Crear una cuenta nueva"
   },
   "otp": {
     "title": "Verificación del código",
@@ -100,5 +122,44 @@
       "keepEditing": "Seguir editando",
       "confirm": "Salir"
     }
+  },
+  "signup": {
+    "title": "Crea tu cuenta",
+    "intro": "Te enviaremos un código de un solo uso para verificarte. Después podrás establecer una contraseña.",
+    "haveAccount": "¿Ya tienes una cuenta?",
+    "login": "Iniciar sesión"
+  },
+  "password": {
+    "show": "Mostrar contraseña",
+    "hide": "Ocultar contraseña"
+  },
+  "forgot": {
+    "title": "¿Olvidaste tu contraseña?",
+    "intro": "Introduce el correo electrónico de tu cuenta y te enviaremos un enlace para establecer una contraseña nueva. Funciona aunque nunca hayas establecido una.",
+    "submit": "Enviarme un enlace",
+    "back": "Volver a iniciar sesión",
+    "sentTitle": "Revisa tu correo",
+    "sentFallback": "Si este correo electrónico tiene una cuenta de Miles Masterclass, te hemos enviado un enlace para establecer tu contraseña.",
+    "spam": "¿No lo ves? Revisa tu carpeta de correo no deseado. El enlace funciona una vez, durante 30 minutos.",
+    "stuck": "¿Sigues teniendo problemas?",
+    "contact": "Contactar con soporte"
+  },
+  "reset": {
+    "title": "Obtén tu nueva contraseña",
+    "intro": "Este enlace asigna a tu cuenta una contraseña nueva, que se muestra una sola vez. Muéstrala cuando estés listo para copiarla.",
+    "reveal": "Mostrar mi nueva contraseña",
+    "busy": "Preparando tu nueva contraseña…",
+    "note": "Al mostrarla se cerrará la sesión de tu cuenta en todos los dispositivos.",
+    "missing": "Este enlace está incompleto. Solicita uno nuevo.",
+    "tryAgain": "Intentar de nuevo",
+    "requestNew": "Solicitar un enlace nuevo",
+    "doneTitle": "Tu nueva contraseña",
+    "doneIntro": "Cópiala ahora: no se volverá a mostrar. Úsala con tu correo electrónico para iniciar sesión.",
+    "username": "Usuario",
+    "password": "Contraseña",
+    "copy": "Copiar contraseña",
+    "copied": "Copiada",
+    "logIn": "Iniciar sesión ahora",
+    "doneNote": "Esta contraseña sustituye a cualquier otra anterior, y se ha cerrado tu sesión en todos los dispositivos."
   }
 }

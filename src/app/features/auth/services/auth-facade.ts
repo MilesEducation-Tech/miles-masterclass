@@ -1,8 +1,19 @@
 import { environment } from '@env/environment';
-import { DestroyRef, Service, computed, inject, signal } from '@angular/core';
-import { email, form, required, validate, validateHttp } from '@angular/forms/signals';
+import { Location } from '@angular/common';
+import { DestroyRef, Service, computed, inject, linkedSignal, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import {
+  FieldTree,
+  email,
+  form,
+  minLength,
+  required,
+  validate,
+  validateHttp,
+} from '@angular/forms/signals';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoService } from '@jsverse/transloco';
+import { map } from 'rxjs';
 
 import { CountryCodeOption, dialCodeWithLength } from '@core/constants/dial-code';
 import {
@@ -11,13 +22,17 @@ import {
   IdentifyResponse,
   OtpChannel,
   OtpContact,
+  SessionResponse,
   isOtpMethod,
   isTerminalFailure,
   toAuthFailure,
 } from '@core/models/auth.model';
 import { CommonResponse } from '@core/models/http.model';
+import { PASSWORD_MIN_LOGIN } from '@core/models/password.model';
 import { apiUrl } from '@core/services/api-client/api-client';
 import { AuthSession } from '@core/services/auth-session/auth-session';
+import { SUPPORT_EMAIL } from '@features/auth/constants/auth';
+import { LoginView, PasswordLoginModel } from '@features/auth/models/sign-in.model';
 import { HttpErrorResponse } from '@angular/common/http';
 
 export interface AuthModel {
@@ -61,15 +76,22 @@ const FALLBACK_COOLDOWN_SECONDS = 60;
  */
 const IDENTIFY_DEBOUNCE_MS = 400;
 
+/** `?method=` → the code-flow tab it names, or `null` for the password view. */
+function methodOf(param: string | null): 'PHONE' | 'EMAIL' | null {
+  if (param === 'phone') return 'PHONE';
+  if (param === 'email') return 'EMAIL';
+  return null;
+}
+
 /**
  * The sign-in screen's own state.
  *
  * This is a facade because the login page is genuinely multi-step: the
- * LOGIN↔OTP toggle, the resend cooldown, the attempt tally and two form models
- * are all state that must die when the user leaves `/auth`. Hence
- * `autoProvided: false` and `providers: [AuthFacade]` on the auth route —
- * anything longer-lived belongs in `AuthSession`, which is where the session
- * itself lives.
+ * password and code views, the LOGIN↔OTP steps, the resend cooldown, the
+ * attempt tally and three form models are all state that must die when the
+ * user leaves `/auth`. Hence `autoProvided: false` and `providers: [AuthFacade]`
+ * on the `login` and `signup` routes — each gets its own — and anything
+ * longer-lived belongs in `AuthSession`, which is where the session itself lives.
  *
  * Everything the template binds to is kept; `login.html` is the spec.
  */
@@ -89,6 +111,7 @@ export class AuthFacade {
   private readonly auth = inject(AuthSession);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly location = inject(Location);
   // Synchronous: the route's resolver merged the `auth.*` dictionary before this facade was created.
   private readonly transloco = inject(TranslocoService);
   private readonly t = (key: string, params?: Record<string, unknown>): string =>
@@ -106,8 +129,35 @@ export class AuthFacade {
    */
   readonly isTerminal = signal(false);
 
-  /** Which login method the tab strip has selected. */
-  readonly loginMethod = signal<'PHONE' | 'EMAIL'>('PHONE');
+  /** `/auth/signup`: the same card, code-only, with sign-up copy. Set by the page — see `start`. */
+  readonly isSignup = signal(false);
+
+  /**
+   * `?method=`. Read off the ROOT route, which is the one a route-provided service is given; query
+   * params belong to the whole URL, so it carries them all the same.
+   */
+  private readonly methodParam = toSignal(
+    this.route.queryParamMap.pipe(map((params) => params.get('method'))),
+    { requireSync: true },
+  );
+
+  /**
+   * Email and password by default. `?method=phone|email` is the code flow on that tab, so the
+   * "Login with OTP" buttons are real navigations: Back returns to the password view, and a link can
+   * open either. Sign-up is code-only: the API creates an account when a code is verified.
+   */
+  readonly view = computed<LoginView>(() =>
+    this.isSignup() || methodOf(this.methodParam()) ? 'OTP' : 'PASSWORD',
+  );
+
+  /**
+   * Which login method the tab strip has selected: the URL's, else Email on sign-up (a password can
+   * only be set on an account with a confirmed email), else Mobile. Writable, and kept in the URL by
+   * `selectLoginMethod`, so the two can't disagree.
+   */
+  readonly loginMethod = linkedSignal<'PHONE' | 'EMAIL'>(
+    () => methodOf(this.methodParam()) ?? (this.isSignup() ? 'EMAIL' : 'PHONE'),
+  );
 
   /**
    * Tab values for `app-tabs` on the login form. They stay English because `selectLoginMethod`
@@ -234,7 +284,7 @@ export class AuthFacade {
   );
 
   /** Support address surfaced in the Mobile consent copy. */
-  readonly supportEmail = 'support@milesmasterclass.com';
+  readonly supportEmail = SUPPORT_EMAIL;
 
   /**
    * Whether the identifier looks complete enough to ask the SSO about.
@@ -376,6 +426,26 @@ export class AuthFacade {
     });
   });
 
+  // ── Password sign-in ──────────────────────────────────────────────────────
+
+  readonly passwordModel = signal<PasswordLoginModel>({ email: '', password: '' });
+
+  readonly passwordForm = form<PasswordLoginModel>(this.passwordModel, (schema) => {
+    required(schema.email, { message: this.t('auth.login.password.errors.emailRequired') });
+    email(schema.email, { message: this.t('auth.login.errors.invalidEmail') });
+    required(schema.password, { message: this.t('auth.login.password.errors.required') });
+    minLength(schema.password, PASSWORD_MIN_LOGIN, {
+      message: this.t('auth.login.password.errors.min', { min: PASSWORD_MIN_LOGIN }),
+    });
+  });
+
+  /** The password view's failure line, apart from the code flow's `error` so a view switch never
+   *  carries one across. */
+  readonly passwordError = signal<string | null>(null);
+
+  /** After a 429 the account's PASSWORD sign-in is locked, but a code still works — so offer one. */
+  readonly offerOtpInstead = signal(false);
+
   constructor() {
     // One interval for every countdown on the screen. Cleared with the facade,
     // which dies with the auth route.
@@ -384,6 +454,67 @@ export class AuthFacade {
   }
 
   // ── Actions ───────────────────────────────────────────────────────────────
+
+  /**
+   * The page calls this on every entry. This facade lives in the route's injector, which outlives the
+   * page, and a route-provided service can't read its own route's `data` (it is given the root route).
+   */
+  start(signup: boolean): void {
+    this.isSignup.set(signup);
+  }
+
+  /**
+   * Sign in with the password view's email and password.
+   *
+   * Validated here rather than by disabling the button: a password manager can fill both fields
+   * without an `input` event the form sees (Chrome withholds autofilled values until the page is
+   * interacted with), and a button waiting on validity would sit dead over filled fields.
+   */
+  async loginWithPassword(): Promise<void> {
+    if (this.isLoading() || this.isTerminal()) return;
+    this.pickUpAutofill();
+    this.passwordForm().markAsTouched();
+    if (this.passwordForm().invalid()) return;
+
+    this.isLoading.set(true);
+    this.passwordError.set(null);
+    this.offerOtpInstead.set(false);
+
+    const { email, password } = this.passwordModel();
+    try {
+      // The email trimmed; the password exactly as typed (contract §2.6).
+      const session = await this.auth.loginWithPassword({ identifier: email.trim(), password });
+      await this.routeAfterSession(session);
+    } catch (err) {
+      this.renderPasswordFailure(err);
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
+  /**
+   * The "Login with OTP" buttons: the code flow on that channel, from its first step. A navigation
+   * (`?method=`), so Back returns to the password view. An email typed for the password carries over.
+   */
+  useOtp(method: 'PHONE' | 'EMAIL'): void {
+    this.passwordError.set(null);
+    this.offerOtpInstead.set(false);
+    this.goBackToLogin();
+    this.loginMethod.set(method);
+    const typed = method === 'EMAIL' ? this.passwordModel().email.trim() : '';
+    this.authModel.update((m) => ({ ...m, identifier: typed }));
+    this.loginForm.identifier().reset();
+    void this.router.navigate([], {
+      queryParams: { method: method === 'PHONE' ? 'phone' : 'email' },
+      queryParamsHandling: 'merge',
+    });
+  }
+
+  /** Back to email and password — a navigation as well, so Back from there returns to the code flow. */
+  usePassword(): void {
+    this.goBackToLogin();
+    void this.router.navigate([], { queryParams: { method: null }, queryParamsHandling: 'merge' });
+  }
 
   /**
    * Who the code goes to, as send and verify want it: the email as typed, or
@@ -432,18 +563,7 @@ export class AuthFacade {
     try {
       const session = await this.auth.verifyOtp(this.toContact(), this.otpModel().otp);
       this.failedAttempts.set(0);
-
-      // Rule 4: the milestone, not a token claim.
-      const redirect = this.route.snapshot.queryParamMap.get('redirect');
-      if (session.profile_status === 'new_user') {
-        // The profile page returns to `redirect` once it is complete, so a new
-        // learner who signed in to register for a webinar lands back on it.
-        await this.router.navigate(['/auth/profile'], {
-          queryParams: redirect ? { redirect } : {},
-        });
-      } else {
-        await this.router.navigateByUrl(redirect ?? '/');
-      }
+      await this.routeAfterSession(session);
     } catch (err) {
       const failure = this.renderFailure(err);
       if (failure.kind === 'bad_code') {
@@ -476,6 +596,52 @@ export class AuthFacade {
   }
 
   // ── Internals ─────────────────────────────────────────────────────────────
+
+  /** Where a fresh session goes, by code or by password alike. Rule 4: the milestone, not a token claim. */
+  private async routeAfterSession(session: SessionResponse): Promise<void> {
+    const redirect = this.route.snapshot.queryParamMap.get('redirect');
+    if (session.profile_status === 'new_user') {
+      // The profile page returns to `redirect` once it is complete, so a new
+      // learner who signed in to register for a webinar lands back on it.
+      await this.router.navigate(['/auth/profile'], {
+        queryParams: redirect ? { redirect } : {},
+      });
+    } else {
+      await this.router.navigateByUrl(redirect ?? '/');
+    }
+  }
+
+  /** A password sign-in's failure, onto the password view. */
+  private renderPasswordFailure(err: unknown): void {
+    const failure = toAuthFailure(
+      err instanceof HttpErrorResponse ? err : new HttpErrorResponse({ status: 0 }),
+    );
+    this.passwordError.set(failure.message);
+
+    if (failure.kind === 'bad_code') {
+      // A wrong password or no such account: the server says the same for both, and so do we. A
+      // fresh field with the cursor in it makes the retry one keystroke away.
+      this.passwordModel.update((m) => ({ ...m, password: '' }));
+      this.passwordForm.password().reset();
+      this.passwordForm.password().focusBoundControl();
+    }
+    if (failure.kind === 'locked') this.offerOtpInstead.set(true);
+    if (isTerminalFailure(failure)) this.isTerminal.set(true);
+  }
+
+  /** What a password manager put in the fields, read straight off them — see `loginWithPassword`. */
+  private pickUpAutofill(): void {
+    const filled = (field: FieldTree<string>): string | undefined => {
+      const element = field().formFieldBindings()[0]?.element;
+      return element && 'value' in element ? String(element.value) : undefined;
+    };
+    const email = filled(this.passwordForm.email);
+    const password = filled(this.passwordForm.password);
+    this.passwordModel.update((m) => ({
+      email: email ?? m.email,
+      password: password ?? m.password,
+    }));
+  }
 
   private async send(contact: OtpContact): Promise<void> {
     const sent = await this.auth.sendOtp(contact);
@@ -515,6 +681,15 @@ export class AuthFacade {
     this.authModel.update((m) => ({ ...m, identifier: '' }));
     this.loginForm.identifier().reset();
     this.error.set(null);
+    // The tab is part of the URL, so a reload or a shared link opens this one. The entry is
+    // rewritten in place, not navigated: a router navigation runs the app's view transition, which
+    // cross-faded the whole page on every tab click. And Back leaves the code flow rather than
+    // stepping through tabs.
+    const tree = this.router.createUrlTree([], {
+      queryParams: { method: method === 'PHONE' ? 'phone' : 'email' },
+      queryParamsHandling: 'merge',
+    });
+    this.location.replaceState(this.router.serializeUrl(tree));
   }
 
   /**
@@ -547,5 +722,10 @@ export class AuthFacade {
     this.error.set(null);
     this.isTerminal.set(false);
     this.otpModel.set({ identifier: '', otp: '' });
+    // The password must not outlive the page (contract §2.6: no persisted form state).
+    this.passwordModel.set({ email: '', password: '' });
+    this.passwordForm().reset();
+    this.passwordError.set(null);
+    this.offerOtpInstead.set(false);
   }
 }

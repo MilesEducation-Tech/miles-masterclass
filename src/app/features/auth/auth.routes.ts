@@ -1,10 +1,10 @@
 import { Route } from '@angular/router';
-import { AuthFacade } from './services/auth-facade';
 import { canDeactivateExamGuard } from '@core/guards/can-deactivate-exam-guard';
 import { authGuard } from '@core/guards/auth/auth-guard';
 import { guestGuard } from '@core/guards/auth/guest-guard';
 import { featureTranslations } from '@core/services/translation-loader/translation-loader';
-import { Auth } from './auth';
+import { Auth } from '@features/auth/auth';
+import { AuthFacade } from '@features/auth/services/auth-facade';
 import en from '../../../i18n/auth/en.json';
 
 export const authRoutes: Route[] = [
@@ -25,20 +25,40 @@ export const authRoutes: Route[] = [
       {
         path: 'login',
         canMatch: [guestGuard],
-        // Login is the facade's only user. A route's injector outlives the page,
-        // so `Login` resets the OTP flow itself when it is destroyed.
+        // A route's injector outlives the page, so `Login` resets the facade itself when it is
+        // destroyed.
         providers: [AuthFacade],
-        loadComponent: () => import('./pages/login/login').then((m) => m.Login),
+        loadComponent: () => import('@features/auth/pages/login/login').then((m) => m.Login),
       },
-      // `signup` and `forget-password` are gone. Sign-in is OTP-only, so there
-      // is no password to forget, and `auth-identify/` answers identically for
-      // a known and an unknown identifier — login IS signup. Old links are
-      // redirected server-side in `src/legacy-redirects.ts`.
+      {
+        // The login card with sign-up copy, code-only: the API creates an account when a code is
+        // verified and has no register-with-password route. Its own providers, so its own facade:
+        // a half-finished sign-in can't carry over.
+        path: 'signup',
+        canMatch: [guestGuard],
+        providers: [AuthFacade],
+        data: { signup: true },
+        loadComponent: () => import('@features/auth/pages/login/login').then((m) => m.Login),
+      },
+      {
+        path: 'forgot-password',
+        canMatch: [guestGuard],
+        loadComponent: () =>
+          import('@features/auth/pages/forgot-password/forgot-password').then(
+            (m) => m.ForgotPassword,
+          ),
+      },
+      {
+        // Where the set/reset email links (contract §2.9). No guard: the link works signed in or out.
+        path: 'password/reset',
+        loadComponent: () =>
+          import('@features/auth/pages/reset-password/reset-password').then((m) => m.ResetPassword),
+      },
       {
         path: 'profile',
         canMatch: [authGuard],
         canDeactivate: [canDeactivateExamGuard],
-        loadComponent: () => import('./pages/profile/profile').then((m) => m.Profile),
+        loadComponent: () => import('@features/auth/pages/profile/profile').then((m) => m.Profile),
       },
     ],
   },
