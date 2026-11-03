@@ -1,44 +1,26 @@
 import { DatePipe } from '@angular/common';
-import {
-  afterNextRender,
-  Component,
-  DestroyRef,
-  ElementRef,
-  inject,
-  viewChild,
-} from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Button } from '@shared/ui/button/button';
 import { LiveSessionFacade } from '@features/offerings/webinar/services/live-session-facade';
 
 /**
- * The element the Zoom SDK renders into, plus our chrome around it.
+ * The full-screen surface the room shows until Zoom's own page covers it:
+ * connecting, and waiting for the host to start, each with a way out.
  *
  * It owns no SDK, no lease and no state: it reads the room's title, status and
- * wait-for-host state from `LiveSessionFacade` and hands the facade its
- * `#zoomRoot` once rendered. The root stays mounted through every in-room
- * phase: Zoom draws its own screens, waiting room included, inside it.
- *
- * The container is kept free of Tailwind utilities on purpose. The SDK injects
- * its own stylesheet and lays the meeting out itself; classes applied inside
- * `#zoomRoot` fight it, and preflight resets reaching into it are what produce
- * the "controls are invisible" reports.
+ * wait-for-host state from `LiveSessionFacade`. Zoom is not rendered here.
+ * Client View draws into its own body-level root on top of this element (see
+ * `ZoomMeetingClient`), so nothing in this component ever sits over the meeting.
  */
 @Component({
   selector: 'app-meeting-stage',
   imports: [DatePipe, Button],
   templateUrl: './meeting-stage.html',
+  host: {
+    class:
+      'fixed inset-0 flex flex-col items-center justify-center gap-3 bg-background px-6 text-center',
+  },
 })
 export class MeetingStage {
   protected readonly facade = inject(LiveSessionFacade);
-  private readonly destroyRef = inject(DestroyRef);
-
-  private readonly zoomRoot = viewChild.required<ElementRef<HTMLElement>>('zoomRoot');
-
-  constructor() {
-    afterNextRender(() => {
-      const root = this.zoomRoot().nativeElement;
-      this.facade.attachStage(root);
-      this.destroyRef.onDestroy(() => this.facade.detachStage(root));
-    });
-  }
 }

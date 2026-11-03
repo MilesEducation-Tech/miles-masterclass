@@ -7,6 +7,24 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-11-03, NON-REFACTOR, MIL-XXX: live webinar room on Zoom's Client View, UNCOMMITTED** on
+  `feat/MIL-XXX-webinar-live-client-view` (`prompts/webinar-live-client-view.md`).
+  - **Why Client View:** Component View (SDK 6.10) ignores `viewSizes` during a screen share (fixed 615px
+    height), keeps a fixed aspect, and is desktop-only. Client View is Zoom's full-page client: phones
+    included, with polls and Q&A built in.
+  - **What changed:** `ZoomMeetingClient` is rebuilt on `ZoomMtg` (imported once,
+    `leaveRedirect: false`, `#zmmtg-root` shown only while joining or joined). Exits come from
+    `onUserLeave` reason codes. The phone hand-off branch and `attachStage` are gone, and `MeetingStage`
+    is a full-screen connecting/waiting surface.
+  - **SDK quirks found:** in webinars, `onUserIsInWaitingRoom` is never delivered, and `onMeetingStatus`
+    stops once a hold state is stored (Zoom saves "false" as a string). `onUserLeave` is always delivered.
+  - **Beacon:** the code is correct. Delivery is verified: the beacon is sent, and the release route
+    answers 204 to a header-less `text/plain` body from the app origin.
+  - **Checks:** lint 0 errors, structure ✔, tsc ✔, build:prod ✔ (1.01 MB / 229 kB initial, Zoom lazy).
+  - **Not verified (live checks skipped by the user, 2026-11-03):** anything in the joined room, which
+    needs a signed-in session and a webinar a host has started. That covers in-place rejoin,
+    `leaveRedirect`, exit screens, polls per size, and a lease actually ending on tab close. Run them on
+    UAT before release (list in the prompt's "Live checks").
 - 🔧 **2026-11-02, NON-REFACTOR, MIL-117: PR #225 review ("remove testing/mock"), STAGED, NOT COMMITTED.**
   - Removed `testing/mocks/ai-labs.mock.ts` and the 7 AI Labs stories that were its only users
     (progress panel, token meter, quiz and top-up dialogs, course, exam and feedback pages).

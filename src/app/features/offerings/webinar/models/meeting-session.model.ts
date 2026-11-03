@@ -1,6 +1,6 @@
 // Type-only: erased at build, so nothing static reaches into the SDK package and
 // it stays in its own lazy chunk (see `ZoomMeetingClient`).
-import type ZoomMtgEmbedded from '@zoom/meetingsdk/embedded';
+import type { ZoomMtg } from '@zoom/meetingsdk';
 import { contractError, isNum, isObject, isStr, isStrOrNull } from '@core/utils/contract-guards';
 
 /**
@@ -131,14 +131,17 @@ export type ZoomJoinOutcome =
   | 'web-unsupported'
   | 'failed';
 
-/** The SDK's `connection-change` payload, read field by field: the SDK types it as `any`. */
-export interface ConnectionChangePayload {
-  state?: string;
-  reason?: string;
-}
+/** Client View, typed by the SDK itself rather than restated here. */
+export type ZoomClientView = typeof ZoomMtg;
 
-/** The Component View client, typed by the SDK itself rather than restated here. */
-export type ZoomEmbeddedClient = ReturnType<typeof ZoomMtgEmbedded.createClient>;
+/**
+ * Client View's `init` options, plus `leaveRedirect`: SDK 6.10's `init` reads
+ * it, but `index.d.ts` leaves it out. `false` keeps the page when the learner
+ * leaves, so the room can say why instead of jumping to `leaveUrl`.
+ */
+export type ZoomClientViewInit = Parameters<ZoomClientView['init']>[0] & {
+  leaveRedirect: boolean;
+};
 
 /** Why this surface lost the session. Drives which copy the exit screen shows. */
 export type EjectionReason =
@@ -153,6 +156,9 @@ export type ZoomCloseReason = Extract<
   EjectionReason,
   'meeting-ended' | 'removed' | 'connection-lost'
 >;
+
+/** How Zoom ended our participant: an exit screen, or `left` when the learner pressed Zoom's own Leave. */
+export type ZoomExit = ZoomCloseReason | 'left';
 
 /** How the single-session rule is currently blocking this surface. */
 export type SessionConflict =
