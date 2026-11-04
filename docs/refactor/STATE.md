@@ -83,8 +83,13 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     - `spent` is now set when a join is asked for, and `attempt()` reloads for every later join; the
       in-place re-sign is gone.
     - Verified on a local prod build and dev against the live UAT webinar: Zoom's UI renders, the join
-      reaches Zoom, and Rejoin reloads. A full admitted join was blocked by Zoom's "already joined on another
-      device" for this registration.
+      reaches Zoom, and Rejoin reloads. A full admitted join was first blocked by Zoom's "already joined
+      on another device" for this registration.
+    - **Retest after the other session closed (11:30 UTC), local prod build :4000:**
+      - joined ("You are in the session", attendee footer);
+      - Zoom covers the viewport at 375 and 1440, and the phone tile has `pointer-events: none`;
+      - a reload rejoins with claim 200;
+      - Zoom's Leave reloads onto the detail page, and reopening claims 200 and joins with no Zoom refusal.
     - lint ✔, structure ✔, build:prod ✔ (230.45 kB), stubbed 39/39 (the first run on a freshly restarted dev
       server failed 6 while it warmed up; the re-run passed).
   - **Not verified:** the steady screen during a real 3008 wait or join window, the host ending the

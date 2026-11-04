@@ -187,7 +187,7 @@ SVG icon map). esbuild 0.28.2 rewrites that into `require_main_client()` and nev
 - the join reaches Zoom's server;
 - Rejoin reloads (`navType: reload`) instead of stalling.
 
-A full admitted join was **not** re-confirmed: Zoom kept refusing with "You've already joined this meeting
+A full admitted join was at first blocked: Zoom kept refusing with "You've already joined this meeting
 on another device". The same registration is still a participant elsewhere. Chrome's phase-out of `unload`
 handlers stops Zoom's `leaveOnPageUnload`, so a closed tab's participant lingers until Zoom times it out.
 
