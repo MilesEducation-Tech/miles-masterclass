@@ -38,6 +38,23 @@ export type ProfileForm = 'onboarding' | 'profile';
  * There is deliberately no email, last name, phone or city here — those are
  * questionnaire answers now.
  */
+/**
+ * The subscription term in force now (contract §3.2, 2026-10-29). Under stacked renewals it is the
+ * in-force term with the furthest expiry, the same row the server's entitlement check reads.
+ */
+export interface SubscriptionTerm {
+  subscription_id: string;
+  product_id: string;
+  plan_id: string;
+  /** Operator-authored and may be `""`: a label, never an identifier. */
+  plan_name: string;
+  status: string;
+  started_at: string;
+  expires_at: string;
+  /** Whole days, floored at 0. */
+  days_remaining: number;
+}
+
 export interface UserDetails {
   /** Display name. Falls back server-side to the whole `full_name`. `null` on a
    *  new account until the questionnaire's `full_name` is answered (live UAT,
@@ -55,6 +72,13 @@ export interface UserDetails {
    * it yet must not fail the whole record.
    */
   has_password?: boolean;
+  /**
+   * The term in force, or `null` when there is none (expired, cancelled early, never subscribed). A
+   * cancelled term that runs to `expires_at` is still here. Read through `AccountApi.hasSubscription`,
+   * never directly. It describes the learner for the UI; the server decides access. Optional: an
+   * environment that doesn't send it yet reads as "not known", not as "not subscribed".
+   */
+  current_subscription_details?: SubscriptionTerm | null;
 }
 
 /**
@@ -84,6 +108,8 @@ export function initialsOf(name: string): string {
  * lowercasing did).
  */
 const isNullableString = (v: unknown): v is string | null => v === null || typeof v === 'string';
+const isOptionalRecord = (v: unknown): boolean =>
+  v === undefined || v === null || (typeof v === 'object' && !Array.isArray(v));
 
 export function isUserDetails(body: unknown): body is UserDetails {
   if (typeof body !== 'object' || body === null || Array.isArray(body)) return false;
@@ -93,7 +119,8 @@ export function isUserDetails(body: unknown): body is UserDetails {
     isNullableString(b['full_name']) &&
     typeof b['is_onboarding_completed'] === 'boolean' &&
     typeof b['is_profile_completed'] === 'boolean' &&
-    (b['has_password'] === undefined || typeof b['has_password'] === 'boolean')
+    (b['has_password'] === undefined || typeof b['has_password'] === 'boolean') &&
+    isOptionalRecord(b['current_subscription_details'])
   );
 }
 

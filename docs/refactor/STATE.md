@@ -7,6 +7,25 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🟡 **2026-11-04, NON-REFACTOR — MIL-173, "has a subscription" from `current_subscription_details`. COMMITTED,
+  PR pending** (`prompts/subscription-from-user-details.md`), on `feat/MIL-173-subscription-from-user-details`,
+  first cut off `master` (`bba0e91c`), replayed onto `master` (`b5f95c5c`, 4.0.2) the same day.
+  - **Why:** `user-details/` carries the subscription block since 2026-10-29 (contract §3.2), and every subscription
+    decision in the app was a stub (always yes / always no) or read the dead `CurrentPlanData`.
+  - **Change:** `AccountApi.hasSubscription` (`true` with a term in force, `false` signed out or `null` term,
+    `null` while unknown; unknown never paywalls). Read by the header crown, the footer bar's `subscribed` (the bar
+    itself is commented out of `main-layout`), `Utils.canAccessCpeMode` / `requireCpeModeAccess` (signed-out →
+    sign-in again), CPE Tracker "download all", badge claims, the faculty lock, and a paid invoice (reloads
+    `user-details/`). New `subscriptionGuard` on the `cpe-tracker` route (menu item stays; no subscription →
+    "Subscription Required" toast + plan page; waits for the read). `CurrentPlanData`, `CertificateAccessPolicy` and
+    the engagement dialog's dead helper deleted. `docs/AUTH_API.md` user record section.
+  - **Verified (dev 4101, Playwright, stubbed `user-details/`, English):** 40 checks green (Active, Deactivate,
+    Expired, never, key absent, 500, slow read, signed out, paid / pending invoice). Header screenshots for both states.
+  - **Not verified:** podcast / micro-learning chapter clicks with real data (their `v2/` reads 404 on UAT; the gate
+    was driven through the live `Utils`), the badge claim (no earned badge to click).
+  - **Live UAT (user, 2026-11-04):** a subscribed account's `user-details/` sends `current_subscription_details`
+    (object), `subscription_status: "Active"`, `queued: []`, and the header shows the crown.
+
 - 🟡 **2026-11-04, NON-REFACTOR — MIL-XXX, live webinar room: always full screen, nothing draggable, a clean
   wait for the start. DONE, UNCOMMITTED** (`prompts/webinar-live-fullscreen.md`), on
   `fix/MIL-XXX-webinar-live-fullscreen` off `master` (`bba0e91c`). Follows MIL-170 (#229).
@@ -6927,6 +6946,8 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-11-04 · NON-REFACTOR · **MIL-173 replayed onto `master` (`b5f95c5c`)**: one STATE.md conflict (both "Now" entries kept, MIL-173 first); the stray `<<<<<<< HEAD` line master already carries left as is
+- 2026-11-04 · NON-REFACTOR · **MIL-173 subscription from user-details** (uncommitted): `AccountApi.hasSubscription` read by every subscription decision, `subscriptionGuard` on CPE Tracker, `CurrentPlanData` gone · 40 Playwright checks green · lint 0 errors, structure ✔ (baseline pruned), build:prod ✔ (1.01 MB / 230.41 kB) · MIL-171 merged as #235
 - 2026-11-03 · NON-REFACTOR · **MIL-171 leave guard asks once** (uncommitted): `canDeactivateExamGuard` remembers a confirmed leave across redirects; `leaveConfirmed` in the three `beforeunload`s · 26 Playwright checks green (4 fail on `master`) · MIL-168 merged as #233 (`f49bbe4a`)
 - 2026-11-03 · NON-REFACTOR · **MIL-168 profile Password section + prefill** (uncommitted): change/set from the profile with an email-code fallback; `GET profile/` read again to pre-fill, per-row re-seed, saved "yes" can be unticked, first-load-only spinner · 63 + 84 Playwright checks green (English) · lint 0 errors, structure ✔, build:prod ✔
 - 2026-11-03 · NON-REFACTOR · **MIL-168 plan** (`prompts/profile-password-prefill.md`): profile Password section (set / change, email-code fallback) and saved-answer prefill · MIL-167 merged as #232 (`a49e7d85`) · awaiting approval
