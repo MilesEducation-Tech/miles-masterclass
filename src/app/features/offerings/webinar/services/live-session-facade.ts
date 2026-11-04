@@ -1,5 +1,13 @@
 import { isPlatformBrowser } from '@angular/common';
-import { computed, DestroyRef, inject, PLATFORM_ID, Service, signal } from '@angular/core';
+import {
+  computed,
+  DestroyRef,
+  DOCUMENT,
+  inject,
+  PLATFORM_ID,
+  Service,
+  signal,
+} from '@angular/core';
 import { PRIMARY_OUTLET, Router, UrlTree } from '@angular/router';
 import {
   JOIN_REFUSAL_KINDS,
@@ -52,6 +60,7 @@ export class LiveSessionFacade {
   private readonly session = inject(MeetingSession);
   private readonly zoom = inject(ZoomMeetingClient);
   private readonly router = inject(Router);
+  private readonly document = inject(DOCUMENT);
   private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -80,9 +89,11 @@ export class LiveSessionFacade {
 
   readonly isPreparing = signal(false);
   /**
-   * Zoom refused the join because the host has not started the webinar (or is
-   * still in its practice session). The room holds the lease and tries again
-   * every `WAITING_FOR_HOST_RETRY_MS` until the host starts.
+   * The webinar has not started: Zoom refused the join because the host has not
+   * started it (or is still in its practice session), or the server's join
+   * window has not opened yet. The room tries again every
+   * `WAITING_FOR_HOST_RETRY_MS` until it can join, holding the lease only in
+   * the first case (in the second, the claim is what the server refused).
    */
   readonly waitingForHost = signal(false);
   /** Why the server would not let the learner in; `null` while joining or joined. */
@@ -162,12 +173,14 @@ export class LiveSessionFacade {
    * session someone is actually watching.
    */
   takeover(): void {
-    void this.start(true);
+    if (this.zoom.spent) this.reloadRoom(true);
+    else void this.start(true);
   }
 
   /** Join again without taking over: after a refusal, a failed join or a dropped connection. */
   retry(): void {
-    void this.start(false);
+    if (this.zoom.spent) this.reloadRoom(false);
+    else void this.start(false);
   }
 
   /** The learner pressed Leave: give everything back, then return to the webinar. */
@@ -215,7 +228,16 @@ export class LiveSessionFacade {
     } catch (err) {
       // `acquire` has already given back any lease it took and logged the cause.
       this.zoom.phase.set('idle');
-      this.refusal.set(toRefusal(toWebinarError(err)));
+      const refusal = toRefusal(toWebinarError(err));
+      // Early is not refused: wait on the same screen as for the host, and join
+      // by itself once the window opens. Only for the current run, so an
+      // abandoned attempt never schedules a claim behind the learner's back.
+      if (refusal.kind === 'not-open' && run === this.run) {
+        this.waitingForHost.set(true);
+        this.scheduleRejoin(webinarId, run);
+      } else {
+        this.refusal.set(refusal);
+      }
     } finally {
       this.isPreparing.set(false);
     }
@@ -295,8 +317,9 @@ export class LiveSessionFacade {
     } catch (err) {
       if (run !== this.run) return;
       const refusal = toRefusal(toWebinarError(err));
-      // A network blip while waiting is no reason to stop waiting.
-      if (refusal.kind === 'failed') {
+      // A network blip while waiting is no reason to stop waiting, and neither
+      // is a join window that has not opened yet.
+      if (refusal.kind === 'failed' || refusal.kind === 'not-open') {
         this.scheduleRejoin(webinarId, run);
         return;
       }
@@ -304,6 +327,17 @@ export class LiveSessionFacade {
       this.zoom.phase.set('idle');
       this.refusal.set(refusal);
     }
+  }
+
+  /**
+   * Join again in a fresh page, once Zoom has been in a meeting in this one
+   * (see `ZoomMeetingClient.spent`). A takeover the learner confirmed is carried
+   * across the reload, so it stays one click.
+   */
+  private reloadRoom(takeover: boolean): void {
+    const webinarId = this.webinarId();
+    if (takeover && webinarId) this.session.keepSeatAcrossReload(webinarId);
+    this.document.location.reload();
   }
 
   /** Stop waiting for the host, and abandon any attempt still in flight. */

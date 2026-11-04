@@ -4,6 +4,7 @@ import { DestroyRef, inject, Service, PLATFORM_ID, signal } from '@angular/core'
 import { firstValueFrom, map } from 'rxjs';
 import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
+import { Storage } from '@core/services/storage/storage';
 import { isObject } from '@core/utils/contract-guards';
 import {
   HEARTBEAT_MAX_SECONDS,
@@ -12,6 +13,7 @@ import {
   LIVE_SESSION_BACKGROUND,
   LIVE_SESSION_CHANNEL,
   LIVE_SESSION_LOCK,
+  LIVE_SESSION_RECLAIM_KEY,
   LIVE_SESSION_ROUTES,
   TAKEOVER_POLL_MS,
   TAKEOVER_WAIT_MS,
@@ -68,6 +70,7 @@ import {
 export class MeetingSession {
   private readonly api = inject(ApiClient);
   private readonly logger = inject(Logger);
+  private readonly storage = inject(Storage);
   private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -123,6 +126,7 @@ export class MeetingSession {
    */
   async acquire(webinarId: string, takeover = false): Promise<SignatureResponse | null> {
     if (!this.isBrowser) return null;
+    takeover ||= this.reclaimsOwnSeat(webinarId);
     const alreadyOurs = this.holdsLease() && this.currentWebinarId === webinarId;
     this.currentWebinarId = webinarId;
     this.conflict.set(null);
@@ -189,6 +193,14 @@ export class MeetingSession {
       if (!isSessionConflict(error)) throw err;
       return null;
     }
+  }
+
+  /**
+   * Let this tab's next page load take the seat for `webinarId` back without
+   * asking: it is this window's own seat (see `reclaimsOwnSeat`).
+   */
+  keepSeatAcrossReload(webinarId: string): void {
+    this.storage.setSession(LIVE_SESSION_RECLAIM_KEY, webinarId);
   }
 
   /** Give the session up deliberately — the learner left the meeting. */
@@ -426,12 +438,34 @@ export class MeetingSession {
    */
   private beaconRelease(): void {
     if (!this.holdsLease()) return;
+    // If this is a reload, the new page claims before the beacon lands.
+    if (this.currentWebinarId) this.keepSeatAcrossReload(this.currentWebinarId);
     try {
       const body = JSON.stringify({ session_id: this.sessionId });
       this.releasedByBeacon = navigator.sendBeacon(apiUrl(LIVE_SESSION_ROUTES.release.path), body);
     } catch {
       // Nothing to do — the lease TTL is the backstop.
     }
+  }
+
+  /**
+   * True on the first claim after this tab reloaded while it held the seat, or
+   * after the learner chose to take it over and the room reloaded to do it. The
+   * seat is this window's own, so it is taken back without asking; otherwise a
+   * reload, which claims before the old page's release beacon lands, finds
+   * itself "already in a session on another device".
+   *
+   * Read once and cleared, and honoured only on a reload, so a restored tab or
+   * a later visit never takes a seat over silently.
+   */
+  private reclaimsOwnSeat(webinarId: string): boolean {
+    const kept = this.storage.getSession<string>(LIVE_SESSION_RECLAIM_KEY);
+    if (kept === null) return false;
+    this.storage.removeSession(LIVE_SESSION_RECLAIM_KEY);
+    const [page] = performance.getEntriesByType('navigation');
+    return (
+      kept === webinarId && page instanceof PerformanceNavigationTiming && page.type === 'reload'
+    );
   }
 
   /** One heartbeat after a bfcache restore, to learn if we were superseded. */

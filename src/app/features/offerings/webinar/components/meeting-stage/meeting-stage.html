@@ -2,31 +2,24 @@
 <p class="sr-only" aria-live="polite">{{ facade.statusText() }}</p>
 
 @if (facade.waitingForHost() || facade.isPreparing()) {
-  <span
-    class="h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-accent"
-    aria-hidden="true"
-  ></span>
+  <!-- Hidden from assistive tech: the live status line above already says what
+       is happening, and the spinner's own "Loading..." would repeat it. -->
+  <app-spinner size="xl" aria-hidden="true" />
   @if (facade.waitingForHost()) {
-    <!-- Zoom refused the join because the host has not started. Zoom is hidden
-         between tries, so this is what the learner sees while the room waits. -->
-    <p class="text-sm font-medium">The webinar has not started yet</p>
-    <p class="max-w-md text-sm text-muted-foreground">
+    <!-- The host has not started, or the join window has not opened. This screen
+         sits above Zoom while the room waits, so it is all the learner sees. -->
+    <p class="mt-6 text-xl font-semibold">The webinar has not started yet</p>
+    <p class="mt-2 max-w-md text-sm text-muted-foreground">
       @if (facade.startsAt(); as startsAt) {
         It is scheduled for {{ startsAt | date: 'shortTime' }}.
       }
       You will join automatically as soon as the host starts it. Keep this page open.
     </p>
   } @else {
-    <p class="text-sm text-muted-foreground">Connecting you to the session…</p>
+    <p class="mt-6 text-sm text-muted-foreground">Connecting you to the session…</p>
   }
   <!-- Zoom's own page has its own Leave; this one covers the time before it. -->
-  <button
-    app-button
-    type="button"
-    variant="outline"
-    class="mt-3 data-hover:border-destructive/60 data-hover:bg-transparent data-hover:text-destructive"
-    (click)="facade.leave()"
-  >
+  <button app-button type="button" variant="outline" class="mt-6" (click)="facade.leave()">
     Leave session
   </button>
 }

@@ -7,7 +7,75 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- 🟡 **2026-11-03, NON-REFACTOR — MIL-171, "Leave without saving?" asked twice. DONE, UNCOMMITTED**
+- 🟡 **2026-11-04, NON-REFACTOR — MIL-XXX, live webinar room: always full screen, nothing draggable, a clean
+  wait for the start. DONE, UNCOMMITTED** (`prompts/webinar-live-fullscreen.md`), on
+  `fix/MIL-XXX-webinar-live-fullscreen` off `master` (`bba0e91c`). Follows MIL-170 (#229).
+  - **Found first:** `www.` and `uat.milesmasterclass.com` are NOT built from this repo (old `version.json`
+    format; neither bundles the Zoom SDK, and Join opens the `join_url` in a tab). Only
+    `miles-masterclass.vercel.app` runs this room, on Client View since 2026-11-03 17:07 IST. Before that it was
+    Component View, a bordered, draggable box: the reported symptom.
+  - **Change:**
+    - Client View init gains `videoDrag: false` (Zoom's video tile could be dragged) and `sharingMode: 'fit'`
+      (no "original size" share, which can sit smaller than the screen).
+    - `MeetingStage` takes `z-10` while `waitingForHost()`: each 15 s retry showed Zoom's black root over the
+      waiting screen for the length of the join attempt.
+    - `join_window_not_open` now waits on that screen and retries every 15 s (no lease held) instead of the
+      "not opened yet" card.
+    - The room page is a full-height scrolling surface with its message centred, without box or border. It is
+      not `fixed`, because a fixed wrapper is a stacking context that would trap the stage's lift.
+  - **Verified (dev :3000, Playwright, stubbed API, English):** 39 checks green at 375 / 768 / 1440:
+    - not-open → waiting, a retry 15 s apart, then a join by itself;
+    - the stage is above a stand-in fixed root while waiting, and the control without `z-10` puts the root on top;
+    - message screens centred with no border and no sideways scroll;
+    - Leave while waiting stops the claims;
+    - no page errors.
+  - Gates: lint 0 errors (98 warnings), structure ✔, build:prod ✔ (1.01 MB / 230.44 kB, only the
+    `ai-labs.css` warning).
+  - **Live UAT run (2026-11-04, dev :3000, real account, "Test webinar Nov 4" started by its host):**
+    - Pass:
+      - Client View joins and covers the viewport at 375 / 768 / 1440. The share is fitted (1233×800 at 1440) and doesn't move when dragged. The phone's floating speaker tile doesn't drag.
+      - The second tab gets the local conflict with no claim and no SDK; "Join here instead" moves the
+        session, and the old tab stops heartbeating.
+      - Not registered, ended and not found each land on their screen with no SDK; "All webinars" works.
+      - Signed out goes to `/auth/login?redirect=…/live`.
+      - Closing the room releases the seat: the next claim is 200.
+      - Zoom's own Leave ignores `leaveRedirect: false` and reloads onto the detail page, but the beacon
+        still releases the seat.
+    - Found:
+      - (1) Zoom's dialogs live in body-level `.ReactModalPortal`s outside `#zmmtg-root`, so after a takeover
+        "You have joined this meeting on another platform" covers our exit screen and its button until OK.
+      - (2) Rejoining in the same document after Zoom has ended our participant hangs on Zoom's "Webinar
+        Disconnected" with "Joining the session…" (Zoom logs `mainTaskType is not exist`). This affects
+        "Bring the session back here" and likely "Rejoin".
+      - (3) A quick reload of a joined room claims before the pagehide beacon lands: 409 "already in a
+        session on another device or window", for the same window.
+      - (4) Zoom's "You are viewing …'s screen" banner still drags sideways (Zoom UI, not `videoDrag`).
+  - **Fixed (1)–(3) on this branch, same day** (prompt § "Follow-up from the live UAT run"):
+    - `showZoom` also sets `body[data-zoom-hidden]`, and `styles.css` hides `.ReactModalPortal` under it.
+    - `ZoomMeetingClient.spent`: after one successful join, `takeover()` / `retry()` reload the room.
+    - `MeetingSession.reclaimsOwnSeat`: the pagehide beacon, and a confirmed takeover before its reload,
+      store the webinar id in `sessionStorage`. The next page's first claim takes over silently, only on a
+      `reload` and only for that webinar.
+    - Re-run live on UAT:
+      - a reload rejoins with claim 200 (it was 409);
+      - after a takeover, Zoom's dialog is in the DOM but `display: none`, our screen is on top and its button
+        is clickable;
+      - "Bring the session back here" rejoins in one click through a reload (claim 200);
+      - a fresh second tab still gets the conflict screen.
+    - Stubbed 39/39 still green. lint 0 errors (98 warnings), structure ✔, build:prod ✔ (1.01 MB / 230.53 kB).
+  - **Design-system pass, same day** (prompt § "Design-system pass"):
+    - The room's screens use the `webinar-detail` message pattern (`text-xl font-semibold`, muted copy
+      `mt-2`, actions `mt-6`) and `app-spinner`.
+    - The Leave button is plain `outline`. Joining actions are `primary` and going back is `outline`.
+    - "Open in Zoom" is `a[app-button]`: the shared `Button` selector gained `a[app-button]`.
+    - Measured on UAT and with stubs: not-registered, conflict and waiting all render 20px/600 headings,
+      14px muted copy and 40px buttons, matching the detail page's 404.
+    - Stubbed 39/39 green. lint 0 errors, structure ✔, build:prod ✔ (230.45 kB, only `ai-labs.css`).
+    - Not seen live: "Open in Zoom" (the `web-unsupported` state comes from a Zoom error code).
+  - **Not verified:** the steady screen during a real 3008 wait or join window, the host ending the
+    webinar, removal and a dropped connection.
+
+- ✅ **2026-11-03, NON-REFACTOR — MIL-171, "Leave without saving?" asked twice. MERGED as #235 (`194bbf4b`)**
   (`prompts/leave-guard-double-prompt.md`), on `fix/MIL-171-leave-guard-double-prompt` off `master` (`f49bbe4a`).
   - **Cause:** "Back to Home" goes to `/`, whose `canActivate` (`rootRedirectGuard`) redirects; the redirect is a
     new navigation, and `canDeactivate` runs before `canActivate`, so the leave guard asked again while the page

@@ -46,8 +46,10 @@ const SIZES: Record<ButtonSize, string> = {
   icon: 'size-10 px-0',
 };
 
+// `a[app-button]` is a link that looks like a button (an external URL, say). ngpButton supports
+// it: on an anchor it reflects `aria-disabled` instead of the native `disabled`.
 @Component({
-  selector: 'button[app-button]',
+  selector: 'button[app-button], a[app-button]',
   hostDirectives: [{ directive: NgpButton, inputs: ['disabled'] }],
   imports: [NgIcon],
   template: `

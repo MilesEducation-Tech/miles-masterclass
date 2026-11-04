@@ -172,6 +172,13 @@ export const LIVE_SESSION_LOCK = 'miles:webinar-session';
 export const LIVE_SESSION_CHANNEL = 'miles:webinar-session';
 
 /**
+ * Session-storage key: the webinar whose seat this tab may take back on its
+ * next page load (see `MeetingSession.reclaimsOwnSeat`). Per tab, and it
+ * survives a reload, which is the point.
+ */
+export const LIVE_SESSION_RECLAIM_KEY = 'miles:webinar-session-reclaim';
+
+/**
  * Requests that run on a timer or during teardown (heartbeat, release), so they
  * never drive the global loading bar.
  */
