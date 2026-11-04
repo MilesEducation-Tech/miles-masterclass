@@ -33,15 +33,17 @@ import {
  *    2.00 MB, already close to full. A static import would put Zoom in `main`
  *    and fail `build:prod` — which is the correct outcome, so do not "fix" that
  *    by raising the budget. The SDK's TYPES are imported with `import type` in
- *    the model, which the build erases.
+ *    the model, which the build erases. The runtime import is the package's
+ *    UMD build (`@zoom/meetingsdk/umd`, a `tsconfig.json` path): its ESM build
+ *    breaks in the production bundle (the note on that path says how).
  *
  * 2. **Browser only.** The SDK touches `window`, `document` and WebAssembly at
  *    module scope. The `/live` route is registered as `RenderMode.Client` so
  *    this never runs during SSR, and the platform guard below is the backstop.
  *
  * 3. **One SDK per document.** Client View has no destroy: it is imported and
- *    initialised once, and retries a refused join in place, but cannot join
- *    again once it has been in a meeting (`spent`). It draws into its own
+ *    initialised once, and joins once: a second join in the same page stalls,
+ *    so the room reloads to join again (`spent`). It draws into its own
  *    body-level `#zmmtg-root` and injects global CSS, both confined to the
  *    `/live` document by `live-document-guard`. The root is shown only while
  *    Zoom is joining or joined, so the room's own screens are never hidden
@@ -79,15 +81,16 @@ export class ZoomMeetingClient {
   /** Zoom holds this learner in the waiting room. */
   private held = false;
   /**
-   * Zoom has joined once in this document. Client View cannot join again after
-   * it has been in a meeting: a second `join` stalls on Zoom's "Webinar
-   * Disconnected" page and never calls back. A later join needs a fresh page.
+   * Zoom has been asked to join once in this document. Client View cannot join
+   * a second time, whether the first join was admitted or refused: the second
+   * `join` stalls on Zoom's "Webinar/Meeting Disconnected" page and never calls
+   * back. A later join needs a fresh page.
    */
-  private joinedOnce = false;
+  private joinCalled = false;
 
   /** A further join here would stall; the room must reload to join again. */
   get spent(): boolean {
-    return this.joinedOnce;
+    return this.joinCalled;
   }
 
   constructor() {
@@ -111,6 +114,7 @@ export class ZoomMeetingClient {
     try {
       const zoom = await this.boot(leaveUrl);
       this.showZoom(true);
+      this.joinCalled = true;
       await viaCallbacks((callbacks) =>
         zoom.join({
           signature: params.signature,
@@ -129,7 +133,6 @@ export class ZoomMeetingClient {
         }),
       );
 
-      this.joinedOnce = true;
       // A resolved join is not "attending": the learner may be in the waiting
       // room, and the event saying so can arrive before the join resolves.
       this.syncHold();
@@ -182,7 +185,9 @@ export class ZoomMeetingClient {
   private boot(leaveUrl: string): Promise<ZoomClientView> {
     this.sdk ??= (async () => {
       // Everything about the SDK stays behind this boundary.
-      const { ZoomMtg } = await import('@zoom/meetingsdk');
+      // The UMD build, not the package's ESM entry: see the `paths` note in tsconfig.json. It is
+      // CommonJS, so its `exports` arrive as `default`.
+      const { ZoomMtg } = (await import('@zoom/meetingsdk/umd')).default;
       ZoomMtg.preLoadWasm();
       ZoomMtg.prepareWebSDK();
       await viaCallbacks((callbacks) => {

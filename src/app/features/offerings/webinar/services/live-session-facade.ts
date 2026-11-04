@@ -173,14 +173,12 @@ export class LiveSessionFacade {
    * session someone is actually watching.
    */
   takeover(): void {
-    if (this.zoom.spent) this.reloadRoom(true);
-    else void this.start(true);
+    void this.start(true);
   }
 
   /** Join again without taking over: after a refusal, a failed join or a dropped connection. */
   retry(): void {
-    if (this.zoom.spent) this.reloadRoom(false);
-    else void this.start(false);
+    void this.start(false);
   }
 
   /** The learner pressed Leave: give everything back, then return to the webinar. */
@@ -246,16 +244,17 @@ export class LiveSessionFacade {
   /**
    * One claim → sign → join pass, and what the room does with how Zoom answered.
    * Throws only what `acquire` throws (a server refusal or a network failure).
-   *
-   * `canRemint` allows one fresh signature after Zoom refuses one as expired or
-   * invalid; a second refusal is a fault, not an expiry.
    */
-  private async attempt(
-    webinarId: string,
-    takeover: boolean,
-    run: number,
-    canRemint = true,
-  ): Promise<void> {
+  private async attempt(webinarId: string, takeover: boolean, run: number): Promise<void> {
+    // Zoom cannot join twice in one page (see `ZoomMeetingClient.spent`), so
+    // every join after the first (Rejoin, a takeover, the wait for the host)
+    // happens in a fresh one. A seat this page holds comes back through the
+    // reload by itself, since the pagehide beacon marks it; a takeover is carried.
+    if (this.zoom.spent) {
+      this.reloadRoom(takeover);
+      return;
+    }
+
     const signature = await this.session.acquire(webinarId, takeover);
     if (run !== this.run) return;
     // `null` means the lock refused us; `conflict` already carries the reason
@@ -276,9 +275,6 @@ export class LiveSessionFacade {
       case 'not-started':
         this.scheduleRejoin(webinarId, run);
         return;
-      case 'bad-signature':
-        if (canRemint) return this.attempt(webinarId, false, run, false);
-        break;
       case 'meeting-ended':
       case 'removed':
         await this.session.release();
@@ -292,8 +288,10 @@ export class LiveSessionFacade {
         return;
     }
 
-    // `failed`, or a signature refused twice. Give the lease back: "Try again"
-    // claims it afresh, and nobody holds a session behind an error screen.
+    // `failed`, or a refused signature. Not re-signed in place: this page cannot
+    // join again, and a reload for a signature the server keeps getting wrong
+    // would loop. Give the lease back: "Try again" reloads and claims it afresh,
+    // and nobody holds a session behind an error screen.
     await this.session.release();
     this.refusal.set({ kind: 'failed', message: null, opensAt: null });
   }
@@ -330,7 +328,7 @@ export class LiveSessionFacade {
   }
 
   /**
-   * Join again in a fresh page, once Zoom has been in a meeting in this one
+   * Join again in a fresh page, once Zoom has been asked to join in this one
    * (see `ZoomMeetingClient.spent`). A takeover the learner confirmed is carried
    * across the reload, so it stays one click.
    */

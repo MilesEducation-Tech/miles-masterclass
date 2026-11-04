@@ -151,7 +151,54 @@ text-muted-foreground`, and actions sit `mt-6` below it.
 Not fixed: Zoom's "You are viewing …'s screen" banner can still be dragged sideways. It is Zoom's own UI, and
 `videoDrag` doesn't control it.
 
+## Production crash on join (2026-11-04, reported from miles-masterclass.vercel.app)
+
+**Symptom:** the console showed `ReferenceError: require_main_client is not defined` ("tasks error"), then
+`the mainTaskType is not exist`. The room sat on "Joining the session…" over a blank Zoom screen. Dev worked;
+every production build since the Client View move (MIL-170) was broken.
+
+**Cause:** the SDK's ESM `main-client.mjs` dynamically imports itself (`import("./main-client.mjs")`, in its
+SVG icon map). esbuild 0.28.2 rewrites that into `require_main_client()` and never defines it.
+
+- This reproduces with esbuild alone, so it isn't Angular's rolldown chunk optimizer.
+- The Vite dev pre-bundle handles it, which is why dev worked.
+
+**Fix:**
+
+- **UMD import:** the room imports the package's single-file UMD build, `dist/client-view.umd.min.js`, as
+  `@zoom/meetingsdk/umd`. The package's `exports` map hides that file, so it is reached through a
+  `tsconfig.json` path, with types in `models/zoom-client-view.types.d.ts`. The UMD contains no dynamic
+  imports, and Zoom's own bundler compiled the self-import correctly inside it.
+- **CommonJS export:** the UMD is CommonJS. Angular's rolldown optimizer emits only `default` for it, so
+  `ZoomMtg` is read from `default`.
+- **angular.json:** `allowedCommonJsDependencies` gains `@zoom/meetingsdk/umd`.
+  `serve.options.prebundle.exclude: ["@zoom/meetingsdk", "react"]` makes the dev server bundle the UMD and
+  its React itself, as the build does; Vite can't follow the path.
+- **One join per page:** a join Zoom has refused also leaves the page unable to join again (Rejoin stalled
+  on "Meeting Disconnected / Trying to reconnect"). `ZoomMeetingClient.spent` is now set when the join is
+  _asked for_. `attempt()` reloads the room for every later join: Rejoin, takeover and the wait for the
+  host. The in-place re-sign after a refused signature is gone, because it could reload in a loop; that
+  case lands on "Try again".
+
+**Verified (local prod build on :4000 and dev on :3000, live UAT webinar):**
+
+- no `require_main_client` in the bundle;
+- Zoom's UI renders (Join Audio, Chat, Raise Hand, Leave) and its CSS loads from `source.zoom.us`;
+- the join reaches Zoom's server;
+- Rejoin reloads (`navType: reload`) instead of stalling.
+
+A full admitted join was **not** re-confirmed: Zoom kept refusing with "You've already joined this meeting
+on another device". The same registration is still a participant elsewhere. Chrome's phase-out of `unload`
+handlers stops Zoom's `leaveOnPageUnload`, so a closed tab's participant lingers until Zoom times it out.
+
 ## Risks
+
+- **Lingering Zoom participant:** after a tab closes, the learner's Zoom participant can outlive it. Joining
+  from another device in that window gets Zoom's "already joined on another device", then our "You were
+  disconnected". Rejoin works once Zoom drops the old participant. Our seat lease is released by beacon
+  regardless.
+- **Wait for the host by reload:** if Zoom answers 3008 instead of showing its own waiting screen, each
+  15 s retry is now a page reload (the SDK is cached, and the stage covers it).
 
 - **Silent reclaim on reload (follow-up 3):** a tab that held the seat and reloads takes it back without
   asking, even if another device took the seat in the second between. Accepted: it is the window the learner
