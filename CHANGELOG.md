@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.1](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v4.0.0...v4.0.1) (2026-11-04)
+
+
+### Bug Fixes
+
+* **offerings:** keep the live webinar room full screen and wait cleanly for the start ([#238](https://github.com/MilesEducation-Tech/miles-masterclass/issues/238)) ([5186b3e](https://github.com/MilesEducation-Tech/miles-masterclass/commit/5186b3e21529701a42322fb0213adc6423bebb26))
+
 ## [4.0.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.18.0...v4.0.0) (2026-11-04)
 
 
