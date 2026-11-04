@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.19.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.18.0...v3.19.0) (2026-11-04)
+
+
+### Features
+
+* **auth:** add the profile password section and pre-fill saved answers ([#233](https://github.com/MilesEducation-Tech/miles-masterclass/issues/233)) ([f49bbe4](https://github.com/MilesEducation-Tech/miles-masterclass/commit/f49bbe4ab1239c5cf152c2e4a301dfe23ee77478))
+
+
+### Bug Fixes
+
+* **core:** ask "Leave without saving?" once when the way out redirects ([#235](https://github.com/MilesEducation-Tech/miles-masterclass/issues/235)) ([194bbf4](https://github.com/MilesEducation-Tech/miles-masterclass/commit/194bbf4b25d3c06853cd98091e598921d0775cfd))
+
 ## [3.18.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.17.0...v3.18.0) (2026-11-03)
 
 
