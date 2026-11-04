@@ -121,6 +121,17 @@ block, which is the narrower arrangement.
 If you ever need to release by hand, bump `package.json` in a `chore(release): v3.1.0` commit and tag it.
 The rest of this document works either way.
 
+### Forcing a version number
+
+To ship a number the commits alone wouldn't produce (a `4.0.0` milestone with no `BREAKING CHANGE`, say), land
+one commit on `master` whose message ends with the footer `Release-As: 4.0.0`. release-please then retitles the
+open Release PR to that version and nothing else changes; the next release derives from commits again.
+
+Because we squash-merge with "Pull request title and description", the footer must be the **last paragraph of
+the PR description**, on its own line after a blank line. A footer on the branch commit never reaches
+`master`. Don't reach for `release-as` in `release-please-config.json` instead: that setting sticks until
+someone remembers to remove it, and the footer is a one-shot.
+
 ## 3. The build stamps identity into the bundle
 
 **Shipped.** `scripts/generate-version.mjs` runs in the `prebuild`, `prestart` and `prelint`
