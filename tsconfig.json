@@ -20,7 +20,14 @@
       "@layout/*": ["./src/app/layout/*"],
       "@features/*": ["./src/app/features/*"],
       "@testing/*": ["./src/app/testing/*"],
-      "@env/*": ["./src/environments/*"]
+      "@env/*": ["./src/environments/*"],
+      // why: Zoom's single-file UMD build, which the package's `exports` map hides. Its split ESM
+      // build has `main-client.mjs` dynamically importing itself, which esbuild turns into a call to a
+      // `require_main_client()` it never defines: the production room crashed on join. Types come
+      // from `zoom-client-view.types.d.ts`. The dev server bundles the UMD and the React it
+      // `require`s itself, as the build does, instead of handing them to Vite, which can't
+      // follow this path (`serve.options.prebundle.exclude` in angular.json).
+      "@zoom/meetingsdk/umd": ["./node_modules/@zoom/meetingsdk/dist/client-view.umd.min.js"]
     }
   },
   "angularCompilerOptions": {

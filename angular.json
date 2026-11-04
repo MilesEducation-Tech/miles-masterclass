@@ -81,7 +81,8 @@
               "rgbcolor",
               "setimmediate",
               "videojs-vtt.js",
-              "videojs-youtube"
+              "videojs-youtube",
+              "@zoom/meetingsdk/umd"
             ]
           },
           "configurations": {
@@ -136,6 +137,11 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "prebundle": {
+              "exclude": ["@zoom/meetingsdk", "react"]
+            }
+          },
           "configurations": {
             "production": {
               "buildTarget": "miles-masterclass-v3:build:production"

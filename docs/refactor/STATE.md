@@ -72,6 +72,21 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
       14px muted copy and 40px buttons, matching the detail page's 404.
     - Stubbed 39/39 green. lint 0 errors, structure ✔, build:prod ✔ (230.45 kB, only `ai-labs.css`).
     - Not seen live: "Open in Zoom" (the `web-unsupported` state comes from a Zoom error code).
+  - **Production crash on join, fixed same day, UNCOMMITTED on top of PR #238** (prompt § "Production crash
+    on join"):
+    - `require_main_client is not defined` on miles-masterclass.vercel.app: the SDK's ESM
+      `main-client.mjs` imports itself, and esbuild 0.28.2 emits an undefined wrapper. Every prod build
+      since MIL-170 was affected; dev was fine.
+    - The room now imports the UMD build as `@zoom/meetingsdk/umd`: a tsconfig path, plus
+      `models/zoom-client-view.types.d.ts`, with `ZoomMtg` read from `default`.
+    - angular.json: `allowedCommonJsDependencies` and `serve.options.prebundle.exclude`.
+    - `spent` is now set when a join is asked for, and `attempt()` reloads for every later join; the
+      in-place re-sign is gone.
+    - Verified on a local prod build and dev against the live UAT webinar: Zoom's UI renders, the join
+      reaches Zoom, and Rejoin reloads. A full admitted join was blocked by Zoom's "already joined on another
+      device" for this registration.
+    - lint ✔, structure ✔, build:prod ✔ (230.45 kB), stubbed 39/39 (the first run on a freshly restarted dev
+      server failed 6 while it warmed up; the re-run passed).
   - **Not verified:** the steady screen during a real 3008 wait or join window, the host ending the
     webinar, removal and a dropped connection.
 
