@@ -28,6 +28,7 @@ import {
   UserDetails,
   readAccountError,
 } from '@core/models/account.model';
+import { leaveConfirmed } from '@core/guards/can-deactivate-exam-guard';
 import { AccountApi } from '@core/services/account-api/account-api';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { OnboardingApi } from '@core/services/onboarding-api/onboarding-api';
@@ -627,7 +628,7 @@ export class Profile {
   readonly isDirty = computed(() => this.form().dirty());
 
   onBeforeUnload(event: BeforeUnloadEvent): void {
-    if (!this.isDirty() || this.isSaving()) return;
+    if (leaveConfirmed(this) || !this.isDirty() || this.isSaving()) return;
     event.preventDefault();
   }
 
