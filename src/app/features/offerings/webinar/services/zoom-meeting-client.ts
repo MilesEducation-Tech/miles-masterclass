@@ -40,7 +40,8 @@ import {
  *    this never runs during SSR, and the platform guard below is the backstop.
  *
  * 3. **One SDK per document.** Client View has no destroy: it is imported and
- *    initialised once and joins as often as the room asks. It draws into its own
+ *    initialised once, and retries a refused join in place, but cannot join
+ *    again once it has been in a meeting (`spent`). It draws into its own
  *    body-level `#zmmtg-root` and injects global CSS, both confined to the
  *    `/live` document by `live-document-guard`. The root is shown only while
  *    Zoom is joining or joined, so the room's own screens are never hidden
@@ -77,6 +78,17 @@ export class ZoomMeetingClient {
   private sdk: Promise<ZoomClientView> | null = null;
   /** Zoom holds this learner in the waiting room. */
   private held = false;
+  /**
+   * Zoom has joined once in this document. Client View cannot join again after
+   * it has been in a meeting: a second `join` stalls on Zoom's "Webinar
+   * Disconnected" page and never calls back. A later join needs a fresh page.
+   */
+  private joinedOnce = false;
+
+  /** A further join here would stall; the room must reload to join again. */
+  get spent(): boolean {
+    return this.joinedOnce;
+  }
 
   constructor() {
     this.destroyRef.onDestroy(() => void this.leave());
@@ -117,6 +129,7 @@ export class ZoomMeetingClient {
         }),
       );
 
+      this.joinedOnce = true;
       // A resolved join is not "attending": the learner may be in the waiting
       // room, and the event saying so can arrive before the join resolves.
       this.syncHold();
@@ -182,6 +195,11 @@ export class ZoomMeetingClient {
           disablePreview: true,
           // The room's own refusal screens explain a failed join.
           isShowJoiningErrorDialog: false,
+          // The meeting fills the screen and stays put: no video tile dragged
+          // around over the slides, and a share always scaled to the screen,
+          // never Zoom's "original size" view, which can leave it smaller.
+          videoDrag: false,
+          sharingMode: 'fit',
           // Pull Zoom's media hot-fix branch rather than pinning to whatever
           // shipped with this SDK version — the media layer is where their
           // browser-compatibility fixes land between releases.
@@ -260,10 +278,15 @@ export class ZoomMeetingClient {
     this.phase.set(this.held ? 'on-hold' : 'in-meeting');
   }
 
-  /** Show or hide Client View's body-level root, which it creates on import. */
+  /**
+   * Show or hide Client View: its body-level root, and the body-level portals it
+   * draws its dialogs in (the rule in `styles.css`). A dialog Zoom opens after
+   * the room took over the screen stays hidden too.
+   */
   private showZoom(visible: boolean): void {
     const root = this.document.getElementById('zmmtg-root');
     if (root) root.style.display = visible ? 'block' : 'none';
+    this.document.body.toggleAttribute('data-zoom-hidden', !visible);
   }
 }
 

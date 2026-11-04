@@ -506,3 +506,14 @@ swiper-container {
 [ngpAccordionContent][data-closed] {
   display: none;
 }
+
+/*
+ * The live room hides Zoom's Client View whenever its own screens show (see
+ * `ZoomMeetingClient.showZoom`). Zoom draws its dialogs in body-level react-modal
+ * portals outside its root, so they are hidden with it: otherwise one Zoom opens
+ * after the root was hidden ("You have joined this meeting on another platform")
+ * covers the room's screen and its buttons. Nothing else in the app uses React.
+ */
+body[data-zoom-hidden] > .ReactModalPortal {
+  display: none !important;
+}

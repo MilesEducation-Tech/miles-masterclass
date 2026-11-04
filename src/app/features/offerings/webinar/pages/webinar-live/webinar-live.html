@@ -1,9 +1,18 @@
-<div class="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 md:px-6">
+<!-- The room is the whole screen in every state, with no box around it. It scrolls
+     itself (Zoom's CSS locks the body's scroll) and is deliberately not `fixed`: a
+     fixed element is its own stacking context, which would trap the stage's lift
+     above Zoom's root while the room waits.
+
+     Every screen follows the webinar pages' message pattern (`webinar-detail`): an
+     `text-xl font-semibold` heading, muted copy under it, then the actions. Joining
+     (rejoin, take over, try again, sign in) is `primary`, as on the Join button;
+     going back is `outline`. -->
+<div class="flex h-svh flex-col items-center overflow-y-auto px-6 py-10">
   @if (facade.exit(); as reason) {
     <!-- This surface is no longer in the session. The SDK is already torn down;
          all that is left is to explain how it happened and offer the way back. -->
-    <section class="rounded-xl border border-border bg-card px-6 py-10 text-center" role="alert">
-      <h1 class="text-lg font-medium">
+    <section class="my-auto w-full max-w-md text-center" role="alert">
+      <h1 class="text-xl font-semibold">
         @switch (reason) {
           @case ('taken-over-locally') {
             You joined from another window
@@ -25,13 +34,13 @@
       @switch (reason) {
         @case ('meeting-ended') {
           <!-- The host ended it: final, so there is nothing to rejoin. -->
-          <p class="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+          <p class="mt-2 text-sm text-muted-foreground">
             Thank you for attending. Your attendance is recorded for CPE.
           </p>
           <button
             app-button
             type="button"
-            variant="primary"
+            variant="outline"
             class="mt-6"
             (click)="facade.backToWebinar()"
           >
@@ -40,14 +49,14 @@
         }
         @case ('removed') {
           <!-- The host removed this learner; Zoom will not let them back in. -->
-          <p class="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+          <p class="mt-2 text-sm text-muted-foreground">
             The host removed you from this webinar. If you think this was a mistake, contact
             support.
           </p>
           <button
             app-button
             type="button"
-            variant="primary"
+            variant="outline"
             class="mt-6"
             (click)="facade.backToWebinar()"
           >
@@ -55,7 +64,7 @@
           </button>
         }
         @case ('connection-lost') {
-          <p class="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+          <p class="mt-2 text-sm text-muted-foreground">
             Your connection to the session dropped. Rejoin to continue.
           </p>
           <button app-button type="button" variant="primary" class="mt-6" (click)="facade.retry()">
@@ -63,7 +72,7 @@
           </button>
         }
         @default {
-          <p class="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+          <p class="mt-2 text-sm text-muted-foreground">
             You can only attend one session at a time — that is what keeps your attendance record
             accurate for CPE. This window has been disconnected.
           </p>
@@ -83,15 +92,15 @@
     <!-- Takeover with confirmation. A hard block would strand anyone whose
          browser crashed mid-session; a silent takeover would let a stray
          background tab eject the window they are actually watching. -->
-    <section class="rounded-xl border border-border bg-card px-6 py-10 text-center">
-      <h1 class="text-lg font-medium">You are already in a session</h1>
+    <section class="my-auto w-full max-w-md text-center">
+      <h1 class="text-xl font-semibold">You are already in a session</h1>
 
       @if (blocked.source === 'local-tab') {
-        <p class="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+        <p class="mt-2 text-sm text-muted-foreground">
           This session is open in another tab or window of this browser.
         </p>
       } @else {
-        <p class="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+        <p class="mt-2 text-sm text-muted-foreground">
           {{ blocked.detail }}
         </p>
         @if (blocked.holder; as holder) {
@@ -123,15 +132,13 @@
     </section>
   } @else if (facade.refusal(); as refusal) {
     <!-- The server would not let the learner in. Each refusal gets its own way
-         forward; none of them leaves the room spinning. -->
-    <section class="rounded-xl border border-border bg-card px-6 py-10 text-center" role="alert">
-      <h1 class="text-lg font-medium">
+         forward; none of them leaves the room spinning. Arriving before the join
+         window opens is not one of them: the stage waits for it. -->
+    <section class="my-auto w-full max-w-md text-center" role="alert">
+      <h1 class="text-xl font-semibold">
         @switch (refusal.kind) {
           @case ('not-registered') {
             You are not registered for this webinar
-          }
-          @case ('not-open') {
-            This session has not opened yet
           }
           @case ('ended') {
             This session has ended
@@ -153,10 +160,8 @@
           }
         }
       </h1>
-      <p class="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-        @if (refusal.kind === 'not-open' && refusal.opensAt) {
-          The session opens at {{ refusal.opensAt | date: 'shortTime' }}.
-        } @else if (refusal.kind === 'signed-out') {
+      <p class="mt-2 text-sm text-muted-foreground">
+        @if (refusal.kind === 'signed-out') {
           Your session has expired. Sign in again to join.
         } @else {
           {{ refusal.message ?? 'Something went wrong. Please try again.' }}
@@ -170,16 +175,8 @@
             </button>
           }
           @case ('not-found') {
-            <button app-button type="button" variant="primary" (click)="facade.allWebinars()">
+            <button app-button type="button" variant="outline" (click)="facade.allWebinars()">
               All webinars
-            </button>
-          }
-          @case ('not-open') {
-            <button app-button type="button" variant="primary" (click)="facade.retry()">
-              Try again
-            </button>
-            <button app-button type="button" variant="outline" (click)="facade.backToWebinar()">
-              Back to webinar
             </button>
           }
           @case ('failed') {
@@ -197,12 +194,7 @@
           }
           @case ('web-unsupported') {
             @if (facade.mobileJoinUrl(); as url) {
-              <a
-                [href]="url"
-                target="_blank"
-                rel="noopener"
-                class="inline-flex rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary/90"
-              >
+              <a app-button variant="primary" [href]="url" target="_blank" rel="noopener">
                 Open in Zoom
               </a>
             }
@@ -211,7 +203,7 @@
             </button>
           }
           @default {
-            <button app-button type="button" variant="primary" (click)="facade.backToWebinar()">
+            <button app-button type="button" variant="outline" (click)="facade.backToWebinar()">
               Back to webinar
             </button>
           }
