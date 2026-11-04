@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.2](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v4.0.1...v4.0.2) (2026-11-04)
+
+
+### Bug Fixes
+
+* **offerings:** load Zoom's UMD build so the production room can join ([0ca407c](https://github.com/MilesEducation-Tech/miles-masterclass/commit/0ca407c0eb03d0a8a6392ff4a1dcba5d59e18bc1))
+
 ## [4.0.1](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v4.0.0...v4.0.1) (2026-11-04)
 
 
