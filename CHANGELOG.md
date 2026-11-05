@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.1.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v4.0.2...v4.1.0) (2026-11-05)
+
+
+### Features
+
+* **core:** decide "has a subscription" from user-details in one place ([#241](https://github.com/MilesEducation-Tech/miles-masterclass/issues/241)) ([f7a78da](https://github.com/MilesEducation-Tech/miles-masterclass/commit/f7a78da621caca0e22a898c754d954e3e8e686da))
+
 ## [4.0.2](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v4.0.1...v4.0.2) (2026-11-04)
 
 
