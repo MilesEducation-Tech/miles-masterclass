@@ -24,6 +24,7 @@ import { placeSuggestions } from '@core/services/location-autocomplete/location-
 import { logo, mcGrawHillLogo } from '@core/constants/icon';
 import { User } from '@core/models/profile.model';
 import { CountryCodeOption } from '@core/constants/dial-code';
+import { AccountApi } from '@core/services/account-api/account-api';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
@@ -193,6 +194,7 @@ export class Faculty {
   private readonly notification = inject(NotificationService);
   private readonly router = inject(Router);
   private readonly utils = inject(Utils);
+  private readonly account = inject(AccountApi);
   private readonly destroyRef = inject(DestroyRef);
 
   /** Same Miles wordmark the site header renders. */
@@ -211,10 +213,10 @@ export class Faculty {
   protected readonly error = signal<string | null>(null);
 
   /**
-   * Visitors who already bought don't need the faculty programme.
-   * ponytail: was `auth.hasActivePlan()`. Nothing locks the form now.
+   * Visitors who already bought don't need the faculty programme. Only a known
+   * subscription locks the form; while `user-details/` is unknown it stays open.
    */
-  protected readonly locked = signal(false);
+  protected readonly locked = computed(() => this.account.hasSubscription() === true);
 
   /**
    * Map the authenticated user onto the form shape.

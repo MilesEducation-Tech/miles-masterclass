@@ -13,7 +13,6 @@ import { NavigationEnd, Router } from '@angular/router';
 import { EMPTY, Observable, filter, firstValueFrom, from, map, switchMap } from 'rxjs';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Storage } from '@core/services/storage/storage';
-import { CurrentPlanData } from '@core/models/payment.model';
 import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
 import { offeringTypeFromUrl } from '@core/utils/offering-type';
 // Type-only: both dialogs load with `import()` when opened. This service is
@@ -173,10 +172,6 @@ export class EngagementDialog {
       AUTH_ROUTE.test(url) ||
       LEARNING_ROUTE.test(url)
     );
-  }
-
-  private hasActiveSubscription(plan: CurrentPlanData | null): boolean {
-    return !!plan && plan.subscription_status?.toLowerCase() === 'active';
   }
 
   private openDialog$(kind: DialogKind): Observable<unknown> {

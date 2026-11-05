@@ -1,5 +1,5 @@
 import { HttpContext, httpResource } from '@angular/common/http';
-import { Service, effect, inject } from '@angular/core';
+import { Service, computed, effect, inject } from '@angular/core';
 
 import { ACCOUNT_ROUTES, parseUserDetails } from '../../models/account.model';
 import { CommonResponse, SKIP_LOADING } from '../../models/http.model';
@@ -50,6 +50,25 @@ export class AccountApi {
         : undefined,
     { parse: (raw) => parseUserDetails((raw as CommonResponse<unknown> | null)?.data) },
   );
+
+  /**
+   * Whether the learner has a subscription term in force: the one answer every subscription
+   * decision in the app reads.
+   *
+   * - `true`: `current_subscription_details` is set (a cancelled term counts until `expires_at`).
+   * - `false`: signed out, or the record says there is no term.
+   * - `null`: not known yet. `user-details/` is loading, failed, or didn't send the key.
+   *
+   * Callers act on a known answer only (`=== true` / `=== false`). Unknown never paywalls: the
+   * contract calls this block "a description, not an access gate", so the server stays the real
+   * gate, and a subscriber whose read is late or failed must not be sent to the upsell.
+   */
+  readonly hasSubscription = computed<boolean | null>(() => {
+    if (!this.auth.isAuthenticated()) return false;
+    if (!this.user.hasValue()) return null;
+    const term = this.user.value().current_subscription_details;
+    return term === undefined ? null : term !== null;
+  });
 
   constructor() {
     // This record is authoritative for the two stored milestones, and `is_onboarding_completed`

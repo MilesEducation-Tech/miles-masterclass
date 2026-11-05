@@ -10,10 +10,9 @@ const LIBRARY_CHILDREN: readonly NavItem[] = [
 ];
 
 /**
- * Nav for authenticated users.
- * `CPE Tracker` is gated behind `requires: 'activePlan'` — the header filters
- * items whose requirement is unmet, so guests-without-plan and trial users
- * never see the link until they have an active subscription.
+ * Nav for authenticated users. Every item shows to every signed-in learner: `CPE Tracker`
+ * stays in the menu without a subscription, and its route (`subscriptionGuard`) sends a learner
+ * who has none to the plan page. `requires: 'activePlan'` would hide an item instead.
  */
 export const LOGGED_IN_NAV: readonly NavItem[] = [
   {

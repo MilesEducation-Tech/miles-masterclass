@@ -8,6 +8,7 @@ import {
   injectAsync,
   input,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -16,6 +17,7 @@ import { map } from 'rxjs';
 import { PaymentStatus } from '@features/payment/components/payment-status/payment-status';
 import { PaymentFacade } from '@features/payment/services/payment-facade';
 import { CartStore } from '@core/services/cart/cart-store';
+import { AccountApi } from '@core/services/account-api/account-api';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { formatAddress } from '@features/payment/utils/address-format';
 import { paymentDisplayStatus } from '@features/payment/utils/order-status';
@@ -53,6 +55,7 @@ import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-d
 export class Invoice {
   private readonly facade = inject(PaymentFacade);
   private readonly auth = inject(AuthSession);
+  private readonly account = inject(AccountApi);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
@@ -83,6 +86,9 @@ export class Invoice {
   private readonly cart = inject(CartStore).cart;
   protected readonly order = this.facade.order;
   protected readonly paying = this.facade.paying;
+
+  /** A boolean, so the refresh below runs on the edge into "paid", not on every order re-read. */
+  private readonly isPaid = computed(() => this.isInvoice() && this.order()?.status === 'paid');
 
   /**
    * Shimmer while the order read is in flight, and in the gap before it starts, so the
@@ -192,9 +198,14 @@ export class Invoice {
       });
     });
 
-    // ponytail: two effects here needed the session layer — one bounced the
-    // user home on logout, the other refreshed the current plan on the
-    // payment-success edge so the header's `hasActivePlan` flipped at once.
+    // A paid order means a subscription term now exists. `user-details/` was read when the app
+    // loaded, possibly before the payment landed, so read it again for the header and the gates.
+    effect(() => {
+      if (this.isPaid()) untracked(() => this.account.user.reload());
+    });
+
+    // ponytail: an effect here bounced the user home on logout; it needed the removed session
+    // layer.
   }
 
   /** Only subscriptions are sold, so any cart line means the auto-renewal terms apply. */

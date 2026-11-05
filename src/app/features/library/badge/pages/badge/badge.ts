@@ -21,6 +21,7 @@ import {
   toBadgeCardData,
   UserBadgeRef,
 } from '@core/models/badge.model';
+import { AccountApi } from '@core/services/account-api/account-api';
 import { NotificationService } from '@core/services/notification/notification';
 import { Utils } from '@shared/services/utils';
 import { NgpDialogManager } from 'ng-primitives/dialog';
@@ -61,6 +62,7 @@ export class Badge {
   private readonly dialogs = inject(NgpDialogManager);
   private readonly router = inject(Router);
   private readonly notify = inject(NotificationService);
+  private readonly account = inject(AccountApi);
   private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -167,8 +169,15 @@ export class Badge {
       }
     }
 
-    // ponytail: gated on an active subscription, read from the removed
-    // session service. Claiming is open until a plan source is re-attached.
+    // Claiming needs a subscription. Only a known "no" stops it: a late or failed
+    // `user-details/` read lets the claim go, and the server decides.
+    if (this.account.hasSubscription() === false) {
+      this.notify.info(
+        'Subscription required',
+        'Subscribe to claim your Credly badge and showcase it on LinkedIn.',
+      );
+      return;
+    }
     this.facade
       .claimBadge(card.badgeId)
       .pipe(

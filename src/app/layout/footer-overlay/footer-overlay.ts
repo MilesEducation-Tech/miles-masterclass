@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { animationFrameScheduler, fromEvent } from 'rxjs';
 import { auditTime, filter, map } from 'rxjs/operators';
 
+import { AccountApi } from '@core/services/account-api/account-api';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Utils } from '@shared/services/utils';
@@ -61,9 +62,9 @@ export class FooterOverlay {
   // ── Session + subscription state ────────────────────────────────────────
   // The boolean, never the token: a rotation must not re-fire the effects below.
   protected readonly isLoggedIn = inject(AuthSession).isAuthenticated;
-  // ponytail: nothing in the app holds the user's plan (see `utils.ts`), so
-  // "no plan" stays the answer and the subscribe upsell shows to everyone.
-  protected readonly subscribed = signal<boolean | null>(false);
+  // `null` (not known yet) shows no card, so a subscriber never sees the upsell flash before
+  // `user-details/` lands. Signed out is `false`: visitors get the upsell.
+  protected readonly subscribed = inject(AccountApi).hasSubscription;
 
   // ── Cart count ─────────────────────────────────────────────────────────
   // Deliberately never loads the cart: CAIRA's cart read creates an empty cart,

@@ -145,8 +145,8 @@ export class Header {
   );
   protected readonly displayName = computed(() => displayNameOf(this.user()));
   protected readonly initials = computed(() => initialsOf(this.displayName()));
-  // ponytail: no contract source for an active plan yet; plan-gated items stay hidden.
-  protected readonly hasActivePlan = signal(false);
+  // The crown and premium accent wait for a known answer; a late or failed read shows neither.
+  protected readonly hasActivePlan = computed(() => this.account.hasSubscription() === true);
 
   // Latest navigated URL — used as `redirect` query param on profile/login links.
   readonly currentUrl = toSignal(

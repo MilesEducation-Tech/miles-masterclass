@@ -53,12 +53,12 @@ application is asking and a caller must not be able to claim to be another one.
 
 ### Account — JWT, `IsAuthenticated`
 
-| Route                                     | Notes                                                                                                                                         |
-| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET user-details/`                       | 8 routing fields (names, milestones, `Pathway`, enrolment). **GET only** — the old `user_details/` row and its PATCH were deleted 2026-09-24. |
-| `GET questions/?form=onboarding\|profile` | `{Questions: [...]}`, flat, sorted by `display_order`.                                                                                        |
-| `GET/PATCH profile/?form=…`               | Questionnaire answers **only**. See §4. Read to pre-fill the form (`OnboardingApi.answers`); `PATCH` is the only write.                       |
-| `GET web/maintainance-status/`            | Public. `{is_maintenance, force_logout_all_user}`. Not bound yet — the old `web/app-status/` had no reader and was removed.                   |
+| Route                                     | Notes                                                                                                                                                                    |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `GET user-details/`                       | 8 routing fields (names, milestones, `Pathway`, enrolment) and the subscription block. **GET only** — the old `user_details/` row and its PATCH were deleted 2026-09-24. |
+| `GET questions/?form=onboarding\|profile` | `{Questions: [...]}`, flat, sorted by `display_order`.                                                                                                                   |
+| `GET/PATCH profile/?form=…`               | Questionnaire answers **only**. See §4. Read to pre-fill the form (`OnboardingApi.answers`); `PATCH` is the only write.                                                  |
+| `GET web/maintainance-status/`            | Public. `{is_maintenance, force_logout_all_user}`. Not bound yet — the old `web/app-status/` had no reader and was removed.                                              |
 
 ---
 
@@ -227,14 +227,34 @@ of them — was **deleted**; a client still calling it gets 404, and a PATCH on 
   "enrolled_course": [{ "course_name": "cpa", "is_enrolled": true, "is_alumni": false, "…": "…" }],
   "user_data_fully_filled": true,
   "career_counselling_booked": false,
-  "has_password": false
+  "has_password": false,
+  "subscription_status": "Active",
+  "current_subscription_details": {
+    "subscription_id": "0199f3c2-…",
+    "product_id": "454db30e-…",
+    "plan_id": "48366a41-…",
+    "plan_name": "Masterclass Annual",
+    "status": "active",
+    "started_at": "2026-10-01T00:00:00Z",
+    "expires_at": "2027-10-01T00:00:00Z",
+    "days_remaining": 337
+  },
+  "queued": []
 }
 ```
 
-- **The client binds only the first four keys.** The rest were renamed or reshaped three times in a month
+- **The client binds the first four keys, `has_password` and `current_subscription_details`.** The rest were renamed or reshaped three times in a month
   (`Pathway` → `pathway` on 2026-10-05, the course list became rows and `onboarding_fully_completed` became
   `user_data_fully_filled` on 2026-10-07), and nothing in the app branches on them. `isUserDetails` checks
   exactly what `UserDetails` types, so one of those renames can no longer blank the header.
+- **The subscription block** (added 2026-10-29, contract §3.2) is on every response, the degraded fallback
+  included. The app reads only `current_subscription_details`: the term in force, or `null`. A cancelled term
+  (`subscription_status: "Deactivate"`) is still there until `expires_at`. `AccountApi.hasSubscription` is the
+  one place it is read: `true` with a term, `false` signed out or with `null`, and `null` (not known) while
+  the read is loading, failed or the key is missing. Every subscription decision in the app (header crown, the
+  footer's subscribe card, CPE mode, chapter locks, CPE Tracker and its "download all", badge claims, the faculty
+  form) reads that signal and acts only on a known answer. It is UI only: the contract calls the block "a
+  description, not an access gate", and the server keeps deciding access. A paid invoice reloads the record.
 - `pathway` / `enrolled_status` are **strings**, not booleans. `"No"` means "could not confirm".
 - The onboarding gate reads the **stored** `is_onboarding_completed`, not the derived
   `user_data_fully_filled`.

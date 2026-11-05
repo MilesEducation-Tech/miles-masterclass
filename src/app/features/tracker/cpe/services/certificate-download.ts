@@ -3,12 +3,12 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpContext } from '@angular/common/http';
 import { Subject, from, of } from 'rxjs';
 import { catchError, debounceTime, exhaustMap, switchMap, tap } from 'rxjs/operators';
+import { AccountApi } from '@core/services/account-api/account-api';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { NotificationService } from '@core/services/notification/notification';
 import { Logger } from '@core/services/logger/logger';
 import { CommonResponse, SKIP_ERROR_NOTIFICATION } from '@core/models/http.model';
 import { BulkCertificateItem, CPE_TRACKER_ROUTES } from '@core/models/cpe-tracker.model';
-import { CertificateAccessPolicy } from './certificate-access-policy';
 import { TrackerDialogOrchestrator } from './tracker-dialog-orchestrator';
 import { DOWNLOAD_DEBOUNCE_MS } from '../constants/cpe-tracker.constants';
 import {
@@ -43,7 +43,7 @@ export class CertificateDownload {
   private readonly notification = inject(NotificationService);
   private readonly logger = inject(Logger);
   private readonly dialogs = inject(TrackerDialogOrchestrator);
-  private readonly accessPolicy = inject(CertificateAccessPolicy);
+  private readonly account = inject(AccountApi);
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly nasbaTrigger = new Subject<void>();
@@ -133,10 +133,9 @@ export class CertificateDownload {
   }
 
   downloadAllCertificates(year: number): void {
-    // ponytail: the plan came from the removed session service; the policy
-    // sees `null`, which is its no-subscription case.
-    const decision = this.accessPolicy.decideBulk(null);
-    if (decision !== 'allow') {
+    // Only a known "no subscription" refuses: a late or failed `user-details/` read lets the
+    // request go, and the server answers for the learner's actual access.
+    if (this.account.hasSubscription() === false) {
       this.dialogs
         .openDownloadRestricted(
           'Upgrade to an active subscription to download all of your certificates.',

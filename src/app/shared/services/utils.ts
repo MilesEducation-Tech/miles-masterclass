@@ -39,6 +39,7 @@ import { Viewport, ScreenInfo } from '@core/services/viewport/viewport';
 import { SUBSCRIPTION_DIALOG } from '@core/services/dialog/feature-dialog-tokens';
 import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
 import { Logger } from '@core/services/logger/logger';
+import { AccountApi } from '@core/services/account-api/account-api';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { canAccessCpeMode, CpeModeGateContent } from '@shared/utils/cpe-mode-access';
 
@@ -112,6 +113,7 @@ export class Utils {
   private readonly destroyRef = inject(DestroyRef);
   private readonly viewport = inject(Viewport);
   private readonly auth = inject(AuthSession);
+  private readonly account = inject(AccountApi);
 
   private readonly _profession = signal<ProfessionType>('accounting');
   private readonly _currentUrl = signal<string>('');
@@ -378,23 +380,16 @@ export class Utils {
    * this. Free content and content the user bought individually
    * (`active_plan`) are exempt.
    *
-   * Falls back to the cookie snapshot for the same reason `activePlanGuard`
-   * does: on a hard refresh `currentPlan` starts `null` until the async
-   * current-plan fetch lands, and without the fallback an active subscriber
-   * clicking straight through would be wrongly paywalled.
-   *
-   * Reads `hasActivePlan()` (status === 'active'), NOT `!!currentPlan()` —
-   * the truthiness form used by some older gates lets an expired or cancelled
-   * plan through.
+   * Only a known "no" closes it (`AccountApi.hasSubscription`): while
+   * `user-details/` is loading or has failed, a subscriber clicking straight
+   * through must not be paywalled, and the server still refuses what the
+   * learner isn't entitled to.
    *
    * The rule itself lives in `shared/utils/cpe-mode-access` as a pure
    * function; this wrapper only supplies the plan flag.
    */
   canAccessCpeMode(content: CpeModeGateContent): boolean {
-    // ponytail: the subscription flag came from the removed session service.
-    // With nothing to check against, the gate is open — restore the plan
-    // lookup here to make it decide again.
-    return canAccessCpeMode(content, true);
+    return canAccessCpeMode(content, this.account.hasSubscription() !== false);
   }
 
   /**
@@ -412,7 +407,11 @@ export class Utils {
   requireCpeModeAccess(content: CpeModeGateContent): boolean {
     if (this.canAccessCpeMode(content)) return true;
 
-    // ponytail: the guest branch (redirect to login) went with the auth layer.
+    // A visitor has no plan to upgrade: sign in first, then come back here.
+    if (!this.auth.isAuthenticated()) {
+      void this.router.navigate(['/auth/login'], { queryParams: { redirect: this.router.url } });
+      return false;
+    }
     void this.subscriptionDialog().then((SubscriptionDialog) =>
       this.dialogs.open(SubscriptionDialog),
     );
