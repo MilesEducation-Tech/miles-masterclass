@@ -7,6 +7,40 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🟡 **2026-11-10, NON-REFACTOR — MIL-176 (story 1 of the podcast epic), the podcast landing page on the web API.
+  DONE, UNCOMMITTED** (`prompts/podcast-landing-binding.md`), on `feat/MIL-176-podcast-landing-binding`, which
+  has MIL-179 (#247, not merged yet) merged in. Open its PR only after #247 merges and `master` is merged in.
+  - **Change:**
+    - `LIBRARY_OFFERINGS.podcast` (`course_type: "podcast"`, `ownTracks: true`).
+    - `MasterclassLibraryFacade` reads an `ownTracks` offering's `tracks-page/` itself: `pre_login` on the server
+      too, `post_login` in the browser, held through a re-read, with an error and a retry.
+    - `MASTERCLASS_TRACKS_PAGE_URL` moved from `MasterclassHomeFacade` to `core/constants/masterclass.ts`, so both
+      readers share it.
+    - New `PodcastCourseCard`: the square artwork and CAIRA badge, and on hover or focus a panel with the record
+      disk, title, description, fields of study, credits, Trailer, AI Kit and the bookmark; it links by UUID.
+    - The podcast page is rewritten on the facade (`connect('podcast')`) and the rail filter
+      (`contentType = 'podcast'`), with `ComingSoonCard`. Its `FeatureFacade` rows, `app-square`, `app-hover`
+      overlay and `app-coming-soon` are gone from it; nothing shared was deleted.
+  - Gates: lint 0 errors (98 warnings), structure ✔ (baseline pruned: the page's last relative import), build:prod
+    ✔ (1.02 MB / 230.52 kB, only `ai-labs.css`).
+  - **Verified (dev 4101, Playwright, English):** 33 checks green.
+    - Signed out, live UAT:
+      - The server HTML carries both podcast titles; the browser reuses the server's `tracks-page/`.
+      - Every request is `web-api/v1/` or `api/v1/`; there are no learner reads.
+      - "Human Skills in the Age of AI" shows its 2 cards, linked `/podcast/<uuid>/<slug>`.
+      - Hover shows the panel (record disk, title, credits, Trailer). Trailer toasts "Trailer Not Found" (UAT
+        podcasts have none).
+      - The filter reads `content_type=podcast`; a bookmark click goes to sign-in and back.
+    - Signed in, stubbed:
+      - `tracks-page/`, `library/`, `completed-course-section/` and `coming-soon/` all send `course_type=podcast`.
+      - Every row is in today's order; My List drops a bookmarked masterclass; "Coming Soon on Podcast".
+      - The bookmark posts the podcast's UUID, flips, toasts and re-reads `library/`.
+      - Empty rows hide; a `tracks-page/` 500 shows "We couldn't load the podcasts." and Try again recovers.
+    - The MIL-179 masterclass and home checks re-run: 37 green.
+    - Screenshots at 375 / 768 / 1440 (rail and hover); no sideways scroll.
+  - The dev-server restart: a second `pnpm start` had deleted `.angular` under the user's server (SSR 500 on every
+    page); it was stopped and restarted at the user's request.
+
 - 🟡 **2026-11-10, NON-REFACTOR — MIL-179 (refactor, podcast epic), the landing-page rows service shared by
   offering. DONE, UNCOMMITTED** (`prompts/share-landing-rails.md`), on `refactor/MIL-179-share-landing-rails` off
   `master` (`4540eb59`, 4.1.0). Blocks MIL-176 (podcast landing page, plan `prompts/podcast-landing-binding.md` on
@@ -6976,6 +7010,7 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-11-10 · NON-REFACTOR · **MIL-176 podcast landing page** (uncommitted, on top of MIL-179): `LIBRARY_OFFERINGS.podcast`, own tracks read, `PodcastCourseCard`, page rewritten · 33 Playwright checks green + MIL-179's 37 re-run · lint 0 errors, structure ✔ (pruned), build:prod ✔ (1.02 MB / 230.52 kB)
 - 2026-11-10 · NON-REFACTOR · **MIL-179 shared landing rails** (uncommitted): `MasterclassLibraryFacade`, its model and constants moved to `features/offerings/` with `connect(offering)`; `ComingSoonCard` extracted; rail filter `contentType` · 37 Playwright checks green (same query strings as master) · lint 0 errors, structure ✔, build:prod ✔ (1.01 MB / 230.41 kB) · MIL-173 merged as #241
 - 2026-11-04 · NON-REFACTOR · **MIL-173 replayed onto `master` (`b5f95c5c`)**: one STATE.md conflict (both "Now" entries kept, MIL-173 first); the stray `<<<<<<< HEAD` line master already carries left as is
 - 2026-11-04 · NON-REFACTOR · **MIL-173 subscription from user-details** (uncommitted): `AccountApi.hasSubscription` read by every subscription decision, `subscriptionGuard` on CPE Tracker, `CurrentPlanData` gone · 40 Playwright checks green · lint 0 errors, structure ✔ (baseline pruned), build:prod ✔ (1.01 MB / 230.41 kB) · MIL-171 merged as #235
