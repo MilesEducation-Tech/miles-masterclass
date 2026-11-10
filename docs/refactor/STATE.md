@@ -8,8 +8,9 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 ## Now
 
 - 🟡 **2026-11-10, NON-REFACTOR — MIL-176 (story 1 of the podcast epic), the podcast landing page on the web API.
-  DONE, UNCOMMITTED** (`prompts/podcast-landing-binding.md`), on `feat/MIL-176-podcast-landing-binding`, which
-  has MIL-179 (#247, not merged yet) merged in. Open its PR only after #247 merges and `master` is merged in.
+  COMMITTED, PR NEXT** (`prompts/podcast-landing-binding.md`), on `feat/MIL-176-podcast-landing-binding`, rebased
+  onto `master` (`f140b094`) after #247 merged; the rebase dropped the MIL-179 commits and left the files unchanged.
+  MIL-177 and MIL-178 still sit on the pre-rebase commits; rebase each onto `master` once its base merges.
   - **Change:**
     - `LIBRARY_OFFERINGS.podcast` (`course_type: "podcast"`, `ownTracks: true`).
     - `MasterclassLibraryFacade` reads an `ownTracks` offering's `tracks-page/` itself: `pre_login` on the server
@@ -41,8 +42,8 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
   - The dev-server restart: a second `pnpm start` had deleted `.angular` under the user's server (SSR 500 on every
     page); it was stopped and restarted at the user's request.
 
-- 🟡 **2026-11-10, NON-REFACTOR — MIL-179 (refactor, podcast epic), the landing-page rows service shared by
-  offering. DONE, UNCOMMITTED** (`prompts/share-landing-rails.md`), on `refactor/MIL-179-share-landing-rails` off
+- ✅ **2026-11-10, NON-REFACTOR — MIL-179 (refactor, podcast epic), the landing-page rows service shared by
+  offering. MERGED as #247 (`f140b094`)** (`prompts/share-landing-rails.md`), on `refactor/MIL-179-share-landing-rails` off
   `master` (`4540eb59`, 4.1.0). Blocks MIL-176 (podcast landing page, plan `prompts/podcast-landing-binding.md` on
   `feat/MIL-176-podcast-landing-binding`, committed there).
   - **Why:** the podcast landing page shows the masterclass page's learner rows from the same
@@ -7010,6 +7011,7 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-11-10 · NON-REFACTOR · **MIL-179 merged as #247 (`f140b094`)**; MIL-176 rebased onto `master` with no conflicts (same files as before, three commits), PR next
 - 2026-11-10 · NON-REFACTOR · **MIL-176 podcast landing page** (uncommitted, on top of MIL-179): `LIBRARY_OFFERINGS.podcast`, own tracks read, `PodcastCourseCard`, page rewritten · 33 Playwright checks green + MIL-179's 37 re-run · lint 0 errors, structure ✔ (pruned), build:prod ✔ (1.02 MB / 230.52 kB)
 - 2026-11-10 · NON-REFACTOR · **MIL-179 shared landing rails** (uncommitted): `MasterclassLibraryFacade`, its model and constants moved to `features/offerings/` with `connect(offering)`; `ComingSoonCard` extracted; rail filter `contentType` · 37 Playwright checks green (same query strings as master) · lint 0 errors, structure ✔, build:prod ✔ (1.01 MB / 230.41 kB) · MIL-173 merged as #241
 - 2026-11-04 · NON-REFACTOR · **MIL-173 replayed onto `master` (`b5f95c5c`)**: one STATE.md conflict (both "Now" entries kept, MIL-173 first); the stray `<<<<<<< HEAD` line master already carries left as is
