@@ -24,6 +24,19 @@ export const serverRoutes: ServerRoute[] = [
     path: ':country/:profession_type/masterclass/:courseId/:courseTitle/feedback',
     renderMode: RenderMode.Client,
   },
+  // The same three pages under a podcast (MIL-177): a podcast is a course on the web API.
+  {
+    path: ':country/:profession_type/podcast/:courseId/:courseTitle/final-assessment/:sessionId/exam',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: ':country/:profession_type/podcast/:courseId/:courseTitle/final-assessment/report',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: ':country/:profession_type/podcast/:courseId/:courseTitle/feedback',
+    renderMode: RenderMode.Client,
+  },
   {
     path: ':country/:profession_type/cpe-tracker',
     renderMode: RenderMode.Client,

@@ -8,6 +8,7 @@ import {
   linkedSignal,
   signal,
 } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroArrowDownTray, heroBookOpen, heroCheck } from '@ng-icons/heroicons/outline';
 import { displayNameOf } from '@core/models/account.model';
@@ -29,6 +30,7 @@ import { CourseCertificateFacade } from '@features/offerings/services/course-cer
 import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
 import { CourseEvaluationFacade } from '@features/offerings/services/course-evaluation-facade';
 import { FinalAssessmentFacade } from '@features/offerings/services/final-assessment-facade';
+import { routeOffering } from '@features/offerings/utils/route-offering';
 
 /**
  * `…/:courseId/:courseTitle/feedback`: the course evaluation, in the feedback
@@ -91,7 +93,7 @@ export class CourseEvaluation {
     // A direct load (or a reload) arrives without the course page, so the course
     // is connected here too, as the exam and report pages do.
     this.detail.connect(
-      'masterclass',
+      routeOffering(inject(ActivatedRoute)),
       computed(() => ({ courseId: this.courseId(), slug: this.courseTitle() })),
     );
     this.facade.openForm(true);

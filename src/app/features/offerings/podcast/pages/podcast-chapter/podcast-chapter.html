@@ -1,48 +1,25 @@
-@if (podcastFormat() === 'Audio') {
-  <!-- Audio: full-screen immersive layout with back button overlay -->
-  <div class="relative w-full min-h-svh">
-    <div class="absolute top-4 start-4 md:top-8 md:start-11 z-40">
-      <app-backward label="Back to Course" fallback="/" [routePath]="courseNavigation()" />
+<div
+  class="flex w-full max-md:overflow-auto min-h-svh flex-col md:px-11 md:pt-8 p-5 space-y-4 md:overflow-hidden"
+>
+  <app-backward label="Back to Course" fallback="/" routePath="../../.." />
+
+  @if (facade.notFound()) {
+    <div role="alert" class="container mx-auto flex flex-col items-center gap-4 py-24 text-center">
+      <p class="text-muted-foreground">We couldn't find this podcast.</p>
+      <a routerLink="../../../../.." class="text-accent underline underline-offset-4"
+        >Browse podcasts</a
+      >
     </div>
-    <app-audio-chapter
-      [current]="navigation().current"
-      [previous]="navigation().prev"
-      [next]="navigation().next"
-      [cpeMode]="cpeMode()"
-      [chapterIndex]="chapterIndex()"
-      [chapterWiseDetails]="chapterWiseDetails()"
-      [userAssessmentDetails]="chapterFacade.courseDetails()?.user_assessment_details"
-      (navigate)="handleNavigation($event)"
-      (paused)="handleMediaEvent('exit')"
-      (ended)="handleMediaCompleted()"
-      (audioExit)="handleMediaEvent('exit', $event)"
-      (timeUpdate)="updateTime($event)"
-      (startFinalAssessment)="startFinalAssessment()"
-      (viewFinalAssessmentReport)="handleViewReport()"
-    />
-  </div>
-} @else {
-  <!-- Video: standard chapter layout -->
-  <div
-    class="flex w-full max-md:overflow-auto min-h-svh flex-col md:px-11 md:pt-8 p-5 space-y-4 md:overflow-hidden"
-  >
-    <app-backward label="Back to Course" fallback="/" [routePath]="courseNavigation()" />
-    <app-video-chapter
-      [current]="navigation().current"
-      [previous]="navigation().prev"
-      [next]="navigation().next"
-      [cpeMode]="cpeMode()"
-      [courseId]="chapterFacade.courseDetails()?.id ?? null"
-      [courseType]="'podcast'"
-      [chapterWiseDetails]="chapterWiseDetails()"
-      [userAssessmentDetails]="chapterFacade.courseDetails()?.user_assessment_details"
-      (navigate)="handleNavigation($event)"
-      (paused)="handleMediaEvent('exit')"
-      (ended)="handleMediaCompleted()"
-      (videoExit)="handleMediaEvent('exit', $event)"
-      (timeUpdate)="updateTime($event)"
-      (startFinalAssessment)="startFinalAssessment()"
-      (viewFinalAssessmentReport)="handleViewReport()"
-    />
-  </div>
-}
+  } @else if (facade.loadError()) {
+    <div role="alert" class="container mx-auto flex flex-col items-center gap-4 py-24 text-center">
+      <p class="text-muted-foreground">We couldn't load this chapter. Please try again.</p>
+      <button app-button type="button" variant="outline" (click)="facade.reload()">
+        Try again
+      </button>
+    </div>
+  } @else {
+    <!-- The skeleton until the course and its chapter are in; the facade sends a
+         locked or unknown chapter back to the course page. -->
+    <app-course-chapter-player />
+  }
+</div>

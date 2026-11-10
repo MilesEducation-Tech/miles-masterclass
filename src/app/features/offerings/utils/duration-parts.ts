@@ -1,4 +1,4 @@
-import { MasterclassDurationParts } from '@features/offerings/masterclass/models/masterclass-course.model';
+import { MasterclassDurationParts } from '@features/offerings/models/masterclass-course.model';
 
 const HOURS = /(\d+)\s*hours?\b/i;
 const MINUTES = /(\d+)\s*minutes?\b/i;

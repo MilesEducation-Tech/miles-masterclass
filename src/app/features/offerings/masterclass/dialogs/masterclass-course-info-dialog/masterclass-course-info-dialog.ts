@@ -9,7 +9,7 @@ import { MilesSlug } from '@shared/components/miles-slug/miles-slug';
 import { Button } from '@shared/ui/button/button';
 import { Dialog } from '@shared/ui/dialog/dialog';
 import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
-import { MasterclassCourseAbout } from '@features/offerings/masterclass/components/masterclass-course-about/masterclass-course-about';
+import { MasterclassCourseAbout } from '@features/offerings/components/masterclass-course-about/masterclass-course-about';
 
 /**
  * The landing page's "i" dialog: a course's header and its About section, in

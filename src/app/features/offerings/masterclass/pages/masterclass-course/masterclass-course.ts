@@ -8,9 +8,9 @@ import { setupCourseSeo } from '@shared/utils/seo/course-seo-setup';
 import { AppDownloadPrompt } from '@features/offerings/services/app-download-prompt';
 import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
 import { MasterclassChapterList } from '@features/offerings/masterclass/components/masterclass-chapter-list/masterclass-chapter-list';
-import { MasterclassCourseAbout } from '@features/offerings/masterclass/components/masterclass-course-about/masterclass-course-about';
-import { MasterclassCourseRelated } from '@features/offerings/masterclass/components/masterclass-course-related/masterclass-course-related';
-import { MasterclassCourseResources } from '@features/offerings/masterclass/components/masterclass-course-resources/masterclass-course-resources';
+import { MasterclassCourseAbout } from '@features/offerings/components/masterclass-course-about/masterclass-course-about';
+import { MasterclassCourseRelated } from '@features/offerings/components/masterclass-course-related/masterclass-course-related';
+import { MasterclassCourseResources } from '@features/offerings/components/masterclass-course-resources/masterclass-course-resources';
 import { MasterclassCourseHero } from '@features/offerings/masterclass/components/masterclass-course-hero/masterclass-course-hero';
 import {
   MASTERCLASS_COURSE_SECTION_IDS,

@@ -1,0 +1,78 @@
+<div class="lg:w-9/12 sm:w-10/12 w-full mx-auto flex flex-col space-y-8 overflow-hidden">
+  @for (chapter of chapters(); track chapter.id) {
+    @let completed = isChapterWatched(chapter);
+    @let watched = watchedPercent(chapter);
+    <div class="flex sm:space-x-4 max-sm:space-y-4 max-sm:flex-col items-center group">
+      <!-- The title below is the keyboard stop for this row; the artwork repeats it for the
+           mouse, so it is hidden from assistive technology. -->
+      <a
+        class="sm:w-1/2 w-full aspect-video relative rounded-2xl overflow-hidden group/thumbnail cursor-pointer"
+        [routerLink]="['chapter', chapter.id, chapter.slug]"
+        tabindex="-1"
+        aria-hidden="true"
+      >
+        <div class="h-full aspect-square relative z-10">
+          <app-record-disk
+            class="w-full h-auto aspect-square block absolute inset-0 z-0"
+            [coverImage]="artwork(chapter)"
+            [diskImage]="artwork(chapter)"
+            [config]="disk(completed || watched > 0)"
+          />
+          @if (!completed && watched > 0) {
+            <div
+              class="absolute bottom-0 start-0 w-full z-20 rounded-b-sm overflow-hidden pointer-events-none"
+            >
+              <app-progress [value]="watched" variant="primary" size="sm" ariaLabel="Watched" />
+            </div>
+          }
+          @if (completed) {
+            <div
+              class="absolute top-2 start-2 px-2 py-0.5 rounded-full z-20 bg-success/90 text-white flex items-center justify-center space-x-1 pointer-events-none"
+            >
+              <ng-icon name="matDownloadDoneRound" size="14" aria-hidden="true" />
+              <p class="text-xs">Completed</p>
+            </div>
+          }
+          <div
+            class="absolute bottom-2 end-2 px-2 py-0.5 rounded-full z-20 bg-background/90 flex items-center justify-center space-x-1 pointer-events-none"
+          >
+            <ng-icon name="matAccessTimeRound" size="14" aria-hidden="true" />
+            <p class="text-xs">{{ chapter.duration_seconds | duration: 'hh:mm:ss' }}</p>
+          </div>
+          <div
+            class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center bg-background/60 w-[20%] aspect-square rounded-full transition-all group-hover:opacity-100 opacity-0 duration-500 z-20 pointer-events-none"
+          >
+            <ng-icon name="matPlayArrowRound" size="24" aria-hidden="true" />
+          </div>
+        </div>
+      </a>
+      <div class="sm:w-1/2 w-full flex justify-center flex-col space-y-2">
+        <p class="description">Chapter {{ $index + 1 }}</p>
+        <a
+          class="flex flex-col w-fit relative group/title cursor-pointer"
+          [routerLink]="['chapter', chapter.id, chapter.slug]"
+        >
+          <h2 class="title line-clamp-2 mb-1 w-fit">
+            <span
+              class="bg-bottom-left rtl:bg-bottom-right bg-linear-to-r from-accent to-accent bg-size-[0%_3px] bg-no-repeat group-hover/title:bg-size-[100%_3px] transition-all duration-500 ease-out box-decoration-clone"
+            >
+              {{ chapter.name }}
+            </span>
+            <!-- The artwork's badge and bar are hidden with it, so the status is said here. -->
+            @if (completed) {
+              <span class="sr-only">, completed</span>
+            } @else if (watched > 0) {
+              <span class="sr-only">, {{ watched }}% watched</span>
+            }
+          </h2>
+        </a>
+        @if (chapter.mini_description) {
+          <p class="description line-clamp-3">{{ chapter.mini_description }}</p>
+        }
+        @if (chapter.total_quiz_questions) {
+          <p class="text-accent">{{ chapter.total_quiz_questions }} Quiz Questions</p>
+        }
+      </div>
+    </div>
+  }
+</div>

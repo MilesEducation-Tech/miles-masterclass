@@ -30,6 +30,7 @@ import {
   COURSE_DETAIL_API,
   COURSE_DETAIL_CHAPTERS_PAGE_SIZE,
   COURSE_ID_PATTERN,
+  COURSE_TYPE_URL_SEGMENTS,
 } from '@features/offerings/constants/course-detail';
 import {
   ChapterStartResult,
@@ -43,6 +44,7 @@ import {
   isChapterDone,
   MasterclassChapterLink,
   MasterclassCourseDetail,
+  MasterclassRelatedCard,
   MasterclassRelatedCourse,
   MasterclassRelatedRail,
   parseAboutCourseId,
@@ -115,6 +117,9 @@ export class CourseDetailFacade {
     const offering = this.offering();
     return offering ? COURSE_DETAIL_API[offering] : null;
   });
+
+  /** The connected offering's name in the mode picker; `Masterclass` until `connect()`. */
+  readonly modeLabel = computed(() => this.routes()?.modeLabel ?? 'Masterclass');
 
   /** The course's id and slug, as a signal; `null` until `connect()`. */
   private readonly params = signal<Signal<CourseDetailParams> | null>(null);
@@ -658,9 +663,24 @@ export class CourseDetailFacade {
   }
 
   /** Rail cards, without the course on screen, each with a URL slug made from its name. */
-  private toCards(courses: MasterclassRelatedCourse[], currentId: string) {
+  /**
+   * A rail's cards without the current course, each with its slug and its
+   * course page's absolute link: by its own `course_type`, so a podcast's
+   * related masterclass opens the masterclass page.
+   */
+  private toCards(
+    courses: MasterclassRelatedCourse[],
+    currentId: string,
+  ): MasterclassRelatedCard[] {
+    const pageSegment = this.routes()?.urlSegment ?? '';
+    const base = ['/', this.utils.country(), this.utils.profession()];
     return courses
       .filter((card) => card.id !== currentId)
-      .map((card) => ({ ...card, slug: this.utils.slugify(card.name) }));
+      .map((card) => {
+        const slug = this.utils.slugify(card.name);
+        const segment =
+          (card.course_type && COURSE_TYPE_URL_SEGMENTS[card.course_type]) || pageSegment;
+        return { ...card, slug, link: [...base, segment, card.id, slug] };
+      });
   }
 }

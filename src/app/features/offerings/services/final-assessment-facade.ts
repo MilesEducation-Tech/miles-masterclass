@@ -280,8 +280,8 @@ export class FinalAssessmentFacade {
    * The QAS rules, one whole rule per item, before anything is drawn; the text's
    * own title, when it has one, introduces them. Resolves `true` on "Start Exam".
    */
-  private async confirmRules(text: string): Promise<boolean> {
-    const { heading, rules } = toExamRules(text);
+  private async confirmRules(text: string | null): Promise<boolean> {
+    const { heading, rules } = toExamRules(text ?? '');
     const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
     const ref = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
       data: {
@@ -290,7 +290,7 @@ export class FinalAssessmentFacade {
         containerClass: 'flex flex-col space-y-4 text-start wrap-break-word',
         content: [
           { type: 'text', value: heading ?? ASSESSMENT_COPY.rulesIntro },
-          { type: 'list', items: rules, ordered: true },
+          ...(rules.length ? [{ type: 'list' as const, items: rules, ordered: true }] : []),
         ],
         buttons: [{ label: ASSESSMENT_COPY.startExam, variant: 'default', action: 'confirm' }],
         maxWidth: ASSESSMENT_DIALOG_WIDTH,

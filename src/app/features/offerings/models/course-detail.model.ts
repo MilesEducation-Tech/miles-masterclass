@@ -34,11 +34,12 @@ import {
 } from '@core/utils/contract-guards';
 
 /**
- * The offerings `CourseDetailFacade` serves: those with a web `course-detail/`
- * route. Podcast (`v2/:course_type/details/`) and micro-learning
- * (`v2/nano-learning/`) join when the backend ships theirs.
+ * The offerings `CourseDetailFacade` serves: those whose courses the web
+ * `course-detail/` route answers. Masterclass and podcast (a course with
+ * `course_type: "podcast"`, MIL-177) share every route; micro-learning joins
+ * when the backend ships its web routes.
  */
-export type CourseOffering = 'masterclass';
+export type CourseOffering = 'masterclass' | 'podcast';
 
 /** What differs per offering: its routes, its URL segment and its analytics name. */
 export interface CourseDetailApi {
@@ -76,6 +77,8 @@ export interface CourseDetailApi {
   courseProgress: string;
   /** The course page's URL segment: `/:country/:profession/<segment>/:id/:slug`. */
   urlSegment: string;
+  /** The offering's name in the mode picker: "Choose Your <name> Mode". */
+  modeLabel: 'Masterclass' | 'Podcast';
 }
 
 /** A course's id and slug, as the route (or a card) carries them. */
@@ -137,6 +140,11 @@ export interface MasterclassChapter {
   duration_seconds: number;
   total_quiz_questions: number;
   horizontal_thumbnail_url: string | null;
+  /**
+   * The square artwork the podcast chapter list shows. Sent on UAT (2026-11-10) for
+   * every course, but not in Postman, so it is optional.
+   */
+  square_thumbnail_url?: string | null;
   /** The stream. `null` whenever the course is locked to the caller, so always pre-login. */
   hls_video_url: string | null;
   /** HTML from the admin; empty on a chapter the ladder hasn't unlocked. */
@@ -221,6 +229,12 @@ export interface MasterclassRelatedCourse {
   thumbnail_url: string | null;
   total_cpe_credits: number;
   field_of_study: MasterclassFieldOfStudy[];
+  /**
+   * `course` (a masterclass) or `podcast`: which page the card opens. Sent on
+   * UAT (2026-11-10) though Postman doesn't show it, so it is optional; without
+   * it the card opens on the current page's offering.
+   */
+  course_type?: string;
 }
 
 export interface MasterclassInstructorCourses {
@@ -229,11 +243,14 @@ export interface MasterclassInstructorCourses {
   courses: MasterclassRelatedCourse[];
 }
 
+/** A Related card with its course page's absolute link, by its own `course_type`. */
+export type MasterclassRelatedCard = MasterclassRelatedCourse & { slug: string; link: string[] };
+
 /** One rail of the Related section, ready to render: a heading and linkable cards. */
 export interface MasterclassRelatedRail {
   id: string;
   heading: string;
-  courses: (MasterclassRelatedCourse & { slug: string })[];
+  courses: MasterclassRelatedCard[];
 }
 
 /** The NASBA block's dates (ISO 8601). */
@@ -250,6 +267,11 @@ export interface MasterclassCourseDetail {
   mini_description: string;
   description: string;
   horizontal_thumbnail_url: string | null;
+  /**
+   * The square artwork: the podcast hero's record disk. Sent on UAT (2026-11-10)
+   * for every course, but not in Postman, so it is optional.
+   */
+  square_thumbnail_url?: string | null;
   /**
    * The hero's poster, before the trailer starts. Was `trailer_thumbnail_url`
    * until UAT renamed it on 2026-10-14 (Postman not updated yet).
@@ -270,7 +292,8 @@ export interface MasterclassCourseDetail {
   learning_objectives: MasterclassLearningObjective[];
   topics: MasterclassTopic[];
   /** The course duration, preformatted ("3 hours"). Not the video length. */
-  masterclass_duration: string;
+  /** Preformatted ("1 hour 34 minutes"); `null` on some podcasts (UAT, 2026-11-10). */
+  masterclass_duration: string | null;
   /** The video length: the sum of the chapter videos, in seconds. */
   masterclass_duration_seconds: number;
   program_level: string | null;
@@ -295,8 +318,12 @@ export interface MasterclassCourseDetail {
   course_mode: CourseMode | null;
   /** The server's own words for why the course is locked, when it has some. */
   course_pop_up_remark: string | null;
-  /** The final assessment's QAS rules, one per line, shown before a sitting starts. */
-  exam_rules: string;
+  /**
+   * The final assessment's QAS rules, one per line, shown before a sitting
+   * starts. `null` on the UAT podcasts (2026-11-10); the dialog then shows only
+   * its introduction.
+   */
+  exam_rules: string | null;
   /**
    * Whether the learner may sit the final assessment now. The server computes
    * it (CPE mode, every chapter and its quiz done, not yet passed), so no
@@ -452,6 +479,7 @@ function isChapter(v: unknown): v is MasterclassChapter {
     isNum(v['duration_seconds']) &&
     isNum(v['total_quiz_questions']) &&
     isStrOrNull(v['horizontal_thumbnail_url']) &&
+    (v['square_thumbnail_url'] === undefined || isStrOrNull(v['square_thumbnail_url'])) &&
     isStrOrNull(v['hls_video_url']) &&
     isStrOrNull(v['transcript_text']) &&
     isBool(v['is_locked']) &&
@@ -489,7 +517,8 @@ function isRelatedCourse(v: unknown): v is MasterclassRelatedCourse {
     isStr(v['mini_description']) &&
     isStrOrNull(v['thumbnail_url']) &&
     isNum(v['total_cpe_credits']) &&
-    listOf(isFieldOfStudy)(v['field_of_study'])
+    listOf(isFieldOfStudy)(v['field_of_study']) &&
+    (v['course_type'] === undefined || isStr(v['course_type']))
   );
 }
 
@@ -520,6 +549,7 @@ function isApiCourseDetail(v: unknown): v is ApiCourseDetail {
     isStr(v['mini_description']) &&
     isStr(v['description']) &&
     isStrOrNull(v['horizontal_thumbnail_url']) &&
+    (v['square_thumbnail_url'] === undefined || isStrOrNull(v['square_thumbnail_url'])) &&
     isStrOrNull(v['trailer_horizontal_thumbnail_image_url']) &&
     isStrOrNull(v['horizontal_trailer_url']) &&
     isStrOrNull(v['sample_video_url']) &&
@@ -530,7 +560,7 @@ function isApiCourseDetail(v: unknown): v is ApiCourseDetail {
     listOf(isInstructor)(v['instructors']) &&
     listOf(isLearningObjective)(v['learning_objectives']) &&
     listOf(isTopic)(v['topics']) &&
-    isStr(v['masterclass_duration']) &&
+    isStrOrNull(v['masterclass_duration']) &&
     isNum(v['masterclass_duration_seconds']) &&
     isStrOrNull(v['program_level']) &&
     isStr(v['instructional_delivery_method']) &&
@@ -549,7 +579,7 @@ function isApiCourseDetail(v: unknown): v is ApiCourseDetail {
     isBool(v['course_is_locked']) &&
     isCourseMode(v['course_mode']) &&
     isStrOrNull(v['course_pop_up_remark']) &&
-    isStr(v['exam_rules']) &&
+    isStrOrNull(v['exam_rules']) &&
     isBool(v['show_final_assessment']) &&
     isBool(v['final_assessment_submitted']) &&
     isBool(v['show_feedback']) &&

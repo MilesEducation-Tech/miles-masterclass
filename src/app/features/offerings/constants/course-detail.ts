@@ -11,157 +11,173 @@ import { AssessmentReviewStatus } from '@features/offerings/models/final-assessm
 const ROOT = environment.API.baseUrl;
 
 /**
+ * The web course routes. A podcast is a course too (`course_type: "podcast"`),
+ * so it is served by the same routes; only the page's URL segment differs.
+ */
+const WEB_COURSE_ROUTES: Omit<CourseDetailApi, 'urlSegment' | 'modeLabel'> = {
+  /**
+   * Web-only read, `AllowAny` since 2026-10-07: the course page, both sides of
+   * login. Append `<uuid>/` (a slug is a 404). `?login_type=` is required:
+   * `pre_login` is served anonymously, `post_login` is a 401 without a token,
+   * and an undeclared parameter is a 400.
+   */
+  courseDetail: `${ROOT}web-api/v1/masterclass/course-detail/`,
+
+  /**
+   * Web-only read, `AllowAny`: one course's public content. Takes exactly one
+   * of `?course_id=<uuid>` or `?slug=`; both, neither, or any other key is a
+   * 400 `invalid_query`, and an unknown course is a 404.
+   */
+  aboutCourse: `${ROOT}web-api/v1/masterclass/about-course/`,
+
+  /**
+   * `IsAuthenticated`, no body: a toggle that answers where it landed,
+   * `data.bookmarked` (`parseBookmarkToggle`). The cards toggle the same route
+   * through `MasterclassBookmarks`; the facade also re-reads `course-detail/`.
+   */
+  bookmark: { path: `${ROOT}web-api/v1/masterclass/bookmark/:id/`, method: 'POST' },
+
+  /**
+   * `IsAuthenticated`, no body: the FIRST write of the learning flow. The
+   * learner has no enrolment until it runs, and the `mode=` switch is stored
+   * on that enrolment. Idempotent. Its guards answer distinctly: `403
+   * chapter_locked` / `caira_access_required`, `409` for an AI Lab lock or the
+   * 7DC partner flow, and `200 reset_required` for an expired window.
+   */
+  chapterStart: { path: `${ROOT}web-api/v1/masterclass/chapter-start/:id/`, method: 'POST' },
+
+  /**
+   * `IsAuthenticated`, strict body: saves one chapter's progress and answers
+   * the whole course's, lock ladder included. `400` "Not enrolled" before a
+   * `chapter-start/`; `403 caira_access_required`; `409` for an AI Lab lock;
+   * `200 reset_required` for an expired window; a locked or unknown chapter is
+   * reported under `skipped`, not refused.
+   */
+  courseProgressUpdate: {
+    path: `${ROOT}web-api/v1/masterclass/course-progress-update/:id/`,
+    method: 'POST',
+  },
+
+  /**
+   * `IsAuthenticated`: one chapter's quiz. Append `<chapter uuid>/`. Its guards,
+   * in order: `409` AI Lab lock, `403 caira_access_required`, `403
+   * chapter_locked`, `404` with no quiz configured (not an empty 200), `403
+   * already_completed`, and `403 preview_mode` (the quiz is CPE only).
+   * Unanswered questions carry no answer; a resumed attempt's answered ones
+   * come back graded.
+   */
+  quizQuestions: `${ROOT}web-api/v1/masterclass/quiz-questions/`,
+
+  /**
+   * `IsAuthenticated`, strict body `{question_id, selected_option_ids}`: grades
+   * ONE answer server-side. The same guards, plus `200 reset_required` for an
+   * expired window and `400` for a question outside the bank or one already
+   * answered in this attempt.
+   */
+  quizSubmit: { path: `${ROOT}web-api/v1/masterclass/quiz-submit/:id/`, method: 'POST' },
+
+  /**
+   * `IsAuthenticated`, no body: draws the final assessment's sitting (`201`),
+   * or returns the open one (`200`, `resumed: true`), so a second start never
+   * redraws. Refusals, in order: `409` AI Lab lock, `403 caira_access_required`,
+   * `403 preview_mode`, `404` no configuration, `403 chapters_not_complete`,
+   * `403 already_passed`, `403 cool_off_active` (with `cool_off_ends_at`), and
+   * `404` for a bank with no active question.
+   */
+  assessmentStart: {
+    path: `${ROOT}web-api/v1/masterclass/assessment-start/:id/`,
+    method: 'POST',
+  },
+
+  /**
+   * `IsAuthenticated`: a sitting's paper again, the same questions in the same
+   * order, and never their answers. Append `<course uuid>/` and send
+   * `?session_id=`. A sitting that is gone answers `404 session_not_found`, `409
+   * session_submitted` or `409 session_expired`.
+   */
+  assessmentQuestions: `${ROOT}web-api/v1/masterclass/assessment-questions/`,
+
+  /**
+   * `IsAuthenticated`, strict body `{session_id, answers}` answering exactly the
+   * sitting's questions: scores it server-side and closes the sitting. `200`
+   * with `passed` and `score_percent`, or `reset_required` for an expired
+   * window; the start's refusals, plus `409 session_submitted` / `expired`.
+   */
+  assessmentSubmit: {
+    path: `${ROOT}web-api/v1/masterclass/assessment-submit/:id/`,
+    method: 'POST',
+  },
+
+  /**
+   * `IsAuthenticated`: the learner's final assessment for one course. Append
+   * `<course uuid>/`. ALWAYS answers (`passed`, `failed` or `not_attempted`);
+   * the only 404 is an unknown course. Its `answers[]` is empty in every
+   * captured example, so the review reads `assessmentResult` instead.
+   */
+  assessmentReport: `${ROOT}web-api/v1/masterclass/assessment-report/`,
+
+  /**
+   * `IsAuthenticated`: the latest attempt, question by question. Append
+   * `<course uuid>/`. `404` for an unknown course, no configuration or no
+   * attempt yet; `403 caira_access_required`; `409` AI Lab lock. Correct
+   * answers are withheld on a failed attempt against a bank-less assessment
+   * (NASBA 6.01.2(1)(ii)), which the report flags as `feedback_withheld`.
+   */
+  assessmentResult: `${ROOT}web-api/v1/masterclass/assessment-result/`,
+
+  /**
+   * `IsAuthenticated`: the post-course evaluation. Append `<course uuid>/`.
+   * Gated on a pass: `403 assessment_not_passed` before one, `403
+   * feedback_already_submitted` after the form is in, `403
+   * caira_access_required`, `409` AI Lab lock, and `200 reset_required` for an
+   * expired window.
+   */
+  feedbackQuestions: `${ROOT}web-api/v1/masterclass/feedback-questions/`,
+
+  /**
+   * `IsAuthenticated`, strict body `{responses, optional_feedback_text}`:
+   * records the evaluation once (never edited) and runs the course closure
+   * (CPE, Credly badge, certificate). The questions read's refusals, plus `400`.
+   */
+  feedbackSubmit: {
+    path: `${ROOT}web-api/v1/masterclass/feedback-submit/:id/`,
+    method: 'POST',
+  },
+
+  /**
+   * `IsAuthenticated`, `?course_id=<uuid>`: the learner's own evaluation.
+   * Always answers (`submitted: false` before one). Its paged `responses` are
+   * empty in every capture, so only the submission's date is read.
+   */
+  feedbackResponses: `${ROOT}web-api/v1/masterclass/feedback-responses/`,
+
+  /**
+   * `IsAuthenticated`: the GET twin of `courseProgressUpdate`. Append `<course
+   * uuid>/`. Its top level carries the same completion flags as
+   * `course-detail/`, `masterclass_certificate_url` included, in a lighter
+   * read, so the wait for a freshly triggered certificate asks this one.
+   */
+  courseProgress: `${ROOT}web-api/v1/masterclass/course-progress/`,
+};
+
+/**
  * `CourseDetailFacade`'s routes and names, per offering. An offering joins by
- * adding its entry, once the backend ships its web routes; none is guessed.
+ * adding its entry, once the backend serves its courses on the web routes; none
+ * is guessed.
  */
 export const COURSE_DETAIL_API: Record<CourseOffering, CourseDetailApi> = {
-  masterclass: {
-    /**
-     * Web-only read, `AllowAny` since 2026-10-07: the course page, both sides of
-     * login. Append `<uuid>/` (a slug is a 404). `?login_type=` is required:
-     * `pre_login` is served anonymously, `post_login` is a 401 without a token,
-     * and an undeclared parameter is a 400.
-     */
-    courseDetail: `${ROOT}web-api/v1/masterclass/course-detail/`,
+  masterclass: { ...WEB_COURSE_ROUTES, urlSegment: 'masterclass', modeLabel: 'Masterclass' },
+  podcast: { ...WEB_COURSE_ROUTES, urlSegment: 'podcast', modeLabel: 'Podcast' },
+};
 
-    /**
-     * Web-only read, `AllowAny`: one course's public content. Takes exactly one
-     * of `?course_id=<uuid>` or `?slug=`; both, neither, or any other key is a
-     * 400 `invalid_query`, and an unknown course is a 404.
-     */
-    aboutCourse: `${ROOT}web-api/v1/masterclass/about-course/`,
-
-    /**
-     * `IsAuthenticated`, no body: a toggle that answers where it landed,
-     * `data.bookmarked` (`parseBookmarkToggle`). The cards toggle the same route
-     * through `MasterclassBookmarks`; the facade also re-reads `course-detail/`.
-     */
-    bookmark: { path: `${ROOT}web-api/v1/masterclass/bookmark/:id/`, method: 'POST' },
-
-    /**
-     * `IsAuthenticated`, no body: the FIRST write of the learning flow. The
-     * learner has no enrolment until it runs, and the `mode=` switch is stored
-     * on that enrolment. Idempotent. Its guards answer distinctly: `403
-     * chapter_locked` / `caira_access_required`, `409` for an AI Lab lock or the
-     * 7DC partner flow, and `200 reset_required` for an expired window.
-     */
-    chapterStart: { path: `${ROOT}web-api/v1/masterclass/chapter-start/:id/`, method: 'POST' },
-
-    /**
-     * `IsAuthenticated`, strict body: saves one chapter's progress and answers
-     * the whole course's, lock ladder included. `400` "Not enrolled" before a
-     * `chapter-start/`; `403 caira_access_required`; `409` for an AI Lab lock;
-     * `200 reset_required` for an expired window; a locked or unknown chapter is
-     * reported under `skipped`, not refused.
-     */
-    courseProgressUpdate: {
-      path: `${ROOT}web-api/v1/masterclass/course-progress-update/:id/`,
-      method: 'POST',
-    },
-
-    /**
-     * `IsAuthenticated`: one chapter's quiz. Append `<chapter uuid>/`. Its guards,
-     * in order: `409` AI Lab lock, `403 caira_access_required`, `403
-     * chapter_locked`, `404` with no quiz configured (not an empty 200), `403
-     * already_completed`, and `403 preview_mode` (the quiz is CPE only).
-     * Unanswered questions carry no answer; a resumed attempt's answered ones
-     * come back graded.
-     */
-    quizQuestions: `${ROOT}web-api/v1/masterclass/quiz-questions/`,
-
-    /**
-     * `IsAuthenticated`, strict body `{question_id, selected_option_ids}`: grades
-     * ONE answer server-side. The same guards, plus `200 reset_required` for an
-     * expired window and `400` for a question outside the bank or one already
-     * answered in this attempt.
-     */
-    quizSubmit: { path: `${ROOT}web-api/v1/masterclass/quiz-submit/:id/`, method: 'POST' },
-
-    /**
-     * `IsAuthenticated`, no body: draws the final assessment's sitting (`201`),
-     * or returns the open one (`200`, `resumed: true`), so a second start never
-     * redraws. Refusals, in order: `409` AI Lab lock, `403 caira_access_required`,
-     * `403 preview_mode`, `404` no configuration, `403 chapters_not_complete`,
-     * `403 already_passed`, `403 cool_off_active` (with `cool_off_ends_at`), and
-     * `404` for a bank with no active question.
-     */
-    assessmentStart: {
-      path: `${ROOT}web-api/v1/masterclass/assessment-start/:id/`,
-      method: 'POST',
-    },
-
-    /**
-     * `IsAuthenticated`: a sitting's paper again, the same questions in the same
-     * order, and never their answers. Append `<course uuid>/` and send
-     * `?session_id=`. A sitting that is gone answers `404 session_not_found`, `409
-     * session_submitted` or `409 session_expired`.
-     */
-    assessmentQuestions: `${ROOT}web-api/v1/masterclass/assessment-questions/`,
-
-    /**
-     * `IsAuthenticated`, strict body `{session_id, answers}` answering exactly the
-     * sitting's questions: scores it server-side and closes the sitting. `200`
-     * with `passed` and `score_percent`, or `reset_required` for an expired
-     * window; the start's refusals, plus `409 session_submitted` / `expired`.
-     */
-    assessmentSubmit: {
-      path: `${ROOT}web-api/v1/masterclass/assessment-submit/:id/`,
-      method: 'POST',
-    },
-
-    /**
-     * `IsAuthenticated`: the learner's final assessment for one course. Append
-     * `<course uuid>/`. ALWAYS answers (`passed`, `failed` or `not_attempted`);
-     * the only 404 is an unknown course. Its `answers[]` is empty in every
-     * captured example, so the review reads `assessmentResult` instead.
-     */
-    assessmentReport: `${ROOT}web-api/v1/masterclass/assessment-report/`,
-
-    /**
-     * `IsAuthenticated`: the latest attempt, question by question. Append
-     * `<course uuid>/`. `404` for an unknown course, no configuration or no
-     * attempt yet; `403 caira_access_required`; `409` AI Lab lock. Correct
-     * answers are withheld on a failed attempt against a bank-less assessment
-     * (NASBA 6.01.2(1)(ii)), which the report flags as `feedback_withheld`.
-     */
-    assessmentResult: `${ROOT}web-api/v1/masterclass/assessment-result/`,
-
-    /**
-     * `IsAuthenticated`: the post-course evaluation. Append `<course uuid>/`.
-     * Gated on a pass: `403 assessment_not_passed` before one, `403
-     * feedback_already_submitted` after the form is in, `403
-     * caira_access_required`, `409` AI Lab lock, and `200 reset_required` for an
-     * expired window.
-     */
-    feedbackQuestions: `${ROOT}web-api/v1/masterclass/feedback-questions/`,
-
-    /**
-     * `IsAuthenticated`, strict body `{responses, optional_feedback_text}`:
-     * records the evaluation once (never edited) and runs the course closure
-     * (CPE, Credly badge, certificate). The questions read's refusals, plus `400`.
-     */
-    feedbackSubmit: {
-      path: `${ROOT}web-api/v1/masterclass/feedback-submit/:id/`,
-      method: 'POST',
-    },
-
-    /**
-     * `IsAuthenticated`, `?course_id=<uuid>`: the learner's own evaluation.
-     * Always answers (`submitted: false` before one). Its paged `responses` are
-     * empty in every capture, so only the submission's date is read.
-     */
-    feedbackResponses: `${ROOT}web-api/v1/masterclass/feedback-responses/`,
-
-    /**
-     * `IsAuthenticated`: the GET twin of `courseProgressUpdate`. Append `<course
-     * uuid>/`. Its top level carries the same completion flags as
-     * `course-detail/`, `masterclass_certificate_url` included, in a lighter
-     * read, so the wait for a freshly triggered certificate asks this one.
-     */
-    courseProgress: `${ROOT}web-api/v1/masterclass/course-progress/`,
-
-    urlSegment: 'masterclass',
-  },
+/**
+ * The page a course card opens, by the card's `course_type`. A Related card can
+ * be another offering's course (a podcast's related masterclass), so it links by
+ * its own type; an unknown one opens on the current page's offering.
+ */
+export const COURSE_TYPE_URL_SEGMENTS: Readonly<Record<string, string>> = {
+  course: 'masterclass',
+  podcast: 'podcast',
 };
 
 /**
