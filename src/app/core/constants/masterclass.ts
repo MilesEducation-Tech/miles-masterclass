@@ -18,6 +18,26 @@ import {
 export const MASTERCLASS_COURSE_TYPE = 'course';
 
 /**
+ * Absolute URL off `environment.API.baseUrl`, which is the ORIGIN ROOT (trailing slash,
+ * no `api/` segment). Built whole, the same way as `WEBINAR_ENDPOINTS`, so
+ * `apiUrl()` passes it through untouched and the `web-api/` surface is
+ * spelled out where a reviewer can see it. This read never calls `app-api/`.
+ *
+ * Web-only read, `AllowAny`: the tracks with their courses inline, read by
+ * `MasterclassHomeFacade` (masterclass) and `MasterclassLibraryFacade` (an
+ * offering with `ownTracks`). Replaced
+ * `home-page/` on 2026-10-07 (Postman `web-masterclass-tracks-page-v1`); the
+ * old route is a 404 on every host.
+ *
+ * `login_type` is required and strict — leaving it out, or sending any other
+ * key, is a 400 `invalid_query`. So is `course_type`, since 2026-10-13
+ * (`MASTERCLASS_COURSE_TYPE`). An anonymous `post_login` is a 401, and so
+ * is a bad or expired token on either branch (the backend rechecked this on
+ * 2026-10-07; it used to be a 403).
+ */
+export const MASTERCLASS_TRACKS_PAGE_URL = `${environment.API.baseUrl}web-api/v1/masterclass/tracks-page/`;
+
+/**
  * `IsAuthenticated`, no body: toggles the learner's bookmark on one course
  * (`:id` is its UUID) and answers where it landed, `data.bookmarked`. A toggle,
  * not a set, so a double tap corrects itself. 404 for an unknown course.

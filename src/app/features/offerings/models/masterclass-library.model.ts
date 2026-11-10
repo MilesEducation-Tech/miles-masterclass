@@ -43,12 +43,18 @@ export type WebCourseType = 'course' | 'podcast' | 'nano_learning' | 'micro_lear
  * shows the learner rails. An offering joins by adding its `LIBRARY_OFFERINGS`
  * entry.
  */
-export type LibraryOffering = 'masterclass';
+export type LibraryOffering = 'masterclass' | 'podcast';
 
 /** What differs per offering on its landing page's rails. */
 export interface LibraryOfferingConfig {
-  /** Narrows `library/`, `completed-course-section/` and `coming-soon/`, and My List. */
+  /** Narrows `library/`, `completed-course-section/`, `coming-soon/` and `tracks-page/`, and My List. */
   courseType: WebCourseType;
+  /**
+   * Whether the facade reads the offering's `tracks-page/` itself. Masterclass
+   * does not: its tracks come from the root `MasterclassHomeFacade`, which the
+   * home page shares.
+   */
+  ownTracks: boolean;
 }
 
 // ---- Rails -----------------------------------------------------------------

@@ -1,65 +1,72 @@
-import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
+import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
-import { Carousel } from '@shared/components/carousel/carousel';
-import { environment } from '@env/environment';
 import { swiperConfigComingSoon, swiperConfigPodcast } from '@core/config/swiper.config';
-import { Square } from '@shared/components/cards/square/square';
-import { PodcastHero } from '../../components/podcast-hero/podcast-hero';
-import { ComingSoon } from '@shared/components/cards/coming-soon/coming-soon';
+import { filterIcon } from '@core/constants/icon';
+import { RAIL_FILTER_EMPTY } from '@core/constants/masterclass';
+import { trackRail } from '@core/models/masterclass-home.model';
+import { NgIcon } from '@ng-icons/core';
+import { Carousel } from '@shared/components/carousel/carousel';
 import { Faq } from '@shared/components/faq/faq';
 import { PartnerContentList } from '@shared/components/partner-content-list/partner-content-list';
+import { MasterclassRailFilter } from '@shared/services/masterclass-rail-filter';
+import { Button } from '@shared/ui/button/button';
+import { ComingSoonCard } from '@features/offerings/components/coming-soon-card/coming-soon-card';
+import { PodcastCourseCard } from '@features/offerings/podcast/components/podcast-course-card/podcast-course-card';
+import { PodcastHero } from '@features/offerings/podcast/components/podcast-hero/podcast-hero';
+import {
+  PODCAST_COMING_SOON_HEADING,
+  PODCAST_COMING_SOON_SECTION_ID,
+  PODCAST_FILTER_CONTENT_TYPE,
+} from '@features/offerings/podcast/constants/podcast';
+import { MasterclassLibraryFacade } from '@features/offerings/services/masterclass-library-facade';
 
+/**
+ * The podcast landing page, on the web API: the hero, then the podcast tracks
+ * from `tracks-page/?course_type=podcast` (both sides of sign-in), and signed
+ * in the learner's own rails around them and Coming Soon last. Every row comes
+ * from `MasterclassLibraryFacade`, connected to `podcast`, the same service as
+ * the masterclass page's. Every rail has a filter over the podcasts
+ * (`MasterclassRailFilter`), and every card a bookmark.
+ */
 @Component({
   selector: 'app-podcast',
-  imports: [Carousel, Square, ComingSoon, PodcastHero, Faq, PartnerContentList],
+  imports: [
+    Carousel,
+    ComingSoonCard,
+    Faq,
+    NgIcon,
+    NgTemplateOutlet,
+    PartnerContentList,
+    PodcastCourseCard,
+    PodcastHero,
+    Button,
+  ],
   templateUrl: './podcast.html',
-  host: {
-    class: '',
-  },
 })
 export class Podcast {
-  S3_BUCKET_URL = environment.ASSETS.s3Url;
-  readonly feature: FeatureFacade = inject(FeatureFacade);
+  protected readonly library = inject(MasterclassLibraryFacade);
+  protected readonly railFilter = inject(MasterclassRailFilter);
 
-  // Swiper configurations for templates
-  readonly swiperConfigPodcast = swiperConfigPodcast;
-  readonly swiperConfigComingSoon = swiperConfigComingSoon;
+  constructor() {
+    this.library.connect('podcast');
+    this.railFilter.contentType.set(PODCAST_FILTER_CONTENT_TYPE);
+  }
 
-  filterConfig = {
-    filterEnabled: true,
-  };
+  protected readonly swiperConfigPodcast = swiperConfigPodcast;
+  protected readonly swiperConfigComingSoon = swiperConfigComingSoon;
+  protected readonly comingSoonHeading = PODCAST_COMING_SOON_HEADING;
+  protected readonly comingSoonSectionId = PODCAST_COMING_SOON_SECTION_ID;
+  protected readonly filterIcon = filterIcon;
+  protected readonly railFilterEmpty = RAIL_FILTER_EMPTY;
 
-  readonly popular = this.feature.getResource('popular', 'podcast');
-  readonly inprogress = this.feature.getResource('inprogress', 'podcast', {
-    requiresAuth: true,
-  });
-  readonly recommended = this.feature.getResource('recommended', 'podcast', {
-    requiresAuth: true,
-  });
-  readonly complimentary = this.feature.getResource('complimentary', 'podcast', {
-    requiresAuth: true,
-  });
-  readonly becauseYouWatched = this.feature.getResource('becauseYouWatched', 'podcast', {
-    requiresAuth: true,
-  });
-  readonly track = this.feature.getResource('track', 'podcast');
-  readonly bookmark = this.feature.getResource('bookmark', 'podcast', { requiresAuth: true });
-  readonly completed = this.feature.getResource('completed', 'podcast', { requiresAuth: true });
-  readonly comingSoon = this.feature.getResource('comingSoon', 'podcast');
-
-  readonly complimentaryHeading = computed(() => {
-    const meta = this.complimentary.metadata();
-    const details = meta?.['details'] as { company_name?: string } | undefined;
-    const companyName = details?.company_name;
-    return companyName
-      ? `Complimentary Courses for ${companyName} Employees`
-      : 'Complimentary Courses';
-  });
-
-  readonly becauseYouWatchedHeading = computed(() => {
-    const meta = this.becauseYouWatched.metadata();
-    const watchedCourse = meta?.['watched_course'] as { title?: string } | undefined;
-    const courseTitle = watchedCourse?.title;
-    return courseTitle ? `Because You Watched ${courseTitle}` : 'Because You Watched';
-  });
+  // Every rail through its filter.
+  protected readonly railsAboveTracks = computed(() =>
+    this.railFilter.narrow(this.library.railsAboveTracks()),
+  );
+  protected readonly trackRails = computed(() =>
+    this.railFilter.narrow(this.library.tracks().map(trackRail)),
+  );
+  protected readonly railsBelowTracks = computed(() =>
+    this.railFilter.narrow(this.library.railsBelowTracks()),
+  );
 }

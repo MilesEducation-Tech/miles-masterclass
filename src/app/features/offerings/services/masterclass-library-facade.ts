@@ -3,16 +3,25 @@ import { HttpContext, HttpErrorResponse, httpResource } from '@angular/common/ht
 import { computed, effect, inject, PLATFORM_ID, Service, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize, map } from 'rxjs';
+import { MASTERCLASS_TRACKS_PAGE_URL } from '@core/constants/masterclass';
 import { SKIP_LOADING } from '@core/models/http.model';
-import { MasterclassCourse, MasterclassRail } from '@core/models/masterclass-home.model';
+import {
+  MasterclassCourse,
+  MasterclassHomePage,
+  MasterclassRail,
+  MasterclassTrack,
+  parseHomePage,
+} from '@core/models/masterclass-home.model';
 import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { MasterclassBookmarks } from '@core/services/masterclass-bookmarks/masterclass-bookmarks';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
+import { withPreviousValue } from '@core/utils/with-previous-value';
 import { Utils } from '@shared/services/utils';
 import {
   complimentaryHeading,
+  EMPTY_TRACKS_PAGE,
   LIBRARY_OFFERINGS,
   MASTERCLASS_COMING_SOON_NOTIFY_ROUTE,
   MASTERCLASS_COMING_SOON_PARAMS,
@@ -25,6 +34,7 @@ import {
   MASTERCLASS_RAIL_SECTION_IDS,
   MASTERCLASS_RAILS_ABOVE_TRACKS,
   MASTERCLASS_REMINDER_TOASTS,
+  OFFERING_TRACKS_PAGE_SIZES,
 } from '@features/offerings/constants/masterclass-library';
 import {
   LibraryOffering,
@@ -43,6 +53,8 @@ import {
  * `CourseDetailFacade`: the routes are the same for every course type, and
  * what differs (`course_type`) comes from `LIBRARY_OFFERINGS` once the page
  * calls `connect()`. Route-scoped: the landing route lists it in `providers`.
+ * An offering whose config says `ownTracks` (podcast) reads its tracks here
+ * too; masterclass reads them through the root `MasterclassHomeFacade`.
  *
  * The reads run only once connected, only signed in and only in the browser:
  * the token lives there, and signed out `library/` sends these rails empty.
@@ -64,11 +76,14 @@ export class MasterclassLibraryFacade {
   /** Which offering's courses to read; `null` until `connect()`. */
   private readonly offering = signal<LibraryOffering | null>(null);
 
-  /** The connected offering's `course_type`; `null` until `connect()`. */
-  private readonly courseType = computed(() => {
+  /** The connected offering's settings; `null` until `connect()`. */
+  private readonly config = computed(() => {
     const offering = this.offering();
-    return offering ? LIBRARY_OFFERINGS[offering].courseType : null;
+    return offering ? LIBRARY_OFFERINGS[offering] : null;
   });
+
+  /** The connected offering's `course_type`; `null` until `connect()`. */
+  private readonly courseType = computed(() => this.config()?.courseType ?? null);
 
   private readonly signedIn = computed(() => this.isBrowser && this.auth.isAuthenticated());
 
@@ -111,9 +126,56 @@ export class MasterclassLibraryFacade {
     { parse: parseComingSoon },
   );
 
+  /**
+   * The offering's tracks, for an offering whose config says `ownTracks`
+   * (masterclass reads them through the root `MasterclassHomeFacade`). Signed
+   * out it is read on the server too, so the page's HTML carries the track list
+   * and the browser reuses the response; signed in only in the browser, where
+   * the token lives (an anonymous `post_login` is a 401). Signing in or out
+   * re-reads it, off the session's boolean.
+   */
+  private readonly tracksResource = httpResource<MasterclassHomePage>(
+    () => {
+      const config = this.config();
+      if (!config?.ownTracks) return undefined;
+      const signedIn = this.auth.isAuthenticated();
+      if (signedIn && !this.isBrowser) return undefined;
+      return {
+        url: apiUrl(MASTERCLASS_TRACKS_PAGE_URL),
+        params: {
+          login_type: signedIn ? 'post_login' : 'pre_login',
+          course_type: config.courseType,
+          ...OFFERING_TRACKS_PAGE_SIZES,
+        },
+      };
+    },
+    { defaultValue: EMPTY_TRACKS_PAGE, parse: parseHomePage },
+  );
+
+  /** Holds the last good tracks through a re-read (sign-in), so the rails don't flash empty. */
+  private readonly tracksPage = withPreviousValue(this.tracksResource);
+
+  /** The offering's tracks in the API's order; a track with no courses is left out. */
+  readonly tracks = computed<MasterclassTrack[]>(() =>
+    this.tracksPage.hasValue()
+      ? this.tracksPage.value().tracks.filter((track) => track.courses.length > 0)
+      : [],
+  );
+
+  /** The tracks' read is in flight (first load or a re-read). */
+  readonly tracksLoading = computed(() => this.tracksPage.isLoading());
+
+  /** A failed tracks read or a contract mismatch; the page shows it with a retry. */
+  readonly tracksError = computed(() => this.tracksResource.error() ?? null);
+
   /** Read one offering's courses; the landing page calls it once, from its constructor. */
   connect(offering: LibraryOffering): void {
     this.offering.set(offering);
+  }
+
+  /** The page's "Try again" after a failed tracks read. */
+  reloadTracks(): void {
+    this.tracksResource.reload();
   }
 
   private readonly latestLibrary = computed(() =>
@@ -236,6 +298,11 @@ export class MasterclassLibraryFacade {
     .subscribe(() => this.library.reload());
 
   // The rails hide on failure, so the log is the only place a drift shows.
+  private readonly tracksErrorLog = effect(() => {
+    const error = this.tracksError();
+    if (error) this.logger.error('[MasterclassLibraryFacade] tracks-page load failed', error);
+  });
+
   private readonly libraryErrorLog = effect(() => {
     const error = this.library.error();
     if (error) this.logger.error('[MasterclassLibraryFacade] library load failed', error);

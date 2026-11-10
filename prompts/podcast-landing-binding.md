@@ -250,3 +250,16 @@ pnpm build:prod
 - The course page, chapters, assessment and feedback (Stories 2 and 3), and the card's Info button (Story 2).
 - Deleting `FeatureFacade`, `app-hover`, `app-square` or `app-coming-soon`: micro-learning, partners and related courses still use them.
 - Renaming the `Masterclass*` services and models to neutral names (a later `refactor/` PR if wanted).
+
+## As built (2026-11-10)
+
+PR A landed as MIL-179 (#247) and is merged into this branch. Two places differ from the plan above:
+
+- **The `tracks-page/` URL moved to `core/constants/masterclass.ts`** (`MASTERCLASS_TRACKS_PAGE_URL`), out of
+  `MasterclassHomeFacade`, so the root tracks read and the offering's own read share one definition.
+- **`PodcastCourseCard` acts on its own.** It injects `MasterclassBookmarks`, `CourseAiKit` and `Utils` instead of
+  emitting `bookmark` / `trailer` / `aiKit` for the page to relay, so the page template only passes `course` and
+  `index`. The card isn't in `shared/`, so it doesn't have to stay inputs and outputs only.
+
+The rails' placeholder is sized to the podcast row (heading plus 1 / 3 / 5 squares). Before, it was a full-width
+square, which shifted the page when the row arrived.
