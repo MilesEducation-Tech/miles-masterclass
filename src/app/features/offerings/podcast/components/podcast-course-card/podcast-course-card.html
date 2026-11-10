@@ -1,0 +1,107 @@
+@let c = course();
+<!-- The artwork: square, with the CAIRA badge. -->
+<div class="relative size-full rounded-md overflow-hidden bg-secondary">
+  @if (artwork(); as src) {
+    <img [ngSrc]="src" [alt]="c.title" fill [priority]="index() < 4" class="object-cover" />
+  }
+  <app-caira-credly-badge
+    class="absolute bottom-0 left-1/2 -translate-x-1/2 z-20"
+    [includedForCaira]="c.included_for_caira"
+    [hasIndividualBadge]="c.has_individual_badge"
+    variant="inline"
+  />
+</div>
+
+<!-- On hover or keyboard focus: the details panel, a little larger than the artwork it covers. -->
+<div
+  class="absolute top-1/2 left-1/2 w-[110%] min-h-full h-auto -translate-x-1/2 -translate-y-1/2 origin-center z-10 opacity-0 pointer-events-none scale-50 transition-all duration-300 ease-out group-hover/podcast:opacity-100 group-hover/podcast:pointer-events-auto group-hover/podcast:scale-105 group-hover/podcast:z-100 group-focus-within/podcast:opacity-100 group-focus-within/podcast:pointer-events-auto group-focus-within/podcast:scale-105 group-focus-within/podcast:z-100"
+  (mouseenter)="hovering.set(true)"
+  (mouseleave)="hovering.set(false)"
+>
+  <div class="w-full h-auto flex flex-col relative rounded-md overflow-hidden">
+    <button
+      type="button"
+      class="absolute top-3 end-3 z-30 size-9 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center cursor-pointer transition-colors"
+      [attr.aria-label]="bookmarked() ? 'Remove bookmark' : 'Add bookmark'"
+      [attr.aria-pressed]="bookmarked()"
+      (click)="toggleBookmark()"
+    >
+      <ng-icon
+        [svg]="bookmarked() ? icons.matBookmarkRound : icons.matBookmarkBorderRound"
+        class="size-5"
+      />
+    </button>
+    <div class="relative w-full aspect-square bg-card-hover px-3 py-4 space-y-3">
+      <a class="block w-3/5" [routerLink]="courseLink()" tabindex="-1" aria-hidden="true">
+        <app-record-disk
+          class="w-full h-auto aspect-square block"
+          [coverImage]="artwork() ?? ''"
+          [diskImage]="artwork() ?? undefined"
+          [config]="disk()"
+        />
+      </a>
+      <div class="flex flex-col space-y-2 justify-end">
+        <h3 class="text-white font-bold text-lg line-clamp-1">
+          <a [routerLink]="courseLink()" class="hover:underline focus-visible:underline">{{
+            c.title
+          }}</a>
+        </h3>
+        @if (c.short_description) {
+          <p class="text-xs text-zinc-300 line-clamp-2">{{ c.short_description }}</p>
+        }
+        <app-categories-list
+          class="text-muted-foreground text-xs w-full"
+          [items]="c.fields_of_study"
+        />
+        <app-caira-credly-badge
+          [includedForCaira]="c.included_for_caira"
+          [hasIndividualBadge]="c.has_individual_badge"
+          variant="inline"
+        />
+        <div class="flex items-center justify-between space-x-2">
+          <div class="flex items-center space-x-2">
+            <button
+              app-button
+              type="button"
+              class="bg-white text-black hover:bg-white hover:text-black rounded-md gap-2"
+              variant="default"
+              (click)="openTrailer()"
+            >
+              <ng-icon [svg]="icons.faSolidPlay" class="size-4" />
+              Trailer
+            </button>
+            @if (c.has_additional_resources.has_ai_kit) {
+              <!-- The gradient ring: the wrapper's 1px padding. -->
+              <div
+                class="flex rounded-full justify-center items-center bg-linear-to-r from-white to-transparent to-70% p-px overflow-hidden max-md:hidden"
+              >
+                <button
+                  app-button
+                  type="button"
+                  class="bg-background rounded-full! gap-2"
+                  variant="ghost"
+                  (click)="openAiKit()"
+                >
+                  <ng-icon [svg]="icons.faSolidRobot" class="size-4" />
+                  AI Kit
+                </button>
+              </div>
+            }
+          </div>
+          @if (c.total_cpe_credits !== null) {
+            <!-- Not a control: the same pill as the masterclass cards. -->
+            <button
+              app-button
+              type="button"
+              class="text-accent hover:bg-transparent border-accent rounded-md cursor-default"
+              variant="outline"
+              tabindex="-1"
+            >
+              {{ c.total_cpe_credits }} CPE
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

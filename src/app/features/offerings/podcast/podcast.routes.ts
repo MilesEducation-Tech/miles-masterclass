@@ -3,6 +3,8 @@ import { authGuard } from '@core/guards/auth/auth-guard';
 import { FeedbackFacade } from '@features/offerings/services/feedback-facade';
 import { ChapterFacade } from '@features/offerings/services/chapter-facade';
 import { MasterclassFacade } from '@features/offerings/services/masterclass-facade';
+import { MasterclassLibraryFacade } from '@features/offerings/services/masterclass-library-facade';
+import { MasterclassRailFilter } from '@shared/services/masterclass-rail-filter';
 import { Podcast } from '@features/offerings/podcast/pages/podcast/podcast';
 
 /**
@@ -12,7 +14,12 @@ import { Podcast } from '@features/offerings/podcast/pages/podcast/podcast';
  * never loads.
  */
 export const podcastRoutes: Route[] = [
-  { path: '', component: Podcast },
+  {
+    path: '',
+    component: Podcast,
+    // The landing page's rows (connected to `podcast`) and the rails' filter.
+    providers: [MasterclassLibraryFacade, MasterclassRailFilter],
+  },
   {
     path: ':courseId/:courseTitle',
     // Podcast is the last user of the legacy `MasterclassFacade` (masterclass moved to

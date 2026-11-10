@@ -1,6 +1,7 @@
 import { environment } from '@env/environment';
 import { MASTERCLASS_COURSE_TYPE, RAIL_PAGE_SIZE } from '@core/constants/masterclass';
 import { RouteConfig } from '@core/models/http.model';
+import { MasterclassHomePage } from '@core/models/masterclass-home.model';
 import {
   LibraryOffering,
   LibraryOfferingConfig,
@@ -12,8 +13,24 @@ import {
  * for every course type; `course_type` narrows them.
  */
 export const LIBRARY_OFFERINGS: Readonly<Record<LibraryOffering, LibraryOfferingConfig>> = {
-  masterclass: { courseType: MASTERCLASS_COURSE_TYPE },
+  masterclass: { courseType: MASTERCLASS_COURSE_TYPE, ownTracks: false },
+  // A podcast is a course with `course_type: "podcast"` (UAT, 2026-11-10).
+  podcast: { courseType: 'podcast', ownTracks: true },
 };
+
+/**
+ * `tracks-page/`'s list sizes for an offering that reads its own tracks: every
+ * track and every course in one read, the API's ceiling (it pages both lists
+ * 6 rows at a time by default). `login_type` and `course_type` are added per
+ * request. Postman `web-masterclass-tracks-page-v1`.
+ */
+export const OFFERING_TRACKS_PAGE_SIZES = {
+  'tracks.page_size': RAIL_PAGE_SIZE,
+  'tracks.courses.page_size': RAIL_PAGE_SIZE,
+} as const;
+
+/** The tracks before `tracks-page/` answers, so the page reads one fixed shape. */
+export const EMPTY_TRACKS_PAGE: MasterclassHomePage = { login_type: 'pre_login', tracks: [] };
 
 /**
  * The signed-in rails' read: every learner rail in one call. `post_login`
