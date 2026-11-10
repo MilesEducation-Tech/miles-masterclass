@@ -7,9 +7,10 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- 🟡 **2026-11-10, NON-REFACTOR — MIL-178 (Task, podcast epic), remove the legacy podcast course code. DONE,
-  UNCOMMITTED** (`prompts/remove-legacy-podcast-course-code.md`), on `refactor/MIL-178-remove-legacy-podcast-course-code`,
-  cut from MIL-177.
+- 🟡 **2026-11-10, NON-REFACTOR — MIL-178 (Task, podcast epic), remove the legacy podcast course code. COMMITTED,
+  PR NEXT** (`prompts/remove-legacy-podcast-course-code.md`), on `refactor/MIL-178-remove-legacy-podcast-course-code`,
+  cut from MIL-177 and rebased onto `master` (`6e370561`) after #250 merged; the rebase dropped the MIL-179, MIL-176
+  and MIL-177 commits and left the code unchanged. Last PR of the podcast epic (MIL-175).
   - **Deleted (no users after MIL-177, about 2,440 lines):**
     - services: `MasterclassFacade`, `ChapterFacade`;
     - components: `CourseChapterList`, `CourseResources`, `VideoChapter`, `AudioChapter`, `CourseRelatedSection`;
@@ -30,12 +31,11 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
   - `AGENTS.md` §9 still says "The 34 files in `LEGACY_ANY_FILES`"; the list was 19 on `master`, now 18. Not
     touched here.
 
-- 🟡 **2026-11-10, NON-REFACTOR — MIL-177 (story 2 of the podcast epic), the podcast course and chapter pages, final
-  assessment, report and feedback on the web API. COMMITTED, PR NEXT** (`prompts/podcast-course-chapter-binding.md`),
-  on `feat/MIL-177-podcast-course-chapter-binding`, cut from MIL-176 and rebased onto `master` (`f90131d1`) after
-  #248 merged; the rebase dropped the MIL-179 and MIL-176 commits and left the code unchanged. MIL-178 still sits on
-  the pre-rebase commits; rebase it onto `master` once this merges. Story 3 became the Task "Remove the legacy
-  podcast course code" (user, 2026-11-10).
+- ✅ **2026-11-10, NON-REFACTOR — MIL-177 (story 2 of the podcast epic), the podcast course and chapter pages, final
+  assessment, report and feedback on the web API. MERGED as #250 (`6e370561`)**
+  (`prompts/podcast-course-chapter-binding.md`), on `feat/MIL-177-podcast-course-chapter-binding`, cut from MIL-176
+  and rebased onto `master` (`f90131d1`) after #248 merged; the rebase dropped the MIL-179 and MIL-176 commits and
+  left the code unchanged. Story 3 became the Task "Remove the legacy podcast course code" (user, 2026-11-10).
   - **Change:**
     - `COURSE_DETAIL_API.podcast` (the same web routes, `urlSegment: 'podcast'`, `modeLabel: 'Podcast'`).
     - The podcast course route mirrors masterclass's: the four shared facades, plus the chapter, exam (leave
@@ -7067,6 +7067,7 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-11-10 · NON-REFACTOR · **MIL-177 merged as #250 (`6e370561`)**; MIL-178 rebased onto `master`: the old MIL-179, MIL-176 and MIL-177 commits dropped (their conflicts resolved to `master`'s side), one STATE.md conflict on its own entry (both sides kept), code unchanged, PR next
 - 2026-11-10 · NON-REFACTOR · **MIL-176 merged as #248 (`f90131d1`)**; MIL-177 rebased onto `master`: the old MIL-179 and MIL-176 commits dropped (their conflicts resolved to `master`'s side), one STATE.md conflict on its own entry (both sides kept), code unchanged, PR next
 - 2026-11-10 · NON-REFACTOR · **MIL-179 merged as #247 (`f140b094`)**; MIL-176 rebased onto `master` with no conflicts (same files as before, three commits), PR next
 - 2026-11-10 · NON-REFACTOR · **MIL-178 legacy podcast cleanup** (uncommitted, on MIL-177): ~2,440 lines deleted (`MasterclassFacade`, `ChapterFacade`, 5 components, `course-load`, `related-content.model`), `AudioJs` kept · MIL-176/177/179 checks re-run green · lint 0 errors (97 warnings), structure ✔ (pruned), build:prod ✔ (230.43 kB), build-storybook ✔
