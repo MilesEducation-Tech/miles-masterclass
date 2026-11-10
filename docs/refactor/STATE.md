@@ -8,8 +8,10 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 ## Now
 
 - 🟡 **2026-11-10, NON-REFACTOR — MIL-177 (story 2 of the podcast epic), the podcast course and chapter pages, final
-  assessment, report and feedback on the web API. DONE, UNCOMMITTED** (`prompts/podcast-course-chapter-binding.md`),
-  on `feat/MIL-177-podcast-course-chapter-binding`, cut from MIL-176. Story 3 became the Task "Remove the legacy
+  assessment, report and feedback on the web API. COMMITTED, PR NEXT** (`prompts/podcast-course-chapter-binding.md`),
+  on `feat/MIL-177-podcast-course-chapter-binding`, cut from MIL-176 and rebased onto `master` (`f90131d1`) after
+  #248 merged; the rebase dropped the MIL-179 and MIL-176 commits and left the code unchanged. MIL-178 still sits on
+  the pre-rebase commits; rebase it onto `master` once this merges. Story 3 became the Task "Remove the legacy
   podcast course code" (user, 2026-11-10).
   - **Change:**
     - `COURSE_DETAIL_API.podcast` (the same web routes, `urlSegment: 'podcast'`, `modeLabel: 'Podcast'`).
@@ -38,10 +40,10 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
   - Gates: lint 0 errors (98 warnings), structure ✔ (pruned: both podcast pages' relative imports), build:prod ✔
     (1.01 MB / 230.46 kB, only `ai-labs.css`).
 
-- 🟡 **2026-11-10, NON-REFACTOR — MIL-176 (story 1 of the podcast epic), the podcast landing page on the web API.
-  COMMITTED, PR NEXT** (`prompts/podcast-landing-binding.md`), on `feat/MIL-176-podcast-landing-binding`, rebased
-  onto `master` (`f140b094`) after #247 merged; the rebase dropped the MIL-179 commits and left the files unchanged.
-  MIL-177 and MIL-178 still sit on the pre-rebase commits; rebase each onto `master` once its base merges.
+- ✅ **2026-11-10, NON-REFACTOR — MIL-176 (story 1 of the podcast epic), the podcast landing page on the web API.
+  MERGED as #248 (`f90131d1`)** (`prompts/podcast-landing-binding.md`), on `feat/MIL-176-podcast-landing-binding`,
+  rebased onto `master` (`f140b094`) after #247 merged; the rebase dropped the MIL-179 commits and left the files
+  unchanged.
   - **Change:**
     - `LIBRARY_OFFERINGS.podcast` (`course_type: "podcast"`, `ownTracks: true`).
     - `MasterclassLibraryFacade` reads an `ownTracks` offering's `tracks-page/` itself: `pre_login` on the server
@@ -7042,6 +7044,7 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-11-10 · NON-REFACTOR · **MIL-176 merged as #248 (`f90131d1`)**; MIL-177 rebased onto `master`: the old MIL-179 and MIL-176 commits dropped (their conflicts resolved to `master`'s side), one STATE.md conflict on its own entry (both sides kept), code unchanged, PR next
 - 2026-11-10 · NON-REFACTOR · **MIL-179 merged as #247 (`f140b094`)**; MIL-176 rebased onto `master` with no conflicts (same files as before, three commits), PR next
 - 2026-11-10 · NON-REFACTOR · **MIL-177 podcast course and chapter pages** (uncommitted, on MIL-176): `COURSE_DETAIL_API.podcast`, assessment/report/feedback routes, `routeOffering`, hero/list/pages rebuilt, three sections moved up, nullable `exam_rules` / `masterclass_duration` · 34 Playwright checks green + MIL-176/179 re-runs · lint 0 errors, structure ✔ (pruned), build:prod ✔ (1.01 MB / 230.46 kB)
 - 2026-11-10 · NON-REFACTOR · **MIL-176 podcast landing page** (uncommitted, on top of MIL-179): `LIBRARY_OFFERINGS.podcast`, own tracks read, `PodcastCourseCard`, page rewritten · 33 Playwright checks green + MIL-179's 37 re-run · lint 0 errors, structure ✔ (pruned), build:prod ✔ (1.02 MB / 230.52 kB)
