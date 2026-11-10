@@ -1,5 +1,6 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, DestroyRef, inject, input, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroArrowDownTray } from '@ng-icons/heroicons/outline';
 import { NgpLabel } from 'ng-primitives/form-field';
@@ -22,6 +23,7 @@ import { CourseCertificateFacade } from '@features/offerings/services/course-cer
 import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
 import { CourseEvaluationFacade } from '@features/offerings/services/course-evaluation-facade';
 import { FinalAssessmentFacade } from '@features/offerings/services/final-assessment-facade';
+import { routeOffering } from '@features/offerings/utils/route-offering';
 
 /**
  * `…/:courseId/:courseTitle/final-assessment/report`: the learner's latest
@@ -80,7 +82,7 @@ export class FinalAssessmentReport {
     // A direct load (or a reload) arrives without the course page, so the course
     // is connected here too, as the exam page does.
     inject(CourseDetailFacade).connect(
-      'masterclass',
+      routeOffering(inject(ActivatedRoute)),
       computed(() => ({ courseId: this.courseId(), slug: this.courseTitle() })),
     );
     this.facade.openReport(true);

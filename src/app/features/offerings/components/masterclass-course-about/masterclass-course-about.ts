@@ -5,7 +5,7 @@ import { logo } from '@core/constants/icon';
 import { CategoriesList } from '@shared/components/categories-list/categories-list';
 import { DurationPipe } from '@shared/pipes/duration/duration-pipe';
 import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
-import { durationParts } from '@features/offerings/masterclass/utils/duration-parts';
+import { durationParts } from '@features/offerings/utils/duration-parts';
 
 /**
  * The course page's About section, from `course-detail/`. Its design is the
@@ -35,6 +35,6 @@ export class MasterclassCourseAbout {
 
   protected readonly duration = computed(() => {
     const course = this.course();
-    return course ? durationParts(course.masterclass_duration) : null;
+    return course?.masterclass_duration ? durationParts(course.masterclass_duration) : null;
   });
 }

@@ -433,8 +433,8 @@ export class CourseChapterFacade {
       await import('@features/offerings/dialogs/select-cpe-mode/select-cpe-mode');
     if (!this.isStill(key)) return;
     const ref = this.dialogs.open<SelectCpeModeData, SelectCpeModeResult>(SelectCpeMode, {
-      // Masterclass is the only offering on this API so far.
-      data: { type: 'Masterclass', format: 'video' },
+      // Every chapter plays as video: `course-detail/` doesn't say which podcasts are audio.
+      data: { type: this.detail.modeLabel(), format: 'video' },
     });
     const result = await firstValueFrom(ref.afterClosed);
     if (!this.isStill(key)) return;

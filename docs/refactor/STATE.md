@@ -7,10 +7,43 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- 🟡 **2026-11-10, NON-REFACTOR — MIL-176 (story 1 of the podcast epic), the podcast landing page on the web API.
-  COMMITTED, PR NEXT** (`prompts/podcast-landing-binding.md`), on `feat/MIL-176-podcast-landing-binding`, rebased
-  onto `master` (`f140b094`) after #247 merged; the rebase dropped the MIL-179 commits and left the files unchanged.
-  MIL-177 and MIL-178 still sit on the pre-rebase commits; rebase each onto `master` once its base merges.
+- 🟡 **2026-11-10, NON-REFACTOR — MIL-177 (story 2 of the podcast epic), the podcast course and chapter pages, final
+  assessment, report and feedback on the web API. COMMITTED, PR NEXT** (`prompts/podcast-course-chapter-binding.md`),
+  on `feat/MIL-177-podcast-course-chapter-binding`, cut from MIL-176 and rebased onto `master` (`f90131d1`) after
+  #248 merged; the rebase dropped the MIL-179 and MIL-176 commits and left the code unchanged. MIL-178 still sits on
+  the pre-rebase commits; rebase it onto `master` once this merges. Story 3 became the Task "Remove the legacy
+  podcast course code" (user, 2026-11-10).
+  - **Change:**
+    - `COURSE_DETAIL_API.podcast` (the same web routes, `urlSegment: 'podcast'`, `modeLabel: 'Podcast'`).
+    - The podcast course route mirrors masterclass's: the four shared facades, plus the chapter, exam (leave
+      guard), report and evaluation children, three `RenderMode.Client` entries, and `data: { offering }`.
+    - The shared exam, report and evaluation pages read the offering from it (`routeOffering`).
+    - `PodcastCourse`, `PodcastChapter` and `PodcastCourseHero` rebuilt on the facades; new `PodcastChapterList`.
+    - `MasterclassCourseAbout` / `Resources` / `Related`, `duration-parts.ts` and `masterclass-course.model.ts`
+      moved to the offerings level (git renames).
+    - Related cards link by their own `course_type`.
+    - `exam_rules` and `masterclass_duration` are nullable (null on UAT podcasts).
+    - Every chapter plays in the video player (option 2: no format flag yet).
+  - **Verified (dev 4101, Playwright, English):** 34 checks green.
+    - Signed out, live UAT:
+      - Server HTML with title and canonical; hero, record disks and chapter rows; About.
+      - Trailer toasts; chapter links under `/podcast/…/chapter/`; Watch Now goes to sign-in.
+      - An old numeric link opens the podcast; an unknown id shows "We couldn't find this podcast."
+    - Signed in, stubbed from the live body:
+      - The bookmark posts the podcast and holds.
+      - Related cards link to `/masterclass/` and `/podcast/` by type.
+      - The chapter page plays the stream; "Choose Your Podcast Mode", then `mode=preview`; chapter-start.
+      - The rules dialog, then the exam at `/podcast/…/final-assessment/sess-1/exam`.
+      - The report and the evaluation at their `/podcast/` paths; the certificate is enabled after feedback.
+    - The masterclass course page and its related links are unchanged.
+    - MIL-176's 33 and MIL-179's 37 re-run green; screenshots at 375 / 768 / 1440, no sideways scroll.
+  - Gates: lint 0 errors (98 warnings), structure ✔ (pruned: both podcast pages' relative imports), build:prod ✔
+    (1.01 MB / 230.46 kB, only `ai-labs.css`).
+
+- ✅ **2026-11-10, NON-REFACTOR — MIL-176 (story 1 of the podcast epic), the podcast landing page on the web API.
+  MERGED as #248 (`f90131d1`)** (`prompts/podcast-landing-binding.md`), on `feat/MIL-176-podcast-landing-binding`,
+  rebased onto `master` (`f140b094`) after #247 merged; the rebase dropped the MIL-179 commits and left the files
+  unchanged.
   - **Change:**
     - `LIBRARY_OFFERINGS.podcast` (`course_type: "podcast"`, `ownTracks: true`).
     - `MasterclassLibraryFacade` reads an `ownTracks` offering's `tracks-page/` itself: `pre_login` on the server
@@ -7011,7 +7044,9 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-11-10 · NON-REFACTOR · **MIL-176 merged as #248 (`f90131d1`)**; MIL-177 rebased onto `master`: the old MIL-179 and MIL-176 commits dropped (their conflicts resolved to `master`'s side), one STATE.md conflict on its own entry (both sides kept), code unchanged, PR next
 - 2026-11-10 · NON-REFACTOR · **MIL-179 merged as #247 (`f140b094`)**; MIL-176 rebased onto `master` with no conflicts (same files as before, three commits), PR next
+- 2026-11-10 · NON-REFACTOR · **MIL-177 podcast course and chapter pages** (uncommitted, on MIL-176): `COURSE_DETAIL_API.podcast`, assessment/report/feedback routes, `routeOffering`, hero/list/pages rebuilt, three sections moved up, nullable `exam_rules` / `masterclass_duration` · 34 Playwright checks green + MIL-176/179 re-runs · lint 0 errors, structure ✔ (pruned), build:prod ✔ (1.01 MB / 230.46 kB)
 - 2026-11-10 · NON-REFACTOR · **MIL-176 podcast landing page** (uncommitted, on top of MIL-179): `LIBRARY_OFFERINGS.podcast`, own tracks read, `PodcastCourseCard`, page rewritten · 33 Playwright checks green + MIL-179's 37 re-run · lint 0 errors, structure ✔ (pruned), build:prod ✔ (1.02 MB / 230.52 kB)
 - 2026-11-10 · NON-REFACTOR · **MIL-179 shared landing rails** (uncommitted): `MasterclassLibraryFacade`, its model and constants moved to `features/offerings/` with `connect(offering)`; `ComingSoonCard` extracted; rail filter `contentType` · 37 Playwright checks green (same query strings as master) · lint 0 errors, structure ✔, build:prod ✔ (1.01 MB / 230.41 kB) · MIL-173 merged as #241
 - 2026-11-04 · NON-REFACTOR · **MIL-173 replayed onto `master` (`b5f95c5c`)**: one STATE.md conflict (both "Now" entries kept, MIL-173 first); the stray `<<<<<<< HEAD` line master already carries left as is

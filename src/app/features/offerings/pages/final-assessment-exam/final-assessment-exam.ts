@@ -35,6 +35,7 @@ import {
 } from '@features/offerings/models/final-assessment.model';
 import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
 import { FinalAssessmentFacade } from '@features/offerings/services/final-assessment-facade';
+import { routeOffering } from '@features/offerings/utils/route-offering';
 
 /**
  * `…/:courseId/:courseTitle/final-assessment/:sessionId/exam`: one sitting of
@@ -94,7 +95,7 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
     // A direct load (or a reload) arrives without the course page, so the course
     // is connected here too, as the chapter page does.
     inject(CourseDetailFacade).connect(
-      'masterclass',
+      routeOffering(inject(ActivatedRoute)),
       computed(() => ({ courseId: this.courseId(), slug: this.courseTitle() })),
     );
     effect(() => this.facade.openSitting(this.sessionId() ?? null));
