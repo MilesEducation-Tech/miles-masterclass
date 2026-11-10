@@ -1,4 +1,4 @@
-import { NgOptimizedImage, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
 import {
   swiperConfigComingSoon,
@@ -15,7 +15,6 @@ import {
 import { MasterclassBookmarks } from '@core/services/masterclass-bookmarks/masterclass-bookmarks';
 import { MasterclassHomeFacade } from '@core/services/masterclass-home-facade/masterclass-home-facade';
 import { NgIcon } from '@ng-icons/core';
-import { faSolidBell, faSolidCheck, faSolidPlay } from '@ng-icons/font-awesome/solid';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Carousel } from '@shared/components/carousel/carousel';
 import { MasterclassCourseCard } from '@shared/components/cards/masterclass-course-card/masterclass-course-card';
@@ -28,17 +27,15 @@ import { CourseAiKit } from '@shared/services/course-ai-kit';
 import { MasterclassRailFilter } from '@shared/services/masterclass-rail-filter';
 import { Utils } from '@shared/services/utils';
 import { Button } from '@shared/ui/button/button';
-import {
-  MASTERCLASS_COMING_SOON_HEADING,
-  MASTERCLASS_RAIL_SECTION_IDS,
-} from '@features/offerings/masterclass/constants/masterclass';
+import { ComingSoonCard } from '@features/offerings/components/coming-soon-card/coming-soon-card';
+import { MASTERCLASS_RAIL_SECTION_IDS } from '@features/offerings/constants/masterclass-library';
+import { MASTERCLASS_COMING_SOON_HEADING } from '@features/offerings/masterclass/constants/masterclass';
 import {
   MASTERCLASS_SECTION_NAV,
   MASTERCLASS_TRACKS_SECTION_ID,
 } from '@features/offerings/masterclass/constants/masterclass-nav';
-import { MasterclassComingSoonCourse } from '@features/offerings/masterclass/models/masterclass-library.model';
 import { MasterclassHighlightFacade } from '@features/offerings/masterclass/services/masterclass-highlight-facade';
-import { MasterclassLibraryFacade } from '@features/offerings/masterclass/services/masterclass-library-facade';
+import { MasterclassLibraryFacade } from '@features/offerings/services/masterclass-library-facade';
 
 /**
  * The masterclass landing page: the hero over the admin-pinned courses from
@@ -53,8 +50,8 @@ import { MasterclassLibraryFacade } from '@features/offerings/masterclass/servic
   selector: 'app-masterclass',
   imports: [
     Carousel,
+    ComingSoonCard,
     Faq,
-    NgOptimizedImage,
     NgTemplateOutlet,
     PartnerContentList,
     SectionNav,
@@ -81,6 +78,7 @@ export class Masterclass {
     // MIL-23: this page renders the tracks on the server (a crawler gets the
     // track list; the browser reuses the response). The home page does not.
     this.home.fetchOnServer.set(true);
+    this.library.connect('masterclass');
   }
 
   // Even tracks render vertical cards (more per view), odd ones horizontal.
@@ -89,9 +87,6 @@ export class Masterclass {
   protected readonly swiperConfigComingSoon = swiperConfigComingSoon;
   protected readonly comingSoonHeading = MASTERCLASS_COMING_SOON_HEADING;
   protected readonly comingSoonSectionId = MASTERCLASS_RAIL_SECTION_IDS.comingSoon;
-  protected readonly playIcon = faSolidPlay;
-  protected readonly bellIcon = faSolidBell;
-  protected readonly checkIcon = faSolidCheck;
   protected readonly filterIcon = filterIcon;
   protected readonly railFilterEmpty = RAIL_FILTER_EMPTY;
 
@@ -120,11 +115,6 @@ export class Masterclass {
   /** The shared video dialog; it toasts "Trailer Not Found" for a course with none. */
   protected openTrailer(course: MasterclassCourse): void {
     void this.utils.openVideoDialog(course.horizontal_trailer_url, course.title);
-  }
-
-  /** A Coming Soon teaser's trailer, in the same dialog. */
-  protected openComingSoonTrailer(course: MasterclassComingSoonCourse): void {
-    void this.utils.openVideoDialog(course.trailer_url, course.name);
   }
 
   /** The AI Kit button, on courses that have one: the "Additional Resources" dialog. */

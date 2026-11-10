@@ -1,0 +1,53 @@
+@let teaser = course();
+<div class="flex justify-end h-full relative">
+  <div
+    class="flex items-end justify-start text-[16rem] leading-[280px] font-medium [-webkit-text-fill-color:transparent]! [-webkit-text-stroke:10px_#ffffff47]! tracking-tighter self-end m-0 absolute bottom-[-22px] start-0 w-2/5 h-full"
+    aria-hidden="true"
+  >
+    {{ index() + 1 }}
+  </div>
+  <div
+    class="max-w-[280px] aspect-9/16 relative flex flex-col h-full w-[70%] p-4 justify-end z-20 rounded-xl overflow-hidden bg-secondary"
+  >
+    @if (teaser.thumbnail_url) {
+      <img
+        [ngSrc]="teaser.thumbnail_url"
+        [alt]="teaser.name"
+        fill
+        class="object-cover object-top"
+      />
+    }
+    <!-- The course cards' hover fade, so the buttons read over busy artwork. -->
+    <div
+      class="absolute inset-0 bg-linear-to-t from-background from-20% via-background/70 via-30% to-50% to-transparent opacity-0 group-hover/card:opacity-100 group-focus-within/card:opacity-100 transition-opacity duration-300 pointer-events-none"
+    ></div>
+    <!-- `relative` paints them over the artwork and the fade; focus shows them, as hover
+         does. Trailer only when there is one; Remind Me on every card. -->
+    <div
+      class="relative flex flex-col gap-2 w-full opacity-0 group-hover/card:opacity-100 focus-within:opacity-100 transition-opacity duration-300 ease-in-out"
+    >
+      @if (teaser.trailer_url) {
+        <button
+          app-button
+          type="button"
+          class="w-full bg-white text-black rounded-md hover:bg-white hover:text-black gap-2"
+          (click)="library.openComingSoonTrailer(teaser)"
+        >
+          <ng-icon [svg]="playIcon" class="size-4" />
+          Trailer
+        </button>
+      }
+      <button
+        app-button
+        type="button"
+        class="w-full bg-white text-black rounded-md hover:bg-white hover:text-black gap-2 disabled:cursor-wait"
+        [attr.aria-pressed]="teaser.notify_me"
+        [disabled]="library.remindersInFlight().has(teaser.id)"
+        (click)="library.toggleReminder(teaser)"
+      >
+        <ng-icon [svg]="teaser.notify_me ? checkIcon : bellIcon" class="size-4" />
+        {{ teaser.notify_me ? 'Reminded' : 'Remind Me' }}
+      </button>
+    </div>
+  </div>
+</div>

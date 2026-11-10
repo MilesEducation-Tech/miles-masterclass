@@ -1,6 +1,7 @@
 import { environment } from '@env/environment';
 import { RouteConfig } from '@core/models/http.model';
 import {
+  FilterContentType,
   RailFilterCreditBucket,
   RailFilterGroupKey,
 } from '@core/models/masterclass-rail-filter.model';
@@ -49,10 +50,13 @@ export const MASTERCLASS_FILTER_ROUTE = {
   void,
   unknown,
   Record<string, string>,
-  { content_type: string; page_size: number; level?: string }
+  { content_type: FilterContentType; page_size: number; level?: string }
 >;
 
-/** Every masterclass in one page (64 on UAT); add `level` for one level's. */
+/**
+ * Every masterclass in one page (64 on UAT); add `level` for one level's.
+ * `content_type` is the default; `MasterclassRailFilter.contentType` changes it.
+ */
 export const MASTERCLASS_FILTER_PARAMS = {
   content_type: 'masterclass_course',
   page_size: RAIL_PAGE_SIZE,

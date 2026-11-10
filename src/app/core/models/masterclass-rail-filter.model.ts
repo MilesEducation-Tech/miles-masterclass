@@ -48,6 +48,13 @@ export interface FilteredRail extends MasterclassRail {
 
 // ---- Course data -----------------------------------------------------------
 
+/**
+ * `content_type` on `filter/`, as the contract lists it (Postman
+ * `web-masterclass-filter-v1`): which kind of course the read lists.
+ */
+export type FilterContentType =
+  'masterclass_course' | 'ai_kit' | 'podcast' | 'reel' | 'nano_learning' | 'micro_learning';
+
 /** A `filter/` row: the keys the cards lack. */
 export interface FilterCourse {
   id: string;

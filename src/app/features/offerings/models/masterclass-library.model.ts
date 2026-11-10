@@ -9,8 +9,10 @@ import {
 } from '@core/utils/contract-guards';
 
 /**
- * Types for the masterclass page's signed-in rails (Postman, checked on UAT
- * 2026-10-26):
+ * Types for an offering landing page's signed-in rails (Postman, checked on UAT
+ * 2026-10-26). Offerings-level since MIL-179: every course type is served by
+ * the same `web-api/v1/masterclass/` routes, narrowed by `course_type`, so the
+ * names keep the API's `masterclass` namespace.
  * - `GET web-api/v1/masterclass/library/` (`web-masterclass-library-v1`):
  *   every learner rail in one read, each its own pagination block.
  * - `GET web-api/v1/masterclass/completed-course-section/`
@@ -27,6 +29,27 @@ import {
  * and both carry paging metadata beyond `results`. Every card is the
  * `tracks-page/` card (`MasterclassCourse`), checked with the same guard.
  */
+
+// ---- Offerings -------------------------------------------------------------
+
+/**
+ * `course_type` on the web masterclass list routes, as the contract lists it
+ * (Postman `web-masterclass-library-v1`). A masterclass is a `course`.
+ */
+export type WebCourseType = 'course' | 'podcast' | 'nano_learning' | 'micro_learning';
+
+/**
+ * The offerings `MasterclassLibraryFacade` serves: those whose landing page
+ * shows the learner rails. An offering joins by adding its `LIBRARY_OFFERINGS`
+ * entry.
+ */
+export type LibraryOffering = 'masterclass';
+
+/** What differs per offering on its landing page's rails. */
+export interface LibraryOfferingConfig {
+  /** Narrows `library/`, `completed-course-section/` and `coming-soon/`, and My List. */
+  courseType: WebCourseType;
+}
 
 // ---- Rails -----------------------------------------------------------------
 

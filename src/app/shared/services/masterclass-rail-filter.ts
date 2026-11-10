@@ -8,6 +8,7 @@ import { MASTERCLASS_FILTER_PARAMS, MASTERCLASS_FILTER_ROUTE } from '@core/const
 import { MasterclassRail } from '@core/models/masterclass-home.model';
 import {
   CourseFilterIndex,
+  FilterContentType,
   FilteredRail,
   FilterPage,
   LevelCourses,
@@ -38,6 +39,13 @@ export class MasterclassRailFilter {
   private readonly api = inject(ApiClient);
   private readonly dialogs = inject(NgpDialogManager);
   private readonly logger = inject(Logger);
+
+  /**
+   * Which courses `filter/` lists, `masterclass_course` unless the page says
+   * otherwise. Set it before the first open: the read is made once per page,
+   * and the service is route-scoped, so one page filters one kind of course.
+   */
+  readonly contentType = signal<FilterContentType>(MASTERCLASS_FILTER_PARAMS.content_type);
 
   /** Each rail's selection, by rail id. */
   private readonly selections = signal<Readonly<Record<string, RailFilterSelection>>>({});
@@ -144,7 +152,8 @@ export class MasterclassRailFilter {
   }
 
   private readPage(level?: string): Observable<FilterPage> {
-    const params = level ? { ...MASTERCLASS_FILTER_PARAMS, level } : MASTERCLASS_FILTER_PARAMS;
+    const base = { ...MASTERCLASS_FILTER_PARAMS, content_type: this.contentType() };
+    const params = level ? { ...base, level } : base;
     return this.api
       .call(MASTERCLASS_FILTER_ROUTE, undefined, { params })
       .pipe(map(parseFilterPage));

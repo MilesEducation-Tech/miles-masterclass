@@ -8,7 +8,7 @@ import { CourseEvaluationFacade } from '@features/offerings/services/course-eval
 import { FinalAssessmentFacade } from '@features/offerings/services/final-assessment-facade';
 import { Masterclass } from '@features/offerings/masterclass/pages/masterclass/masterclass';
 import { MasterclassHighlightFacade } from '@features/offerings/masterclass/services/masterclass-highlight-facade';
-import { MasterclassLibraryFacade } from '@features/offerings/masterclass/services/masterclass-library-facade';
+import { MasterclassLibraryFacade } from '@features/offerings/services/masterclass-library-facade';
 
 /**
  * The landing and course pages are public. Everything a learner does inside a
