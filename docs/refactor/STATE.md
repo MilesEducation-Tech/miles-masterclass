@@ -7,8 +7,38 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- 🟡 **2026-11-04, NON-REFACTOR — MIL-173, "has a subscription" from `current_subscription_details`. COMMITTED,
-  PR pending** (`prompts/subscription-from-user-details.md`), on `feat/MIL-173-subscription-from-user-details`,
+- 🟡 **2026-11-10, NON-REFACTOR — MIL-179 (refactor, podcast epic), the landing-page rows service shared by
+  offering. DONE, UNCOMMITTED** (`prompts/share-landing-rails.md`), on `refactor/MIL-179-share-landing-rails` off
+  `master` (`4540eb59`, 4.1.0). Blocks MIL-176 (podcast landing page, plan `prompts/podcast-landing-binding.md` on
+  `feat/MIL-176-podcast-landing-binding`, committed there).
+  - **Why:** the podcast landing page shows the masterclass page's learner rows from the same
+    `web-api/v1/masterclass/…` routes with `course_type=podcast` (checked live on UAT 2026-11-10), so the service
+    moves to the offerings level instead of being copied.
+  - **Change:**
+    - `MasterclassLibraryFacade` and `masterclass-library.model.ts` moved from `offerings/masterclass/` to
+      `offerings/services/` and `offerings/models/` (git renames).
+    - The library constants moved to `offerings/constants/masterclass-library.ts`.
+    - The facade gains `connect(offering)` (the `CourseDetailFacade` pattern) and reads `course_type` from
+      `LIBRARY_OFFERINGS` (only `masterclass` for now). The param objects lost `course_type`; the facade adds it in
+      the same position, so the query strings are unchanged.
+    - My List narrows to the connected offering's `course_type`.
+    - The inline Coming Soon card became `offerings/components/coming-soon-card` (it injects the facade; the facade
+      gained `openComingSoonTrailer`).
+    - `MasterclassRailFilter.contentType` (default `masterclass_course`, typed `FilterContentType` from the contract).
+  - **Verified (dev 4101, Playwright, English):** 37 checks green.
+    - Masterclass page signed out on live UAT: no learner reads; tracks and filter.
+    - Masterclass page signed in, stubbed: `library/`, `completed-course-section/`, `coming-soon/` and `filter/`
+      (including the per-level reads) send byte-for-byte `master`'s query strings; every rail, heading and order;
+      My List drops a bookmarked podcast; two teaser cards with ranks, Trailer only where there is one; Remind Me
+      on, 500 (reverts) and 409 (re-reads); the trailer dialog; the sidenav entries.
+    - Home page: the filter sends `master`'s params and there's no library read.
+    - Screenshot of the Coming Soon rail at 1440.
+  - Gates: lint 0 errors (98 warnings), structure ✔, build:prod ✔ (1.01 MB / 230.41 kB, only `ai-labs.css`).
+  - The console's "TypeError: not granted" on a trailer comes from the video dialog in the test browser; an
+    unchanged course card's trailer logs it too.
+
+- ✅ **2026-11-04, NON-REFACTOR — MIL-173, "has a subscription" from `current_subscription_details`. MERGED as
+  #241 (`f7a78da6`), released in 4.1.0** (`prompts/subscription-from-user-details.md`), on `feat/MIL-173-subscription-from-user-details`,
   first cut off `master` (`bba0e91c`), replayed onto `master` (`b5f95c5c`, 4.0.2) the same day.
   - **Why:** `user-details/` carries the subscription block since 2026-10-29 (contract §3.2), and every subscription
     decision in the app was a stub (always yes / always no) or read the dead `CurrentPlanData`.
@@ -6946,6 +6976,7 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-11-10 · NON-REFACTOR · **MIL-179 shared landing rails** (uncommitted): `MasterclassLibraryFacade`, its model and constants moved to `features/offerings/` with `connect(offering)`; `ComingSoonCard` extracted; rail filter `contentType` · 37 Playwright checks green (same query strings as master) · lint 0 errors, structure ✔, build:prod ✔ (1.01 MB / 230.41 kB) · MIL-173 merged as #241
 - 2026-11-04 · NON-REFACTOR · **MIL-173 replayed onto `master` (`b5f95c5c`)**: one STATE.md conflict (both "Now" entries kept, MIL-173 first); the stray `<<<<<<< HEAD` line master already carries left as is
 - 2026-11-04 · NON-REFACTOR · **MIL-173 subscription from user-details** (uncommitted): `AccountApi.hasSubscription` read by every subscription decision, `subscriptionGuard` on CPE Tracker, `CurrentPlanData` gone · 40 Playwright checks green · lint 0 errors, structure ✔ (baseline pruned), build:prod ✔ (1.01 MB / 230.41 kB) · MIL-171 merged as #235
 - 2026-11-03 · NON-REFACTOR · **MIL-171 leave guard asks once** (uncommitted): `canDeactivateExamGuard` remembers a confirmed leave across redirects; `leaveConfirmed` in the three `beforeunload`s · 26 Playwright checks green (4 fail on `master`) · MIL-168 merged as #233 (`f49bbe4a`)

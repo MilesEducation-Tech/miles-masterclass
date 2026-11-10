@@ -1,5 +1,5 @@
 import { SectionNavItem } from '@core/services/section-nav/section-nav';
-import { MASTERCLASS_RAIL_SECTION_IDS } from '@features/offerings/masterclass/constants/masterclass';
+import { MASTERCLASS_RAIL_SECTION_IDS } from '@features/offerings/constants/masterclass-library';
 
 /** The tracks wrapper; its entry shows only once there is a track to scroll to. */
 export const MASTERCLASS_TRACKS_SECTION_ID = 'masterclass-tracks';
