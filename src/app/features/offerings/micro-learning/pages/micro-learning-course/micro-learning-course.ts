@@ -225,8 +225,7 @@ export class MicroLearningCourse {
   }
 
   /**
-   * Mirrors `VideoChapter.openTranscript`: hits `v2/course-content/` with
-   * `chapter_id` and renders `data.chapter.transcript_text` in an HtmlContentDialog.
+   * Hits `v2/course-content/` with `chapter_id` and renders `data.chapter.transcript_text` in an HtmlContentDialog.
    * Cached per reel id so reopening the menu doesn't refetch.
    */
   openTranscript(): void {
@@ -255,8 +254,7 @@ export class MicroLearningCourse {
   }
 
   /**
-   * Mirrors `CourseResources.openGlossary`: same `v2/course-content/` endpoint,
-   * but without `chapter_id` so the response carries the course-level
+   * The same `v2/course-content/` read as the transcript, but without `chapter_id` so the response carries the course-level
    * `glossary_transcript_text`. Cached per reel id.
    */
   openGlossary(): void {

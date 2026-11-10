@@ -79,21 +79,19 @@ const isMissing = (error: unknown): boolean =>
 
 /**
  * State and actions for one course of an offering, read from its web
- * `course-detail/` route: today the masterclass course page and its chapter
- * pages (`:courseId/:courseTitle/…`), and the course-info dialog the landing
- * page's "i" button opens. Offering-wide on purpose: what differs per offering
- * (routes, URL segment) comes from `COURSE_DETAIL_API`, so
- * podcast and micro-learning plug in by adding their entry once their web
- * routes exist.
+ * `course-detail/` route: the masterclass and podcast course pages, their
+ * chapter, exam, report and evaluation pages (`:courseId/:courseTitle/…`), and
+ * the course-info dialog the masterclass landing page's "i" button opens.
+ * Offering-wide on purpose: what differs per offering (URL segment, the mode
+ * picker's name) comes from `COURSE_DETAIL_API`, so micro-learning plugs in by
+ * adding its entry once its web routes exist.
  *
  * Never a root service. The course route lists it in `providers` (on the
  * parent, so the course page and its chapters share one instance and one read),
  * and the dialog in its own `providers`, so each has an instance that
  * `connect()` points at its course. The page's sections inject it and read
  * these signals and call these methods themselves; none of them calls the API.
- * The chapter page reaches it through `CourseChapterFacade`. It replaces the
- * shared, legacy `MasterclassFacade` for these only — podcast still uses that
- * one until its own API moves.
+ * The chapter page reaches it through `CourseChapterFacade`.
  */
 @Service({ autoProvided: false })
 export class CourseDetailFacade {

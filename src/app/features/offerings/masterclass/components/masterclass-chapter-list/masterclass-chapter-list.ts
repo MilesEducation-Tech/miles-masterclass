@@ -13,9 +13,9 @@ import { isChapterWatched, watchedPercent } from '@features/offerings/models/cou
 import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
 
 /**
- * The course page's Masterclass section: one row per chapter, the masterclass
- * branch of the shared `CourseChapterList` class for class. That one stays on
- * the legacy facade for podcast. The chapters come from `CourseDetailFacade`.
+ * The course page's Masterclass section: one row per chapter, with the 16:9
+ * thumbnail. The podcast page's `PodcastChapterList` has the same rows with the
+ * podcast artwork. The chapters come from `CourseDetailFacade`.
  *
  * Rows are links to the chapter page rather than the old `role="button"` divs.
  * A started chapter shows how much was watched, and a finished one says so; both

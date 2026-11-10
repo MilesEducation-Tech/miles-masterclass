@@ -177,34 +177,31 @@ So nothing podcast- or reel-shaped can be verified end to end until the backend 
 
 ## 9. This app vs the contract (2026-10-15)
 
-The podcast and micro-learning pages have **not been rebound**: every read and write they make goes to the
-legacy API, which answers 404 on UAT (`prompts/envelope-fallout.md`). What a rebind has to change:
+**Podcast is rebound (November 2026).** MIL-176 moved the landing page onto `MasterclassLibraryFacade`
+(`course_type=podcast`), and MIL-177 moved the course and chapter pages, the final assessment, the report and the
+feedback onto the shared course facades (`COURSE_DETAIL_API.podcast`). MIL-178 removed the legacy code they used.
+The plans are `prompts/podcast-landing-binding.md` and `prompts/podcast-course-chapter-binding.md`.
+
+The micro-learning pages have **not been rebound**: every read and write they make goes to the legacy API, which
+answers 404 on UAT (`prompts/envelope-fallout.md`). What a rebind has to change:
 
 **Legacy routes still called**
 
-- Podcast:
-  - reads: `v2/podcast/details/` (via `v2/:course_type/details/`), `v2/chapters/`, `v2/course-content/`,
-    `v2/dashboard/related_content/`
-  - writes: `v2/user/myclassactivity/`, `user/customaction/set_cpe_mode/` (which sends `masterclass_id` for a
-    podcast), `user-quiz-details/`, `v2/user/toggle-bookmark/`
-  - The loaders are in `features/offerings/utils/course-load.ts` and the root `MasterclassFacade`.
 - Reels: `v2/nano-learning/` and `v2/nano-learning/<id>/` with cursor paging, `chapter-quiz`,
   `v2/library/:id/about/` (in `features/offerings/services/micro-learning-course-facade.ts`).
-- Both:
-  - `user-assessment/*`, `final-assessment/` (`final-assessment-facade.ts`)
+- Also for reels:
   - `feedback-category/`, `user-feedback/*` (`feedback-facade.ts`, which always sends `master_class__id`)
-  - the landing pages' `FeatureFacade` feeds (`v2/dashboard/`, `v2/user/*`, `v2/tracks/…`)
+  - the landing page's `FeatureFacade` feeds (`v2/dashboard/`, `v2/user/*`, `v2/tracks/…`)
 
 **Model and id mismatches**
 
-- Ids are numeric everywhere: `Number(id)` / `+id` in `podcast-course.ts`, `podcast-chapter.ts`,
-  `micro-learning-course.ts`, `course-feedback.ts`, `final-assessment-facade.ts` and `Utils`. A UUID becomes
-  `NaN`.
+- Ids are numeric: `Number(id)` / `+id` in `micro-learning-course.ts`, `course-feedback.ts` and `Utils`. A UUID
+  becomes `NaN`.
 - `MicroLearningReel` (`features/offerings/models/micro-learning-course.model.ts`) extends the legacy `Content`.
   It plays `video_url`, not `hls_video_url`, and needs both `id` and `chapter_id`.
 - `core/models/nano-learning.model.ts` is an empty file.
-- No single `course_type` union covers the four types. `CourseOffering` (`constants/course-detail.ts`) is
-  `'masterclass'` only, and `toApiCourseType` (`Utils`) folds `nano_learning` into `micro_learning`.
+- No single `course_type` union covers the four types. `CourseOffering` (`models/course-detail.model.ts`) is
+  `'masterclass' | 'podcast'`, and `toApiCourseType` (`Utils`) folds `nano_learning` into `micro_learning`.
 
 **Behaviour the contract moves to the server**
 
@@ -219,16 +216,15 @@ legacy API, which answers 404 on UAT (`prompts/envelope-fallout.md`). What a reb
   still open the chapter quiz for a nano reel.
 - Nothing resets local `last_activity` after a failed nano exam, so the 95% gates keep blocking heartbeats until
   a reload. The contract erases the progress server-side and answers `REWATCH`.
-- Completion is client-side: `isReelCompleted` (95% of `total_duration`) and the podcast's 95% heartbeat. The
-  contract judges completion on `max_watched_duration_seconds` via `course-progress-update/`.
+- Completion is client-side: `isReelCompleted` (95% of `total_duration`). The contract judges completion on
+  `max_watched_duration_seconds` via `course-progress-update/`, as the podcast and masterclass chapters now do.
 
 **Players**
 
-- `.mp3` in `hls_video_url`: `AudioChapter` handles it (anything not `.m3u8` / `.mp4` / `.ogg` / `.wav` is
-  `audio/mpeg`). But `VideoChapter` and the reel card label any non-`.m3u8` URL `video/mp4`, and every check
-  uses `endsWith`, which a query string breaks.
-- The podcast picks its player with `podcast_format === 'Audio'`, which is case-sensitive, and the web API sends
-  no `podcast_format`. The rebind has to choose the player from the source's MIME type instead.
+- The reel card labels any non-`.m3u8` URL `video/mp4`, and its check uses `endsWith`, which a query string
+  breaks.
+- Every podcast chapter plays in the shared video player (`CourseChapterPlayer`): the web API sends no audio-or-video
+  flag (question 5). `AudioJs` is kept for the record-disk audio player that returns when it does.
 
 **Links**
 

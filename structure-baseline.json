@@ -147,10 +147,6 @@
       "count": 1,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
-    "src/app/core/models/related-content.model.ts": {
-      "count": 2,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
     "src/app/core/models/route-params.model.ts": {
       "count": 2,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
@@ -319,18 +315,6 @@
       "count": 1,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
-    "src/app/features/offerings/components/course-chapter-list/course-chapter-list.ts": {
-      "count": 1,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/features/offerings/components/course-resources/course-resources.ts": {
-      "count": 1,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/features/offerings/components/video-chapter/video-chapter.ts": {
-      "count": 1,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
     "src/app/features/offerings/micro-learning/pages/micro-learning-course/micro-learning-course.ts": {
       "count": 5,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
@@ -340,10 +324,6 @@
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
     "src/app/features/offerings/pages/course-feedback/course-feedback.ts": {
-      "count": 1,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/features/offerings/services/chapter-facade.ts": {
       "count": 1,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
@@ -497,10 +477,6 @@
     },
     "src/app/shared/components/course-about/course-about.ts": {
       "count": 1,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/shared/components/course-related-section/course-related-section.ts": {
-      "count": 3,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
     "src/app/shared/components/enquiry-form/enquiry-form.ts": {

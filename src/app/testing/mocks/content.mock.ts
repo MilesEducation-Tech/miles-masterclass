@@ -177,11 +177,8 @@ export const MOCK_CARDS: Content[] = [
 ];
 
 /**
- * A fully-loaded course, as `MasterclassFacade.courseDetails()` holds it once
- * the details endpoint has answered. The course-hero templates open with
- * `@let courseDetails = masterclass.courseDetails()!` and dereference it
- * without a guard, so a hero can only be rendered against a loaded course —
- * seeding the facade with this is what a spec does instead of faking one.
+ * A fully-loaded legacy course (`ContentDetails`), as the course details
+ * endpoint answers it once loaded.
  */
 export const MOCK_CONTENT_DETAILS: ContentDetails = {
   ...MOCK_MASTERCLASS_CARD,

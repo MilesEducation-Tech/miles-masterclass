@@ -8,11 +8,11 @@ import { Button } from '@shared/ui/button/button';
 import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
 
 /**
- * The course page's Related section: "Related Courses" and one "More by" rail
- * per instructor, as the shared `CourseRelatedSection` lays them out for a
- * masterclass. The cards are the shared horizontal design, drawn inline, since
- * these API courses carry no trailer or badges for the course card to show.
- * Each links to its own course page. The rails come from `CourseDetailFacade`.
+ * The course page's Related section, shared by the masterclass and podcast
+ * course pages: "Related Courses" and one "More by" rail per instructor. The
+ * cards are the shared horizontal design, drawn inline, since these API courses
+ * carry no trailer or badges for the course card to show. Each links to its own
+ * course page, by its own `course_type`. The rails come from `CourseDetailFacade`.
  */
 @Component({
   selector: 'app-masterclass-course-related',
