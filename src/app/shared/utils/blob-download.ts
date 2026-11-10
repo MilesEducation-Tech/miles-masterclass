@@ -218,25 +218,6 @@ export function saveBlob(blob: Blob, fileName: string): void {
   setTimeout(() => URL.revokeObjectURL(url), REVOKE_DELAY_MS);
 }
 
-/**
- * Pull a filename from a `Content-Disposition` header, handling both the plain
- * `filename="..."` form and the RFC 5987 `filename*=UTF-8''...` form (the latter
- * wins when present). The result is sanitized; falls back to `fallback` (which
- * should already include any extension) when the header is missing or unparsable.
- */
-export function fileNameFromContentDisposition(
-  disposition: string | null,
-  fallback: string,
-): string {
-  if (disposition) {
-    const utf8 = /filename\*=UTF-8''([^;]+)/i.exec(disposition);
-    if (utf8?.[1]) return sanitizeFileName(decodeURIComponent(utf8[1]));
-    const plain = /filename="?([^";]+)"?/i.exec(disposition);
-    if (plain?.[1]) return sanitizeFileName(plain[1].trim());
-  }
-  return fallback;
-}
-
 /** Best-effort filename: prefer the URL's tail if it ends in `.pdf`. */
 export function fileNameFromUrl(url: string): string | null {
   try {

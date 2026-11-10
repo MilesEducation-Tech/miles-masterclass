@@ -4,9 +4,8 @@ import { lucideBot, lucideDownload, lucideFileText, lucideVideo } from '@ng-icon
 import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
 
 /**
- * The course page's Resource section, from `miscellaneous_data`, in the shared
- * `CourseResources` design class for class. That one stays on the legacy facade
- * for podcast.
+ * The course page's Resource section, from `miscellaneous_data`: the masterclass
+ * and podcast course pages share it.
  *
  * The glossary and the course-navigation video open dialogs through
  * `CourseDetailFacade`. Exercise files and the AI Kit arrive as URLs and are
