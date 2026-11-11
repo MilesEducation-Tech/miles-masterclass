@@ -1,5 +1,13 @@
 # Changelog
 
+## [4.2.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v4.1.0...v4.2.0) (2026-11-10)
+
+
+### Features
+
+* **offerings:** bind the podcast course and chapter pages to the web API ([#250](https://github.com/MilesEducation-Tech/miles-masterclass/issues/250)) ([6e37056](https://github.com/MilesEducation-Tech/miles-masterclass/commit/6e370561180ac11191fd4e2209725f83d95bc3bb))
+* **offerings:** bind the podcast landing page to the web API ([#248](https://github.com/MilesEducation-Tech/miles-masterclass/issues/248)) ([f90131d](https://github.com/MilesEducation-Tech/miles-masterclass/commit/f90131d14ac190d7545a8b0720f171699372d813))
+
 ## [4.1.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v4.0.2...v4.1.0) (2026-11-05)
 
 
