@@ -15,7 +15,7 @@ import {
 import { Router, UrlSegment } from '@angular/router';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { firstValueFrom } from 'rxjs';
-import { SKIP_ERROR_NOTIFICATION } from '@core/models/http.model';
+import { SKIP_ERROR_NOTIFICATION, SKIP_LOADING } from '@core/models/http.model';
 import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { SUBSCRIPTION_DIALOG } from '@core/services/dialog/feature-dialog-tokens';
@@ -26,31 +26,48 @@ import { withPreviousValue } from '@core/utils/with-previous-value';
 import { VideoSource } from '@shared/components/video-js/video-js';
 import { detectVideoMimeType, Utils } from '@shared/services/utils';
 import {
+  CHAPTER_COPY,
   COURSE_DETAIL_API,
   COURSE_DETAIL_CHAPTERS_PAGE_SIZE,
   COURSE_ID_PATTERN,
+  PROGRESS_SAVE_INTERVAL_SECONDS,
+  SEEK_JUMP_SECONDS,
 } from '@features/offerings/constants/course-detail';
 import {
   REEL_ACCESS_COPY,
+  REEL_COURSE_MODE_ROUTE,
   REEL_COURSE_TYPES,
+  REEL_MODE_COPY,
   REEL_PLAYER_COPY,
+  REEL_PROGRESS_CLEARED,
+  REEL_STEP_LABELS,
+  REEL_STEP_UNAVAILABLE,
   REELS_FEED_PAGE_SIZE,
   REELS_FEED_URL,
 } from '@features/offerings/constants/reels';
 import {
+  ChapterProgressTracker,
+  CourseMode,
+  CourseProgressUpdate,
   MasterclassCourseDetail,
   parseAboutCourseId,
+  parseChapterStart,
   parseCourseDetail,
+  parseCourseProgress,
+  readCourseStepRefusal,
 } from '@features/offerings/models/course-detail.model';
 import { MicroLearningOptionId } from '@features/offerings/models/micro-learning-course.model';
 import {
+  parseCourseModeResult,
   parseReelAnchor,
   parseReelFeed,
   Reel,
   ReelAccess,
+  ReelButtonAction,
   ReelFeedPage,
+  ReelRequest,
   ReelRouteParams,
-  ReelScrollRequest,
+  ReelUserState,
 } from '@features/offerings/models/reel.model';
 // Type-only: both dialogs load with `import()` when opened (AGENTS.md §4.4).
 import type { HtmlContentDialogData } from '@features/offerings/dialogs/html-content-dialog/html-content-dialog';
@@ -62,6 +79,10 @@ const PROGRAMMATIC_SCROLL_DEBOUNCE_MS = 600;
 const isMissing = (error: unknown): boolean =>
   error instanceof HttpErrorResponse && (error.status === 404 || error.status === 400);
 
+/** The positions a save sends, so the same ones aren't sent twice. */
+const saveKey = (update: CourseProgressUpdate): string =>
+  `${update.last_watched_position_seconds}/${update.max_watched_duration_seconds}`;
+
 /**
  * The reel player, on the web API's reel feed. The page `connect()`s it to the
  * reel in its URL; the feed opens on that reel (`reels-feed/<uuid>/`), and
@@ -71,6 +92,12 @@ const isMissing = (error: unknown): boolean =>
  * with a sign-in (signed out) or subscribe (signed in) button. Signing in
  * re-reads the feed as `post_login`, so a reel the learner may watch unlocks in
  * place.
+ *
+ * A reel the learner may watch is tracked as the chapter page tracks a
+ * chapter: `chapter-start/` on its first play (and Preview when it has no mode
+ * yet), then `course-progress-update/` as it plays. "Watch in CPE mode" posts
+ * `course-mode/`; in CPE mode the button follows the server's next step
+ * (`action_status`), re-read once a reel is watched to its end.
  *
  * Route-scoped: the player's route lists it in `providers`. The page and the
  * reel cards inject it, read its signals and call its methods; none of them
@@ -200,20 +227,50 @@ export class MicroLearningCourseFacade {
   });
 
   /**
-   * Every reel read so far: the one opened on first. A later page can repeat a
-   * reel (the anchor's page leaves it out, the plain feed doesn't), so each
-   * reel is listed once.
+   * The learner's state as this visit changed it (a mode switch, a save, a
+   * re-read), ahead of the next feed read; reset with the feed.
+   */
+  private readonly stateOverrides = linkedSignal<
+    string,
+    ReadonlyMap<string, Partial<ReelUserState>>
+  >({
+    source: this.feedKey,
+    computation: () => new Map(),
+  });
+
+  /**
+   * Every reel read so far: the one opened on first, each with the state this
+   * visit changed. A later page can repeat a reel (the anchor's page leaves it
+   * out, the plain feed doesn't), so each reel is listed once.
    */
   readonly reels = computed<Reel[]>(() => {
     if (!this.anchor.hasValue()) return [];
     const { anchor, rest } = this.anchor.value();
+    const overrides = this.stateOverrides();
     const seen = new Set<string>();
-    return [anchor, ...rest.reels, ...this.appended()].filter((reel) => {
-      if (seen.has(reel.id)) return false;
-      seen.add(reel.id);
-      return true;
-    });
+    return [anchor, ...rest.reels, ...this.appended()]
+      .filter((reel) => {
+        if (seen.has(reel.id)) return false;
+        seen.add(reel.id);
+        return true;
+      })
+      .map((reel) => {
+        const override = overrides.get(reel.id);
+        return override ? { ...reel, user_state: { ...reel.user_state, ...override } } : reel;
+      });
   });
+
+  /** Change one reel's state on screen, ahead of the server's next answer. */
+  private patchState(id: string, patch: Partial<ReelUserState>): void {
+    this.stateOverrides.update((overrides) =>
+      new Map(overrides).set(id, { ...overrides.get(id), ...patch }),
+    );
+  }
+
+  /** The reel as it stands now, with this visit's changes. */
+  private current(id: string): Reel | undefined {
+    return this.reels().find((reel) => reel.id === id);
+  }
 
   readonly loading = computed(
     () => this.legacyIdResource.isLoading() || this.anchorResource.isLoading(),
@@ -235,6 +292,7 @@ export class MicroLearningCourseFacade {
   /** Follow the reel in the page's URL; called once, from the page's constructor. */
   connect(params: Signal<ReelRouteParams>): void {
     this.params.set(params);
+    this.away = false;
   }
 
   reload(): void {
@@ -265,9 +323,12 @@ export class MicroLearningCourseFacade {
   readonly activeReel = computed<Reel | null>(() => this.reels()[this.activeIndex()] ?? null);
 
   /** The page scrolls a reel into view when this changes. */
-  readonly scrollRequest = signal<ReelScrollRequest | null>(null);
+  readonly scrollRequest = signal<ReelRequest | null>(null);
 
-  private scrollToken = 0;
+  /** A reel's card restarts it from the beginning when this names it (CPE switch, Rewatch). */
+  readonly restartRequest = signal<ReelRequest | null>(null);
+
+  private requestToken = 0;
 
   /** When a programmatic scroll started, so the scroll it causes doesn't re-select. */
   private lastProgrammaticScrollAt = 0;
@@ -293,7 +354,7 @@ export class MicroLearningCourseFacade {
     if (!this.reels().some((reel) => reel.id === id)) return;
     this.selectedId.set(id);
     this.lastProgrammaticScrollAt = Date.now();
-    this.scrollRequest.set({ id, token: ++this.scrollToken });
+    this.scrollRequest.set({ id, token: ++this.requestToken });
     this.syncUrlToReel(id);
   }
 
@@ -368,6 +429,382 @@ export class MicroLearningCourseFacade {
     }
     const SubscriptionDialog = await this.subscriptionDialog();
     this.dialogs.open(SubscriptionDialog);
+  }
+
+  // ─── The reel's button ────────────────────────────────────────────────────
+
+  /**
+   * What the reel's main button does: unlock a reel the learner can't watch;
+   * switch one in Preview (or with no mode yet) to CPE; in CPE mode follow the
+   * server's next step (`action_status`), else play and pause.
+   */
+  buttonAction(reel: Reel): ReelButtonAction {
+    if (this.access(reel) !== 'open') return 'unlock';
+    const { course_mode, action_status } = reel.user_state;
+    if (course_mode !== 'cpe' || action_status === 'WATCH_IN_CPE_MODE') return 'cpe';
+    if (action_status === 'REWATCH') return 'rewatch';
+    return action_status ? 'step' : 'play';
+  }
+
+  /** The button's words; `null` for play / pause, which the card words from its player. */
+  buttonLabel(reel: Reel): string | null {
+    const action = this.buttonAction(reel);
+    if (action === 'unlock') return this.accessCopy(reel)?.button ?? null;
+    if (action === 'cpe') return REEL_STEP_LABELS.WATCH_IN_CPE_MODE;
+    const status = reel.user_state.action_status;
+    return action === 'play' || !status ? null : REEL_STEP_LABELS[status];
+  }
+
+  /** The button, for every action but play / pause (the card drives its own player). */
+  onButton(reel: Reel): void {
+    switch (this.buttonAction(reel)) {
+      case 'unlock':
+        void this.unlock(reel);
+        return;
+      case 'cpe':
+        void this.switchToCpe(reel);
+        return;
+      case 'rewatch':
+        this.restart(reel);
+        return;
+      case 'step': {
+        // The quiz, the exam, feedback and the certificate come with the next story.
+        const { title, body } = REEL_STEP_UNAVAILABLE;
+        this.notification.info(title, body);
+        return;
+      }
+    }
+  }
+
+  /** Play the reel from the beginning: its card seeks to 0 and plays. */
+  private restart(reel: Reel): void {
+    this.restartRequest.set({ id: reel.id, token: ++this.requestToken });
+  }
+
+  // ─── CPE / Preview ────────────────────────────────────────────────────────
+
+  /** The reel whose mode switch is in flight; its button waits. */
+  readonly modePending = signal<string | null>(null);
+
+  /**
+   * "Watch in CPE mode": one click, no picker. The server resets the reel's
+   * progress, so it starts again from the beginning, as CPE mode requires.
+   */
+  private async switchToCpe(reel: Reel): Promise<void> {
+    if (this.modePending()) return;
+    if (!(await this.setMode(reel, 'cpe'))) return;
+    const { title, body } = REEL_MODE_COPY.cpe;
+    this.notification.success(title, body);
+    this.restart(reel);
+  }
+
+  /**
+   * `course-mode/`. Resolves whether the mode is now in force. A refusal
+   * (`caira_enrollment_required` for CPE outside CAIRA, `course_mode_locked`)
+   * shows the server's message, unless `silent`.
+   */
+  private async setMode(reel: Reel, mode: CourseMode, silent = false): Promise<boolean> {
+    this.modePending.set(reel.id);
+    const route = REEL_COURSE_MODE_ROUTE;
+    try {
+      const raw = await firstValueFrom(
+        this.api.call(
+          { ...route, path: route.path.replace(':id', reel.id) },
+          { mode },
+          silent ? { context: this.quiet() } : undefined,
+        ),
+      );
+      const result = parseCourseModeResult(raw);
+      this.patchState(reel.id, {
+        course_mode: result.course_mode,
+        ...(result.progress_reset ? REEL_PROGRESS_CLEARED : {}),
+      });
+      if (result.progress_reset) this.forgetProgress(reel.id);
+      return true;
+    } catch (error) {
+      this.logger.error('[MicroLearningCourse] course-mode failed', error);
+      if (!silent && !this.away) {
+        const refusal = readCourseStepRefusal(error);
+        const { title, body } = CHAPTER_COPY.modeNotChanged;
+        this.notification.error(title, refusal.message ?? body);
+      }
+      return false;
+    } finally {
+      this.modePending.set(null);
+    }
+  }
+
+  // ─── Progress ─────────────────────────────────────────────────────────────
+  // The chapter page's rules (`CourseChapterFacade`): the playhead is the resume
+  // point, the furthest point only grows while the video plays forward, and a
+  // save goes every 15 s of play, on pause, at the end and on leaving.
+
+  /** Reels whose `chapter-start/` answered in this visit: only their saves may go. */
+  private readonly started = new Set<string>();
+
+  /** `chapter-start/` in flight, per reel. */
+  private readonly starting = new Set<string>();
+
+  /** The playing reel's playhead and furthest point. */
+  private tracker: (ChapterProgressTracker & { reelId: string }) | null = null;
+
+  /** Saves waiting to go, per reel; a failed one waits for the next save. */
+  private readonly unsent = new Map<string, CourseProgressUpdate>();
+  private readonly failed = new Map<string, CourseProgressUpdate>();
+
+  /** The positions last sent, per reel, so a repeat isn't sent twice. */
+  private readonly lastSaved = new Map<string, string>();
+
+  /** Reels already warned about, so a failing save warns once. */
+  private readonly warned = new Set<string>();
+
+  private draining: Promise<void> | null = null;
+
+  /** The page has gone: saves still go, but no toast shows on whatever page is next. */
+  private away = false;
+
+  /**
+   * The page is leaving: save where the learner stopped. Called from the page's
+   * destroy, because this facade's route injector outlives the page, and the
+   * player is torn down without a pause.
+   */
+  leave(): void {
+    this.queueSave();
+    this.tracker = null;
+    this.away = true;
+  }
+
+  /** The player's clock. Only a reel the learner may watch is tracked; its first play starts it. */
+  videoTime(reel: Reel, currentTime: number, duration: number): void {
+    if (duration <= 0 || this.access(reel) !== 'open') return;
+    void this.start(reel);
+    const tracker = this.trackerFor(reel);
+    const from = tracker.lastTime ?? currentTime;
+    const step = currentTime - from;
+    // A forward step under `SEEK_JUMP_SECONDS` is play; anything else is a seek,
+    // which moves the resume point and nothing more.
+    if (step > 0 && step < SEEK_JUMP_SECONDS) {
+      if (from <= tracker.furthest + SEEK_JUMP_SECONDS) {
+        tracker.furthest = Math.max(tracker.furthest, currentTime);
+      }
+      tracker.sincePlayedSave += step;
+    }
+    tracker.lastTime = currentTime;
+    tracker.position = currentTime;
+    if (tracker.sincePlayedSave >= PROGRESS_SAVE_INTERVAL_SECONDS) this.queueSave();
+  }
+
+  /** A pause, including the one when the reel leaves the screen. */
+  videoPaused(reel: Reel): void {
+    if (this.tracker?.reelId === reel.id) this.queueSave();
+  }
+
+  /**
+   * The reel played to its end (CPE mode; Preview loops). The save goes first,
+   * then the reel is re-read, so its button moves on to the server's next step.
+   */
+  async videoEnded(reel: Reel): Promise<void> {
+    if (this.tracker?.reelId !== reel.id) return;
+    this.queueSave();
+    await this.drain();
+    await this.refreshReel(reel);
+  }
+
+  /** Where the reel resumes: the saved playhead, unless it was watched to the end. */
+  resumeAt(reel: Reel): number {
+    const { last_watched_position_seconds, is_video_completed } = reel.user_state;
+    return this.access(reel) === 'open' && !is_video_completed
+      ? (last_watched_position_seconds ?? 0)
+      : 0;
+  }
+
+  /**
+   * The reel's first play in this visit: `chapter-start/` creates the
+   * enrolment; a reel with no mode then starts in Preview, without a toast, as
+   * reels always have. Saves wait for it.
+   */
+  private async start(reel: Reel): Promise<void> {
+    if (this.started.has(reel.id) || this.starting.has(reel.id)) return;
+    this.starting.add(reel.id);
+    const route = COURSE_DETAIL_API.reels.chapterStart;
+    try {
+      const raw = await firstValueFrom(
+        this.api.call({ ...route, path: route.path.replace(':id', reel.chapter.id) }, undefined, {
+          context: this.quiet(),
+        }),
+      );
+      if (parseChapterStart(raw).reset_required && !this.away) {
+        const { title, body } = CHAPTER_COPY.enrolmentReset;
+        this.notification.info(title, body);
+        await this.refreshReel(reel);
+      }
+      this.started.add(reel.id);
+      if (this.current(reel.id)?.user_state.course_mode === null) {
+        await this.setMode(reel, 'preview', true);
+      }
+      void this.drain();
+    } catch (error) {
+      this.logger.error('[MicroLearningCourse] chapter-start failed', error);
+      if (!this.away && !this.warned.has(reel.id)) {
+        this.warned.add(reel.id);
+        const refusal = readCourseStepRefusal(error);
+        const { title, body } = CHAPTER_COPY.cannotStart;
+        this.notification.error(title, refusal.message ?? body);
+      }
+    } finally {
+      this.starting.delete(reel.id);
+    }
+  }
+
+  /** The tracker for `reel`, from what the server has; switching reels saves the last one first. */
+  private trackerFor(reel: Reel): ChapterProgressTracker & { reelId: string } {
+    if (this.tracker?.reelId !== reel.id) {
+      this.queueSave();
+      const saved = this.current(reel.id)?.user_state ?? reel.user_state;
+      this.tracker = {
+        reelId: reel.id,
+        chapterId: reel.chapter.id,
+        position: saved.last_watched_position_seconds ?? 0,
+        furthest: saved.max_watched_duration_seconds ?? 0,
+        lastTime: null,
+        sincePlayedSave: 0,
+      };
+    }
+    return this.tracker;
+  }
+
+  /** A mode switch erased the reel's progress: start its tracker and saves over. */
+  private forgetProgress(id: string): void {
+    if (this.tracker?.reelId === id) this.tracker = null;
+    this.unsent.delete(id);
+    this.failed.delete(id);
+    this.lastSaved.delete(id);
+  }
+
+  /** Queue the playing reel's positions, with any failed saves, then send what's queued. */
+  private queueSave(): void {
+    for (const [id, update] of this.failed) {
+      if (!this.unsent.has(id)) this.unsent.set(id, update);
+    }
+    this.failed.clear();
+
+    const tracker = this.tracker;
+    if (tracker && tracker.position > 0) {
+      // Whole seconds: the server's fields are integers.
+      const update: CourseProgressUpdate = {
+        chapter_id: tracker.chapterId,
+        last_watched_position_seconds: Math.floor(tracker.position),
+        max_watched_duration_seconds: Math.floor(tracker.furthest),
+      };
+      if (this.lastSaved.get(tracker.reelId) !== saveKey(update)) {
+        this.unsent.set(tracker.reelId, update);
+      }
+      tracker.sincePlayedSave = 0;
+    }
+    void this.drain();
+  }
+
+  /** Send the queue one request at a time; resolves once it's empty. */
+  private drain(): Promise<void> {
+    this.draining ??= this.sendQueued().finally(() => {
+      this.draining = null;
+      // A save queued in the gap between the last send and this line.
+      if (this.nextUnsent()) void this.drain();
+    });
+    return this.draining;
+  }
+
+  private async sendQueued(): Promise<void> {
+    for (let next = this.nextUnsent(); next; next = this.nextUnsent()) {
+      const [id, update] = next;
+      this.unsent.delete(id);
+      // Counted as saved while in flight, so a pause then the end don't send twice.
+      this.lastSaved.set(id, saveKey(update));
+      const route = COURSE_DETAIL_API.reels.courseProgressUpdate;
+      try {
+        const raw = await firstValueFrom(
+          this.api.call({ ...route, path: route.path.replace(':id', id) }, update, {
+            context: this.quiet(),
+          }),
+        );
+        const progress = parseCourseProgress(raw);
+        if (progress.reset_required) {
+          if (!this.away) {
+            const { title, body } = CHAPTER_COPY.enrolmentReset;
+            this.notification.info(title, body);
+          }
+          this.forgetProgress(id);
+          const reel = this.current(id);
+          if (reel) await this.refreshReel(reel);
+          continue;
+        }
+        const saved = progress.chapters.find((chapter) => chapter.chapter_id === update.chapter_id);
+        if (saved) {
+          const { is_video_completed, is_chapter_completed } = saved.progress;
+          this.patchState(id, {
+            last_watched_position_seconds: saved.progress.last_watched_position_seconds,
+            max_watched_duration_seconds: saved.progress.max_watched_duration_seconds,
+            ...(is_video_completed !== null ? { is_video_completed } : {}),
+            ...(is_chapter_completed !== null ? { is_chapter_completed } : {}),
+          });
+        }
+      } catch (error) {
+        this.logger.error('[MicroLearningCourse] course-progress-update failed', error);
+        this.lastSaved.delete(id);
+        this.saveFailed(error, id, update);
+      }
+    }
+  }
+
+  private nextUnsent(): [string, CourseProgressUpdate] | null {
+    return [...this.unsent.entries()].find(([id]) => this.started.has(id)) ?? null;
+  }
+
+  /**
+   * A failed save. A 403 or 409 is the server closing the reel to the learner
+   * (entitlement, an AI Lab lock): its message shows, and the reel is re-read.
+   * Anything else warns once per reel and is held for the next save.
+   */
+  private saveFailed(error: unknown, id: string, update: CourseProgressUpdate): void {
+    const refusal = readCourseStepRefusal(error);
+    if (refusal.status === 403 || refusal.status === 409) {
+      if (!this.away) {
+        const { title, body } = CHAPTER_COPY.progressNotSaved;
+        this.notification.error(title, refusal.message ?? body);
+      }
+      const reel = this.current(id);
+      if (reel) void this.refreshReel(reel);
+      return;
+    }
+    this.failed.set(id, update);
+    if (this.away || this.warned.has(id)) return;
+    this.warned.add(id);
+    const { title, body } = CHAPTER_COPY.progressNotSaved;
+    this.notification.error(title, body);
+  }
+
+  /**
+   * Re-read one reel's state (`reels-feed/<uuid>/?page_size=1`, its anchor),
+   * after the save that finishes it or a reset, so its button follows the
+   * server's next step.
+   */
+  private async refreshReel(reel: Reel): Promise<void> {
+    try {
+      const raw = await firstValueFrom(
+        this.api.get<unknown>(`${REELS_FEED_URL}${reel.id}/`, {
+          params: { ...this.feedParams(), page_size: 1 },
+          context: this.quiet(),
+        }),
+      );
+      this.patchState(reel.id, parseReelAnchor(raw).anchor.user_state);
+    } catch (error) {
+      this.logger.error('[MicroLearningCourse] reel re-read failed', error);
+    }
+  }
+
+  /** Sent on the player's own clock or in the background: no page-wide loading bar. */
+  private quiet(): HttpContext {
+    return new HttpContext().set(SKIP_LOADING, true);
   }
 
   // ─── Bookmark and share ───────────────────────────────────────────────────

@@ -10,8 +10,11 @@
           [videoSource]="sources()"
           [config]="videoConfig()"
           [mode]="playerMode()"
+          (metadataLoaded)="onMetadataLoaded()"
+          (timeUpdate)="onTimeUpdate($event)"
           (playing)="onVideoPlaying()"
           (paused)="onVideoPaused()"
+          (ended)="onVideoEnded()"
         />
       } @else if (data.thumbnails.vertical) {
         <img
@@ -123,6 +126,7 @@
     type="button"
     class="flex-1 w-full rounded-lg"
     variant="default"
+    [disabled]="buttonBusy()"
     (click)="onButton()"
   >
     {{ buttonLabel() }}

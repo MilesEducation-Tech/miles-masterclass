@@ -7,8 +7,34 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- 🟡 **2026-11-12, NON-REFACTOR — MIL-182 (story 2 of the reels epic, PR A of 2), the reel player: old binding
-  removed, rebound to the new Postman collection. DONE, UNCOMMITTED** (`prompts/reels-player-binding.md`), on
+- 🟡 **2026-11-12, NON-REFACTOR — MIL-185 (story 2 of the reels epic, PR B of 2), the reel player's progress, CPE /
+  Preview mode and the server's next-step button. DONE, UNCOMMITTED** (`prompts/reels-player-binding.md`, "As
+  built: PR B"), on `feat/MIL-185-reels-progress-mode`, cut from MIL-182; PR A merged as #256 (`bdcb7c2f`), so
+  this branch is rebased onto `master` next (its old MIL-182 commits drop) and its PR opened after.
+  - **Progress:** a reel's first play sends `chapter-start/` (once per visit) and, with no mode yet,
+    `course-mode/ preview` without a toast; then the chapter page's tracker (play vs seek, the furthest point,
+    whole seconds) saves to `course-progress-update/` every 15 s of play, on pause, at the end, on switching
+    reels and on leaving the page (`facade.leave()` from the page: the route injector outlives it); resume from
+    `last_watched_position_seconds`; `reset_required` re-reads the reel; a failed save warns once and is held.
+  - **CPE / Preview:** "Watch in CPE mode" posts `course-mode/ cpe`; `progress_reset` clears the reel's
+    progress and restarts it; `403 caira_enrollment_required` / `409 course_mode_locked` show the server's
+    message and stay in Preview.
+  - **The button:** unlock (locked), "Watch in CPE mode" (Preview or no mode), the server's `action_status` in
+    CPE mode (Rewatch restarts; the quiz / exam / feedback / certificate steps say "This step isn't available
+    yet." until story 3), else Play / Pause / Resume. The end of a reel saves, then re-reads it
+    (`reels-feed/<uuid>/?page_size=1`) so the button follows the server.
+  - The reel's state is patched locally (`stateOverrides`); the card keeps its video sources stable so a save
+    doesn't reload the stream.
+  - **Verified (dev 4101, Playwright, English):** 26 checks green, signed in on stubs with a real HLS stream
+    (first play, Preview, saves on pause / 15 s / leaving, a seek not counted, resume, CPE switch and its
+    restart, both refusals, Take Quiz notice, Rewatch, end → re-read → Take Quiz, a failed save) and signed out
+    live (the trailer is never tracked). MIL-182's 37 re-run green (its Preview-button check now expects
+    "Watch in CPE mode").
+  - Gates: tsc ✔, lint 0 errors (97 warnings), structure ✔, build:prod ✔ (1.01 MB / 230.48 kB, only
+    `ai-labs.css`).
+
+- ✅ **2026-11-12, NON-REFACTOR — MIL-182 (story 2 of the reels epic, PR A of 2), the reel player: old binding
+  removed, rebound to the new Postman collection. MERGED as #256 (`bdcb7c2f`)** (`prompts/reels-player-binding.md`), on
   `feat/MIL-182-reels-player-binding`, cut from MIL-181 and rebased onto `master` (`1f489408`) after #254 merged.
   Split decided by the user (2026-11-12): PR B (progress, CPE / Preview, the server's step button) gets its own
   ticket.
@@ -7137,6 +7163,7 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-11-12 · NON-REFACTOR · **MIL-182 merged as #256 (`bdcb7c2f`)** · **MIL-185 reel progress and mode** (uncommitted, cut from MIL-182, rebase onto `master` next): `chapter-start/` + Preview on first play, `course-progress-update/` tracker, `course-mode/` CPE switch, server `action_status` button, re-read at the end, `leave()` from the page · 26 Playwright checks green + MIL-182's 37 re-run · lint 0 errors (97 warnings), structure ✔, build:prod ✔ (230.48 kB)
 - 2026-11-12 · NON-REFACTOR · **MIL-182 PR A, reel player** (uncommitted): old binding removed, `reel.model.ts`, facade rewritten on `reels-feed/`, access (trailer + sign-in / subscribe), bookmark, share, About (own `CourseDetailFacade`, `COURSE_DETAIL_API.reels`), Transcript / Glossary, menu position fixed · 37 Playwright checks green + MIL-181's 38 and MIL-177's 34 re-run · lint 0 errors (97 warnings), structure ✔ (pruned), build:prod ✔ (230.49 kB) · split agreed: PR B (progress, mode, step button) on its own ticket
 - 2026-11-12 · NON-REFACTOR · **MIL-181 merged as #254 (`1f489408`)**; MIL-182 rebased onto `master` (no commits of its own yet); reel player plan written (`prompts/reels-player-binding.md`), awaiting approval and the split decision
 - 2026-11-12 · NON-REFACTOR · **MIL-181 reels landing page** (uncommitted): old binding removed, `LIBRARY_OFFERINGS.reels` (`courseTypes`, `learnerRows: 'reels-activity'`), `reels-activity/` read, vertical `MasterclassCourseCard` with `pathSegment`, page rebuilt · 38 Playwright checks green + MIL-176's 33 and MIL-179's 37 re-run · lint 0 errors (97 warnings), structure ✔ (pruned), build:prod ✔ (1.01 MB / 230.35 kB) · MIL-178 merged as #251 (`ec1be371`), podcast epic done

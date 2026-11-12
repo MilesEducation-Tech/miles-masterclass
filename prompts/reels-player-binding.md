@@ -166,10 +166,10 @@ The facade is rewritten (about 1,000 lines out, 600 in), the card about half rew
 page trimmed. As one PR that is about 1,500 changed lines, two thirds of them deletions. Under ~400 per PR it
 splits into two tickets:
 
-| PR  | Ticket                                         | What                                                                                                                                                                                                                                           | ≈ lines                  |
-| --- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
-| A   | MIL-182 (this branch)                          | Step 1 in full; the model; the feed, old links and access (decisions 1–4); bookmark, share, About, Transcript, Glossary (8–13); the card on the facade (9). The entitled reel plays in whatever mode the server has; no progress is saved yet. | ~1,000, mostly deletions |
-| B   | new ticket, `feat/MIL-XXX-reels-progress-mode` | Progress (5), CPE / Preview (6) and the server's step button (7).                                                                                                                                                                              | ~450                     |
+| PR  | Ticket                                      | What                                                                                                                                                                                                                                           | ≈ lines                  |
+| --- | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| A   | MIL-182 (this branch)                       | Step 1 in full; the model; the feed, old links and access (decisions 1–4); bookmark, share, About, Transcript, Glossary (8–13); the card on the facade (9). The entitled reel plays in whatever mode the server has; no progress is saved yet. | ~1,000, mostly deletions |
+| B   | MIL-185, `feat/MIL-185-reels-progress-mode` | Progress (5), CPE / Preview (6) and the server's step button (7).                                                                                                                                                                              | ~450                     |
 
 The user chose the split (2026-11-12). PR A is this branch; PR B gets its own ticket and branch, cut from this one.
 
@@ -353,3 +353,20 @@ Built as planned for PR A (Step 1 in full; decisions 1–4 and 8–13), with the
   mode the server has, and the CPE / Preview tag shows it.
 - **The rail's cart button is removed** (user, 2026-11-12: the cart is out of scope for now), with its facade
   rule and the `is_subscription_excluded` / `is_individually_purchasable` keys the model read for it.
+
+## As built: PR B, MIL-185 (2026-11-12)
+
+On `feat/MIL-185-reels-progress-mode`, cut from MIL-182. Built as planned (decisions 5–7), with these details:
+
+- **Leaving the page saves through the page, not the facade's `DestroyRef`.** A route-level injector outlives
+  its page, so the facade's own destroy never ran on an in-app navigation, and the player is torn down without
+  a pause. The page calls `facade.leave()` from its destroy. A full page load (closing the tab) still can't save,
+  as on the chapter page: at most 15 s of play are lost.
+- **The card keeps its video sources as the same array while their URLs don't change** (`computed` with an
+  `equal`). `VideoJs` reloads the media for any new array, and every save hands the card a new reel object.
+- **The reel's state is patched locally** (`stateOverrides`, reset with the feed): a mode switch, each save's
+  answer, and the re-read after a reel ends.
+- **A reel with no mode** shows "Watch in CPE mode" from the start; its first play starts it in Preview without
+  a toast.
+- **The steps after a reel** (Take Quiz, Take Final Assessment, Retake, Submit Feedback, Download Certificate)
+  show "This step isn't available yet." (`REEL_STEP_UNAVAILABLE`); Rewatch restarts the reel.
