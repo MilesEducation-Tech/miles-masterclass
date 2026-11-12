@@ -195,13 +195,18 @@ the vertical trailer with a sign-in / subscribe message, with access `chapter.hl
 (`COURSE_DETAIL_API.reels`); Transcript and Glossary read `course-detail/`. The plan is
 `prompts/reels-player-binding.md`.
 
+**Progress and mode are rebound (MIL-185, PR B).** A reel's first play sends `chapter-start/` and, with no mode,
+`course-mode/ preview`; progress goes to `course-progress-update/` as on the chapter page (the playhead and the
+furthest point played straight through). "Watch in CPE mode" posts `course-mode/ cpe`. In CPE mode the button shows
+the server's `action_status`, re-read once a reel is watched to its end.
+
 **Still to rebind**
 
-- PR B: progress (`chapter-start/`, `course-progress-update/`), CPE / Preview (`course-mode/`) and the server's
-  `action_status` button. Until then an entitled reel plays and pauses but saves nothing.
-- Story 3: the chapter quiz (`quiz-questions/`, `quiz-submit/`), the final assessment, report and feedback on the
-  shared pages, and the certificate (`user_state.certificate_url`). The reel's `feedback` route still uses the
-  legacy `FeedbackFacade` (`feedback-category/`, `user-feedback/*`).
+- Story 3, the steps after a reel: the chapter quiz (`quiz-questions/`, `quiz-submit/`), the final assessment,
+  report and feedback on the shared pages, and the certificate (`user_state.certificate_url`). Until then Take
+  Quiz, Take Final Assessment, Retake, Submit Feedback and Download Certificate say "This step isn't available
+  yet." (Rewatch already restarts the reel), and the reel's `feedback` route still uses the legacy
+  `FeedbackFacade` (`feedback-category/`, `user-feedback/*`).
 - `toApiCourseType` (`Utils`) still folds `nano_learning` into `micro_learning` for the legacy cards.
 - `core/models/nano-learning.model.ts` is an empty file (the clean-up Task removes it).
 

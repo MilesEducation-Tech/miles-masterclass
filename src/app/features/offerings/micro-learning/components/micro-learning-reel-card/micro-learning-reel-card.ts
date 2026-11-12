@@ -72,7 +72,14 @@ export class MicroLearningReelCard {
 
   protected readonly active = computed(() => this.facade.isActive(this.reel()));
   protected readonly preloaded = computed(() => this.facade.isPreloaded(this.reel()));
-  protected readonly sources = computed(() => this.facade.sources(this.reel()));
+  /**
+   * Kept as the same array while its URLs don't change: `VideoJs` reloads the
+   * media for any new array, and every save hands the card a new reel object.
+   */
+  protected readonly sources = computed(() => this.facade.sources(this.reel()), {
+    equal: (a, b) =>
+      a.length === b.length && a.every((s, i) => s.src === b[i].src && s.type === b[i].type),
+  });
   /** The sign-in or subscribe message over a reel the learner can't watch; `null` otherwise. */
   protected readonly accessCopy = computed(() => this.facade.accessCopy(this.reel()));
   protected readonly bookmarked = computed(() => this.facade.isBookmarked(this.reel()));
@@ -85,12 +92,16 @@ export class MicroLearningReelCard {
     this.bookmarked() ? 'matFavoriteRound' : 'matFavoriteBorderRound',
   );
 
+  /** The facade's words (unlock, CPE, the next step), else play / pause / resume from the player. */
   protected readonly buttonLabel = computed(() => {
-    const copy = this.accessCopy();
-    if (copy) return copy.button;
+    const label = this.facade.buttonLabel(this.reel());
+    if (label) return label;
     if (this.isPlaying()) return 'Pause';
-    return this.hasStarted() ? 'Resume' : 'Play';
+    return this.hasStarted() || this.facade.resumeAt(this.reel()) > 0 ? 'Resume' : 'Play';
   });
+
+  /** The reel's mode switch is in flight. */
+  protected readonly buttonBusy = computed(() => this.facade.modePending() === this.reel().id);
 
   /** The CPE / Preview tag, from the learner's mode on the reel; none before a mode is chosen. */
   protected readonly modeTag = computed<{ label: string; classes: string } | null>(() => {
@@ -146,6 +157,28 @@ export class MicroLearningReelCard {
       if (!player) return;
       untracked(() => (isActive ? player.play() : player.pause()));
     });
+
+    // Start again from the beginning when the facade asks (a CPE switch, Rewatch).
+    effect(() => {
+      const request = this.facade.restartRequest();
+      const player = this.videoPlayer();
+      if (!request || request.id !== untracked(this.reel).id || !player) return;
+      untracked(() => {
+        this.hasStarted.set(false);
+        player.seek(0, true);
+        player.play();
+      });
+    });
+  }
+
+  /** The media is ready: pick up where the learner stopped. */
+  protected onMetadataLoaded(): void {
+    const at = this.facade.resumeAt(this.reel());
+    if (at > 0) this.videoPlayer()?.seek(at, true);
+  }
+
+  protected onTimeUpdate(event: { currentTime: number; duration: number }): void {
+    this.facade.videoTime(this.reel(), event.currentTime, event.duration);
   }
 
   protected onVideoPlaying(): void {
@@ -155,12 +188,19 @@ export class MicroLearningReelCard {
 
   protected onVideoPaused(): void {
     this.isPlaying.set(false);
+    this.facade.videoPaused(this.reel());
   }
 
-  /** A locked reel's button unlocks (sign in or subscribe); an open one plays and pauses. */
+  protected onVideoEnded(): void {
+    this.isPlaying.set(false);
+    void this.facade.videoEnded(this.reel());
+  }
+
+  /** Play / pause drives the player here; every other action is the facade's. */
   protected onButton(): void {
-    if (this.accessCopy()) {
-      void this.facade.unlock(this.reel());
+    const reel = this.reel();
+    if (this.facade.buttonAction(reel) !== 'play') {
+      this.facade.onButton(reel);
       return;
     }
     const player = this.videoPlayer();

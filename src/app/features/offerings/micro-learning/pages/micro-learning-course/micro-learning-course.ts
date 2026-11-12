@@ -77,6 +77,8 @@ export class MicroLearningCourse {
     this.facade.connect(
       computed(() => ({ courseId: this.courseId() ?? '', slug: this.courseTitle() ?? '' })),
     );
+    // The facade outlives this page (route injector), so it's told when the learner leaves.
+    this.destroyRef.onDestroy(() => this.facade.leave());
 
     // SSR gate, URL-derived fallback SEO, Supabase load, error fallback and the
     // reset on destroy, as on the masterclass and podcast course pages.

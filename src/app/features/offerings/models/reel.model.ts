@@ -108,11 +108,24 @@ export interface ReelRouteParams {
  */
 export type ReelAccess = 'guest' | 'locked' | 'open';
 
-/** Bring a reel into view; the token lets the same reel be asked for twice. */
-export interface ReelScrollRequest {
+/**
+ * A one-off request about one reel (bring it into view, restart it); the
+ * token lets the same reel be asked twice.
+ */
+export interface ReelRequest {
   id: string;
   token: number;
 }
+
+/** `course-mode/`'s answer, as far as the player reads it. */
+export interface CourseModeResult {
+  course_mode: CourseMode;
+  /** A real switch hard-deleted the learner's progress on the course. */
+  progress_reset: boolean;
+}
+
+/** What the reel's main button does, decided from its access, mode and next step. */
+export type ReelButtonAction = 'unlock' | 'cpe' | 'play' | 'rewatch' | 'step';
 
 // ---- Trust boundary --------------------------------------------------------
 //
@@ -187,6 +200,16 @@ function toPage(block: unknown, route: string): ReelFeedPage {
 export function parseReelFeed(raw: unknown): ReelFeedPage {
   const data = isObject(raw) ? raw['data'] : undefined;
   return toPage(isObject(data) ? data['reels'] : undefined, 'reels-feed');
+}
+
+/** `course-mode/`'s `{ success, message, data }` envelope. */
+export function parseCourseModeResult(raw: unknown): CourseModeResult {
+  const data = isObject(raw) ? raw['data'] : undefined;
+  const mode = isObject(data) ? data['course_mode'] : undefined;
+  if (isObject(data) && (mode === 'cpe' || mode === 'preview') && isBool(data['progress_reset'])) {
+    return { course_mode: mode, progress_reset: data['progress_reset'] };
+  }
+  throw contractError('course-mode');
 }
 
 /** `parse` for `reels-feed/<uuid>/`: the anchor, then the feed without it. */
