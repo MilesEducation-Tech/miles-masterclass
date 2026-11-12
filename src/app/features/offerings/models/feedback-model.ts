@@ -35,7 +35,6 @@ export interface FeedbackRequest {
   other_comments: string;
   masterclass_id?: string;
   podcast_id?: string;
-  nano_learning_id?: string;
 }
 
 export interface CertificateUrls {

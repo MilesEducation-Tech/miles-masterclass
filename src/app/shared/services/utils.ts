@@ -5,11 +5,9 @@ import {
   EnvironmentInjector,
   inject,
   Service,
-  Injector,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { HttpContext } from '@angular/common/http';
 import { Router, NavigationEnd, Event as RouterEvent } from '@angular/router';
 import { EMPTY, Observable } from 'rxjs';
 import { filter, tap } from 'rxjs/operators';
@@ -24,69 +22,17 @@ import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-d
 import type { ShareDialogData } from '@shared/dialogs/share-dialog/share-dialog';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { MASTERCLASS_ROUTES } from '@core/models/masterclass.model';
-import { RouteParams, RouteResponse, SKIP_ERROR_NOTIFICATION } from '@core/models/http.model';
-import {
-  Content,
-  ContentDetails,
-  FinalAssessmentExamResponse,
-  QuizQuestion,
-} from '@core/models/course.model';
-import { Storage } from '@core/services/storage/storage';
-import type { CertificateDialogData } from '@shared/dialogs/certificate-download-dialog/certificate-download-dialog';
+import { RouteResponse } from '@core/models/http.model';
+import { Content, ContentDetails } from '@core/models/course.model';
 import type { VideoDialogData } from '@shared/dialogs/video-dialog/video-dialog';
 import { NotificationService } from '@core/services/notification/notification';
 import { Viewport, ScreenInfo } from '@core/services/viewport/viewport';
-import { SUBSCRIPTION_DIALOG } from '@core/services/dialog/feature-dialog-tokens';
-import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
 import { Logger } from '@core/services/logger/logger';
-import { AccountApi } from '@core/services/account-api/account-api';
 import { AuthSession } from '@core/services/auth-session/auth-session';
-import { canAccessCpeMode, CpeModeGateContent } from '@shared/utils/cpe-mode-access';
-
-type StartFinalAssessmentParams = RouteParams<typeof MASTERCLASS_ROUTES.startFinalAssessment>;
-
-/**
- * Permissive view of a server-side `user_badge` object. The wire shape varies
- * per surface (course details / webinar / tracker row / badge listing) — all
- * we need for the Credly hand-off is the optional `id` and `accept_url`.
- */
-export interface RawCredlyBadge {
-  id?: number | null;
-  accept_url?: string | null;
-}
 
 /** Backend-facing course types (snake_case), used in JSON bodies and ID keys. */
 export type ApiCourseType = 'masterclass' | 'podcast' | 'micro_learning';
 export type CourseIdKey = 'masterclass_id' | 'podcast_id' | 'nano_learning_id';
-
-/**
- * Normalises every spelling of a course type the app can hand around into the
- * backend token. Route literals use `masterclass`/`podcast`/`micro_learning`,
- * payloads use the display label (`Video`, `Podcast`), and the CPE tracker uses
- * `nano_learning`. Returns `null` for anything unrecognised so callers can bail
- * instead of firing a request with no course-id key.
- *
- * Per-caller translation kept missing a case — the exam-retake path mapped only
- * `Video` and sent `Podcast` straight through.
- */
-export function toApiCourseType(courseType: string): ApiCourseType | null {
-  switch (courseType?.trim().toLowerCase()) {
-    case 'video':
-    case 'masterclass':
-      return 'masterclass';
-    case 'audio':
-    case 'podcast':
-      return 'podcast';
-    // An AI Lab course is a nano-learning row, so it shares the id key.
-    case 'ai_lab':
-    case 'nano_learning':
-    case 'micro_learning':
-    case 'micro-learning':
-      return 'micro_learning';
-    default:
-      return null;
-  }
-}
 
 /** Shape accepted by `openCourseInfoDialog`. */
 export type CourseInfoInput = Content | ContentDetails;
@@ -104,16 +50,11 @@ export class Utils {
   private readonly router = inject(Router);
   private readonly dialogs = inject(NgpDialogManager);
   private readonly http = inject(ApiClient);
-  private readonly storage = inject(Storage);
-  private readonly injector = inject(Injector);
   private readonly notification = inject(NotificationService);
-  private readonly subscriptionDialog = inject(SUBSCRIPTION_DIALOG);
-  private readonly featureFacade = inject(FeatureFacade);
   private readonly logger = inject(Logger);
   private readonly destroyRef = inject(DestroyRef);
   private readonly viewport = inject(Viewport);
   private readonly auth = inject(AuthSession);
-  private readonly account = inject(AccountApi);
 
   private readonly _profession = signal<ProfessionType>('accounting');
   private readonly _currentUrl = signal<string>('');
@@ -282,208 +223,6 @@ export class Utils {
         : 'masterclass_id';
   }
 
-  async startFinalAssessment(
-    courseId: string,
-    courseTitle: string,
-    courseType: string,
-    examRules: string,
-  ) {
-    const apiType = toApiCourseType(courseType);
-    if (!apiType) {
-      // No id key means the request can only 400. Fail before opening the rules
-      // dialog rather than after the user has agreed to them.
-      this.logger.error('Cannot start final assessment: unknown course type', { courseType });
-      this.notification.error('Error', 'Unable to start the assessment. Please try again later.');
-      return;
-    }
-    // The API type (`micro_learning`) differs from the URL segment
-    // (`micro-learning`) that `offerings.ts` registers the feature at.
-    // Masterclass and podcast share the same token for both. AI Lab keeps its
-    // own segment — its exam routes hang off the /ai-labs page, not /offerings.
-    const urlSegment =
-      courseType === 'ai_lab'
-        ? 'ai-labs'
-        : apiType === 'micro_learning'
-          ? 'micro-learning'
-          : apiType;
-    // Titles arrive raw from details payloads (`Fraud Risk & Detection`) as well
-    // as pre-slugged from route params. Slugify both — a raw title can carry a
-    // `/` that would split the URL into an extra segment and miss the route.
-    const titleSlug = this.slugify(courseTitle);
-
-    const examRulesArray: string[] = examRules ? examRules.split(/\r?\n/) : [];
-    const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
-    const dialogRef = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
-      data: {
-        title: 'Final Assessment',
-        containerClass: 'flex flex-col space-y-4 text-start',
-        content: [
-          { type: 'text', value: 'QAS Self-Study Qualified Assessment Rules:' },
-          { type: 'list', items: examRulesArray, ordered: true },
-        ],
-        buttons: [{ label: 'Start Exam', variant: 'default', action: 'confirm' }],
-        maxWidth: '100%',
-      },
-    });
-
-    dialogRef.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
-      if (!(result?.result && result?.action === 'confirm')) return;
-
-      const cached: QuizQuestion[] =
-        this.storage.getLocal(`final_assessment_questions_${courseId}`) || [];
-      if (cached.length) {
-        const session_id = this.storage.getLocal('session_id');
-        this.router.navigate([
-          `${this.country()}/${this._profession()}/${urlSegment}/${courseId}/${titleSlug}/final-assessment/${session_id}/exam`,
-        ]);
-        return;
-      }
-
-      const params: StartFinalAssessmentParams = {};
-      if (apiType === 'masterclass') params.masterclass_id = +courseId;
-      else if (apiType === 'podcast') params.podcast_id = +courseId;
-      else params.nano_learning_id = +courseId;
-      // Same id key as a reel, so the backend needs to be told it's a lab.
-      if (courseType === 'ai_lab') params.course_type = 'ai_lab';
-
-      const context = new HttpContext().set(SKIP_ERROR_NOTIFICATION, true);
-      this.http
-        .post<FinalAssessmentExamResponse>(
-          MASTERCLASS_ROUTES.startFinalAssessment.path,
-          {},
-          { params, context },
-        )
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe({
-          next: (value) => {
-            this.storage.setLocal('session_id', value.session_id.toString());
-            this.storage.setLocal(`final_assessment_questions_${courseId}`, value.questions);
-            this.router.navigate([
-              `${this.country()}/${this._profession()}/${urlSegment}/${courseId}/${titleSlug}/final-assessment/${value.session_id}/exam`,
-            ]);
-          },
-          error: (error) => {
-            this.logger.error('Failed to start final assessment', error);
-            // The rules dialog has already closed — without this the user is
-            // left staring at the page with no feedback at all.
-            this.notification.error('Error', 'Unable to start the assessment. Please try again.');
-          },
-        });
-    });
-  }
-
-  /**
-   * Whether the user may enter CPE Certification Mode for this content.
-   *
-   * CPE mode is the paid tier — it awards credit and a certificate — so it
-   * needs an active subscription. Preview mode is free and is never gated by
-   * this. Free content and content the user bought individually
-   * (`active_plan`) are exempt.
-   *
-   * Only a known "no" closes it (`AccountApi.hasSubscription`): while
-   * `user-details/` is loading or has failed, a subscriber clicking straight
-   * through must not be paywalled, and the server still refuses what the
-   * learner isn't entitled to.
-   *
-   * The rule itself lives in `shared/utils/cpe-mode-access` as a pure
-   * function; this wrapper only supplies the plan flag.
-   */
-  canAccessCpeMode(content: CpeModeGateContent): boolean {
-    return canAccessCpeMode(content, this.account.hasSubscription() !== false);
-  }
-
-  /**
-   * Gate for every CPE mode-selection entry point. Returns `true` when the
-   * caller may proceed; otherwise sends the user where they need to go
-   * (login for guests, the subscription upsell for everyone else) and returns
-   * `false` so the caller can bail.
-   *
-   * Same dialog and options `EngagementDialog` uses, so the paywall a learner
-   * meets here is identical to the one everywhere else. The dialog now lives in
-   * `features/payment` and is resolved through `SUBSCRIPTION_DIALOG`, so this
-   * stays synchronous: the open is fired and not awaited, exactly as before,
-   * and the gate's `false` is returned immediately either way.
-   */
-  requireCpeModeAccess(content: CpeModeGateContent): boolean {
-    if (this.canAccessCpeMode(content)) return true;
-
-    // A visitor has no plan to upgrade: sign in first, then come back here.
-    if (!this.auth.isAuthenticated()) {
-      void this.router.navigate(['/auth/login'], { queryParams: { redirect: this.router.url } });
-      return false;
-    }
-    void this.subscriptionDialog().then((SubscriptionDialog) =>
-      this.dialogs.open(SubscriptionDialog),
-    );
-    return false;
-  }
-
-  async openCertificateDownloadDialog(content: ContentDetails) {
-    // Only subscriptions are sold (no single courses), so without an active plan the way to a
-    // certificate is the plan page. A course the subscription excludes can't be unlocked that
-    // way, so it says so instead of offering a purchase that doesn't exist.
-    if (content.is_subscription_excluded && !content.active_plan) {
-      this.openPurchaseGateDialog({
-        title: 'Not Included in the Subscription',
-        message: "This course isn't part of the subscription, so its certificate isn't available.",
-        buttons: [{ label: 'Close', variant: 'default', action: 'close' }],
-      });
-      return;
-    }
-
-    if (!content.active_plan) {
-      this.openPurchaseGateDialog({
-        title: 'Subscription Required',
-        message:
-          'You need an active subscription to download the certificate. Subscribe now to unlock certificate downloads and access premium content.',
-        buttons: [
-          { label: 'Close', variant: 'outline', action: 'close' },
-          { label: 'Subscribe', variant: 'default', action: 'confirm' },
-        ],
-        onConfirm: () =>
-          this.router.navigate(['/', this.country(), this._profession(), 'payment', 'plan']),
-      });
-      return;
-    }
-
-    // NASBA cert URLs are sourced lazily from `user-assessment/download_certificate/`
-    // (the dialog hits it on download click). The Credly badge data still
-    // comes from the course details payload — `user_badge` is typed as
-    // `unknown` so we narrow here without leaking the cast into the dialog API.
-    const rawBadge = content.user_badge as
-      | (RawCredlyBadge & {
-          badge_name?: string | null;
-          badge_image?: string | null;
-          description?: string | null;
-        })
-      | null;
-    // Show the badge row whenever the server has minted a `user_badge` for
-    // this user — either an already-claimed badge (acceptUrl present) or an
-    // id-only stub the dialog can claim on Share click. If both are missing
-    // the user isn't badge-eligible yet, so we omit the row entirely.
-    const badge =
-      rawBadge && (rawBadge.accept_url || rawBadge.id != null)
-        ? {
-            id: rawBadge.id ?? undefined,
-            acceptUrl: rawBadge.accept_url ?? undefined,
-            name: rawBadge.badge_name ?? undefined,
-            image: rawBadge.badge_image ?? undefined,
-            description: rawBadge.description ?? undefined,
-          }
-        : undefined;
-
-    const data: CertificateDialogData = {
-      courseId: content.id,
-      courseType:
-        content.course_type.toLocaleLowerCase() === 'video' ? 'masterclass' : content.course_type, // backend expects empty string instead of 'video'
-      courseTitle: content.title,
-      badge,
-    };
-    const { CertificateDownloadDialog } =
-      await import('@shared/dialogs/certificate-download-dialog/certificate-download-dialog');
-    this.dialogs.open(CertificateDownloadDialog, { data });
-  }
-
   /**
    * Claim a Credly badge via `user-badges/:id/claim/`. Single source of truth
    * for every claim surface (badge library, cpe-tracker, certificate dialog);
@@ -500,36 +239,6 @@ export class Utils {
     res: RouteResponse<typeof MASTERCLASS_ROUTES.claimBadge> | null | undefined,
   ): string | null {
     return res?.credly_accept_url ?? null;
-  }
-
-  /**
-   * Open a subscription gate dialog. Centralises the gating dialogs used by
-   * `openCertificateDownloadDialog`; an informational one has no confirm action.
-   */
-  private async openPurchaseGateDialog(config: {
-    title: string;
-    message: string;
-    buttons: UtilsDialogData['buttons'];
-    onConfirm?: () => void;
-    onCancel?: () => void;
-  }): Promise<void> {
-    const data: UtilsDialogData = {
-      title: config.title,
-      containerClass: 'max-w-lg text-start!',
-      content: [{ type: 'text', value: config.message }],
-      buttons: config.buttons,
-    };
-
-    const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
-    const ref = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
-      data: { ...data, maxWidth: '32rem' },
-    });
-
-    ref.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
-      if (!result?.result) return;
-      if (result.action === 'confirm') config.onConfirm?.();
-      else if (result.action === 'cancel') config.onCancel?.();
-    });
   }
 
   async openShareDialog(data?: ShareDialogData) {
@@ -652,10 +361,6 @@ export class Utils {
               response.is_bookmarked ? 'Bookmarked' : 'Bookmark Removed',
               response.message,
             );
-            // Fan out to every cached feature list so any visible card flips
-            // its bookmark icon in lockstep, and the dedicated bookmark listing
-            // (if loaded) adds/removes the course locally — no extra round-trip.
-            this.featureFacade.applyBookmarkChange(courseId, response.is_bookmarked, courseType);
           }
         }),
       );

@@ -33,7 +33,7 @@ const EMPTY_HOME_PAGE: MasterclassHomePage = { login_type: 'pre_login', tracks: 
  * The `tracks-page/` read: the masterclass tracks with their courses, shared by
  * the home page and the masterclass page.
  *
- * Root on purpose, like `FeatureFacade`: two routes render the same rails, and
+ * Root on purpose: two routes render the same rails, and
  * a root instance means home → masterclass reuses the parsed page instead of
  * refetching ~216 KB. The read is live from first inject, so only pages inject
  * this — never a layout or a shared component.

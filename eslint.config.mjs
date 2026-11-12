@@ -273,7 +273,6 @@ export default [
         'src/app/core/models/feature.model.ts',
         'src/app/core/models/http.model.ts',
         'src/app/core/models/library-filters.model.ts',
-        'src/app/core/services/feature-facade/feature-facade.ts',
         'src/app/core/services/logger/logger.ts',
         'src/app/features/offerings/pages/course-feedback/course-feedback.ts',
         'src/app/features/payment/pages/plan/plan.ts',

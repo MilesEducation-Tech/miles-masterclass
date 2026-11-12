@@ -140,7 +140,7 @@
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
     "src/app/core/models/masterclass.model.ts": {
-      "count": 2,
+      "count": 1,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
     "src/app/core/models/profile.model.ts": {
@@ -440,10 +440,6 @@
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
     "src/app/shared/components/cards/badge-hero-card/badge-hero-card.ts": {
-      "count": 2,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/shared/components/cards/coming-soon/coming-soon.ts": {
       "count": 2,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },

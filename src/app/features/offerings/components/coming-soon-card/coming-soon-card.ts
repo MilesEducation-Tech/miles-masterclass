@@ -7,8 +7,7 @@ import { MasterclassComingSoonCourse } from '@features/offerings/models/mastercl
 import { MasterclassLibraryFacade } from '@features/offerings/services/masterclass-library-facade';
 
 /**
- * One Coming Soon teaser on an offering landing page, in the shared
- * `app-coming-soon` design: the rank in outline, the artwork, and Trailer and
+ * One Coming Soon teaser on an offering landing page: the rank in outline, the artwork, and Trailer and
  * Remind Me on hover or focus. A teaser is not a course yet, so it has no link,
  * bookmark or filter. It injects the page's `MasterclassLibraryFacade`, which
  * owns the rail, the reminders and the trailer dialog.

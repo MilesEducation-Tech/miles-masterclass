@@ -117,11 +117,7 @@ export class CourseFeedback {
         ? 'webinar_id'
         : courseType === 'podcast'
           ? 'podcast_id'
-          : courseType === 'nano-learning' ||
-              courseType === 'micro-learning' ||
-              courseType === 'ai_lab'
-            ? 'nano_learning_id'
-            : 'masterclass_id';
+          : 'masterclass_id';
 
     const req = {
       feedbacks,

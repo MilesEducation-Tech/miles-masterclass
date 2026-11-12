@@ -13,8 +13,6 @@ import { NavigationEnd, Router } from '@angular/router';
 import { EMPTY, Observable, filter, firstValueFrom, from, map, switchMap } from 'rxjs';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Storage } from '@core/services/storage/storage';
-import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
-import { offeringTypeFromUrl } from '@core/utils/offering-type';
 // Type-only: both dialogs load with `import()` when opened. This service is
 // built by `app.ts`, so a value import would put them in the initial bundle.
 import type { ProfileCompletionDialogResult } from '@shared/dialogs/profile-completion-dialog/profile-completion-dialog';
@@ -85,7 +83,6 @@ const DISMISSAL_KEYS: Record<DialogKind, string> = {
 export class EngagementDialog {
   private readonly dialogs = inject(NgpDialogManager);
   private readonly router = inject(Router);
-  private readonly feature = inject(FeatureFacade);
   private readonly storage = inject(Storage);
   private readonly injector = inject(Injector);
   private readonly subscriptionDialog = inject(SUBSCRIPTION_DIALOG);
@@ -206,14 +203,7 @@ export class EngagementDialog {
             return this.afterClosed(ref, ref.afterClosed);
           },
         ),
-      ).pipe(
-        switchMap((result) => {
-          if (result?.saved) {
-            this.feature.refreshPersonalized(offeringTypeFromUrl(this.router.url));
-          }
-          return EMPTY;
-        }),
-      );
+      ).pipe(switchMap(() => EMPTY));
     }
 
     // Subscription: re-validate against the SERVER right before opening. The

@@ -6,26 +6,17 @@ import {
   ElementRef,
   inject,
   input,
-  signal,
   untracked,
   viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Button } from '@shared/ui/button/button';
 import { setupCourseSeo } from '@shared/utils/seo/course-seo-setup';
 import { AppDownloadPrompt } from '@features/offerings/services/app-download-prompt';
 import { MicroLearningCourseFacade } from '@features/offerings/services/micro-learning-course-facade';
 import { REEL_PLAYER_COPY } from '@features/offerings/constants/reels';
-import { MicroLearningFilterOption } from '@features/offerings/models/micro-learning-course.model';
 import { MicroLearningTopBar } from '@features/offerings/micro-learning/components/micro-learning-top-bar/micro-learning-top-bar';
 import { MicroLearningReelCard } from '@features/offerings/micro-learning/components/micro-learning-reel-card/micro-learning-reel-card';
 import { MicroLearningReelNav } from '@features/offerings/micro-learning/components/micro-learning-reel-nav/micro-learning-reel-nav';
-// Type-only: the sheet loads with `import()` when opened (AGENTS.md §4.4).
-import type {
-  MicroLearningFilterSheetData,
-  MicroLearningFilterSheetResult,
-} from '@features/offerings/micro-learning/components/micro-learning-filter-sheet/micro-learning-filter-sheet';
 
 /**
  * The reel player: a vertical feed of reels, opened on the one in the URL. The
@@ -40,7 +31,6 @@ import type {
 })
 export class MicroLearningCourse {
   protected readonly facade = inject(MicroLearningCourseFacade);
-  private readonly dialogs = inject(NgpDialogManager);
   private readonly destroyRef = inject(DestroyRef);
   private readonly reelScroller = viewChild<ElementRef<HTMLElement>>('reelScroller');
 
@@ -48,8 +38,6 @@ export class MicroLearningCourse {
   readonly courseTitle = input<string>();
 
   protected readonly copy = REEL_PLAYER_COPY;
-
-  readonly filters = signal<MicroLearningFilterOption[]>([]);
 
   protected readonly canGoPrev = computed(() => this.facade.activeIndex() > 0);
   protected readonly canGoNext = computed(
@@ -130,17 +118,5 @@ export class MicroLearningCourse {
     const el = this.reelScroller()?.nativeElement;
     const target = el?.children.item(index) as HTMLElement | null | undefined;
     target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-
-  async openFilters(): Promise<void> {
-    const { MicroLearningFilterSheet } =
-      await import('@features/offerings/micro-learning/components/micro-learning-filter-sheet/micro-learning-filter-sheet');
-    const ref = this.dialogs.open<MicroLearningFilterSheetData, MicroLearningFilterSheetResult>(
-      MicroLearningFilterSheet,
-      { data: { title: 'Field of study', options: this.filters(), visibleCount: 5 } },
-    );
-    ref.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
-      if (result) this.filters.set(result);
-    });
   }
 }

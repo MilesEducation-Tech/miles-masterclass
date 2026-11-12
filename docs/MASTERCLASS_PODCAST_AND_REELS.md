@@ -213,12 +213,23 @@ the server's `action_status`, re-read once a reel is watched to its end.
 The quiz and the exam read the reel's `course-detail/` first, only when asked. The reel is re-read after each
 step and when the player comes back from those pages. The plan is `prompts/reels-learning-steps.md`.
 
-**Still to rebind**
+**The legacy reels code is gone (MIL-184).** These all went with it:
 
-- The clean-up Task (MIL-184): the legacy reels code nothing calls any more, including the micro-learning and
-  nano branch of the legacy `course-feedback` page (webinar still uses that page).
-- `toApiCourseType` (`Utils`) still folds `nano_learning` into `micro_learning` for the legacy cards.
-- `core/models/nano-learning.model.ts` is an empty file (the clean-up Task removes it).
+- `FeatureFacade`'s listing cache and the `FEATURE_ROUTES` it read. `getAbout` stays, for the shared cards' info
+  dialog.
+- The old exam start, CPE-mode gate and certificate dialog in `Utils`.
+- The old course routes in `MASTERCLASS_ROUTES`.
+- The shared Coming-soon card.
+- The reel player's commented-out search and filter sheet.
+- The reel arm of the legacy feedback page.
+- The empty `nano-learning.model.ts`.
+
+The plan is `prompts/remove-legacy-reels-code.md`.
+
+**Still open (backend)**
+
+- The lock reason, the reels left out of the subscription, and `cpe_mode_available`.
+- Test reels with quiz, exam and transcript data.
 
 **Players**
 
