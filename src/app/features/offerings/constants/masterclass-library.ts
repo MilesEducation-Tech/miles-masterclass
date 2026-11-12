@@ -6,6 +6,7 @@ import {
   LibraryOffering,
   LibraryOfferingConfig,
   LibraryRailConfig,
+  ReelsActivityRailConfig,
 } from '@features/offerings/models/masterclass-library.model';
 
 /**
@@ -13,9 +14,19 @@ import {
  * for every course type; `course_type` narrows them.
  */
 export const LIBRARY_OFFERINGS: Readonly<Record<LibraryOffering, LibraryOfferingConfig>> = {
-  masterclass: { courseType: MASTERCLASS_COURSE_TYPE, ownTracks: false },
+  masterclass: {
+    courseTypes: [MASTERCLASS_COURSE_TYPE],
+    ownTracks: false,
+    learnerRows: 'library',
+  },
   // A podcast is a course with `course_type: "podcast"` (UAT, 2026-11-10).
-  podcast: { courseType: 'podcast', ownTracks: true },
+  podcast: { courseTypes: ['podcast'], ownTracks: true, learnerRows: 'library' },
+  // A reel is a course of either type; every list route takes both at once (UAT, 2026-11-12).
+  reels: {
+    courseTypes: ['nano_learning', 'micro_learning'],
+    ownTracks: true,
+    learnerRows: 'reels-activity',
+  },
 };
 
 /**
@@ -135,3 +146,46 @@ export const MASTERCLASS_RAIL_HEADINGS = {
   myList: 'My List',
   completed: "Courses you've mastered",
 } as const;
+
+/**
+ * The reels' learner rails: Continue Watching, My List and the mastered reels
+ * in one read. `post_login` needs a token (a 401 otherwise); `pre_login` sends
+ * every rail empty, so the facade doesn't ask signed out. Postman
+ * `web-masterclass-reels-activity-v1`.
+ */
+export const REELS_ACTIVITY_URL = `${environment.API.baseUrl}web-api/v1/masterclass/reels-activity/`;
+
+/**
+ * `reels-activity/`'s params, less `course_type`, which the facade adds from
+ * the connected offering. As on `library/`, each rail pages on its own key and
+ * a bare `page_size` is a 400 (UAT, 2026-11-12).
+ */
+export const REELS_ACTIVITY_PARAMS = {
+  login_type: 'post_login',
+  'continue_watching.page_size': RAIL_PAGE_SIZE,
+  'my_list.page_size': RAIL_PAGE_SIZE,
+  'mastered.page_size': RAIL_PAGE_SIZE,
+} as const;
+
+/** The reels' signed-in rail above the tracks. */
+export const REELS_RAILS_ABOVE_TRACKS: readonly ReelsActivityRailConfig[] = [
+  {
+    key: 'continue_watching',
+    id: MASTERCLASS_RAIL_SECTION_IDS.continueWatching,
+    heading: 'Continue Watching',
+  },
+];
+
+/** The reels' signed-in rails below the tracks, in order. */
+export const REELS_RAILS_BELOW_TRACKS: readonly ReelsActivityRailConfig[] = [
+  {
+    key: 'my_list',
+    id: MASTERCLASS_RAIL_SECTION_IDS.myList,
+    heading: MASTERCLASS_RAIL_HEADINGS.myList,
+  },
+  {
+    key: 'mastered',
+    id: MASTERCLASS_RAIL_SECTION_IDS.completed,
+    heading: MASTERCLASS_RAIL_HEADINGS.completed,
+  },
+];

@@ -7,10 +7,44 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- 🟡 **2026-11-10, NON-REFACTOR — MIL-178 (Task, podcast epic), remove the legacy podcast course code. COMMITTED,
-  PR NEXT** (`prompts/remove-legacy-podcast-course-code.md`), on `refactor/MIL-178-remove-legacy-podcast-course-code`,
-  cut from MIL-177 and rebased onto `master` (`6e370561`) after #250 merged; the rebase dropped the MIL-179, MIL-176
-  and MIL-177 commits and left the code unchanged. Last PR of the podcast epic (MIL-175).
+- 🟡 **2026-11-12, NON-REFACTOR — MIL-181 (story 1 of the reels epic), the reels landing page: old binding removed,
+  rebound to the new Postman collection. DONE, UNCOMMITTED** (`prompts/reels-landing-binding.md`), on
+  `feat/MIL-181-reels-landing-binding` off `master` (`bd153073`, 4.2.0). The epic, its four tickets and the reel
+  access rules (user, 2026-11-12: a reel the learner can't watch plays its trailer; signed out → sign in, signed in
+  without access → subscribe, entitled → the full reel) are at the end of the plan.
+  - **Removed from the page (the old binding):** the five `FeatureFacade.getResource(…)` rows, the hero's legacy
+    feed read and its router-state hand-off, the `app-vertical` / `app-coming-soon` cards and the legacy
+    `filterConfig`. Left with no caller, for the epic's clean-up Task: `FeatureFacade.getResource` and its
+    `FeatureResource` engine, and `app-coming-soon`. The player still reads the hand-off key until story 2.
+  - **Rebound:**
+    - `LIBRARY_OFFERINGS.reels`: `courseTypes: ['nano_learning', 'micro_learning']` (every config now lists its
+      types, sent comma-joined), `ownTracks: true`, and a new `learnerRows: 'reels-activity'`.
+    - `MasterclassLibraryFacade` reads `reels-activity/` for the reels (Continue Watching above the tracks, My List
+      and "Courses you've mastered" below) instead of `library/` + `completed-course-section/`; a bookmark re-reads
+      it. New `ReelsActivity` / `parseReelsActivity`, `REELS_ACTIVITY_*` and the reels rail configs.
+    - Cards: the shared `MasterclassCourseCard` in its vertical layout, with a new `pathSegment` input
+      (`micro-learning`); the trailer plays the new optional `MasterclassCourse.vertical_trailer_url`.
+    - Filters `content_type=reel`; Coming Soon signed in only ("Coming Soon on Reels"); "Start watching" opens the
+      first track's first reel.
+  - **Verified (dev 4101, Playwright, English):** 38 checks green.
+    - Signed out, live UAT: the reel titles in the server HTML; 3 tracks and 4 cards; the empty track hidden; no
+      learner rows or Coming Soon; cards 9:16, linked `/micro-learning/<uuid>/<slug>`; the trailer streams
+      `vertical_trailer_url`; the filter reads `content_type=reel`; Start watching; bookmark → sign-in and back.
+    - Signed in, stubbed: `tracks-page/`, `reels-activity/` and `coming-soon/` send
+      `course_type=nano_learning,micro_learning`; no `library/` or `completed-course-section/`; every row in
+      order; bookmark posts the reel's UUID, flips, toasts and re-reads `reels-activity/`; empty rows hide; a
+      failed `reels-activity/` hides its rows; a failed `tracks-page/` shows "We couldn't load the reels." and
+      Try again recovers.
+    - MIL-176's 33 and MIL-179's 37 re-run green with the same query strings; 375 / 768 / 1440, no sideways
+      scroll.
+  - Gates: tsc ✔, lint 0 errors (97 warnings), structure ✔ (pruned: the page's last relative import),
+    build:prod ✔ (1.01 MB / 230.35 kB, only `ai-labs.css`).
+  - `docs/MASTERCLASS_PODCAST_AND_REELS.md` §9: the landing page is rebound; the player's to-do stays.
+
+- ✅ **2026-11-10, NON-REFACTOR — MIL-178 (Task, podcast epic), remove the legacy podcast course code. MERGED as
+  #251 (`ec1be371`); the podcast epic (MIL-175) is done** (`prompts/remove-legacy-podcast-course-code.md`), on
+  `refactor/MIL-178-remove-legacy-podcast-course-code`, cut from MIL-177 and rebased onto `master` (`6e370561`)
+  after #250 merged; the rebase dropped the MIL-179, MIL-176 and MIL-177 commits and left the code unchanged.
   - **Deleted (no users after MIL-177, about 2,440 lines):**
     - services: `MasterclassFacade`, `ChapterFacade`;
     - components: `CourseChapterList`, `CourseResources`, `VideoChapter`, `AudioChapter`, `CourseRelatedSection`;
@@ -7067,6 +7101,7 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-11-12 · NON-REFACTOR · **MIL-181 reels landing page** (uncommitted): old binding removed, `LIBRARY_OFFERINGS.reels` (`courseTypes`, `learnerRows: 'reels-activity'`), `reels-activity/` read, vertical `MasterclassCourseCard` with `pathSegment`, page rebuilt · 38 Playwright checks green + MIL-176's 33 and MIL-179's 37 re-run · lint 0 errors (97 warnings), structure ✔ (pruned), build:prod ✔ (1.01 MB / 230.35 kB) · MIL-178 merged as #251 (`ec1be371`), podcast epic done
 - 2026-11-10 · NON-REFACTOR · **MIL-177 merged as #250 (`6e370561`)**; MIL-178 rebased onto `master`: the old MIL-179, MIL-176 and MIL-177 commits dropped (their conflicts resolved to `master`'s side), one STATE.md conflict on its own entry (both sides kept), code unchanged, PR next
 - 2026-11-10 · NON-REFACTOR · **MIL-176 merged as #248 (`f90131d1`)**; MIL-177 rebased onto `master`: the old MIL-179 and MIL-176 commits dropped (their conflicts resolved to `master`'s side), one STATE.md conflict on its own entry (both sides kept), code unchanged, PR next
 - 2026-11-10 · NON-REFACTOR · **MIL-179 merged as #247 (`f140b094`)**; MIL-176 rebased onto `master` with no conflicts (same files as before, three commits), PR next

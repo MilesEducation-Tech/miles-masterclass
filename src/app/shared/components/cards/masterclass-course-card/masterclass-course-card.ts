@@ -40,6 +40,12 @@ export class MasterclassCourseCard {
   readonly layout = input<MasterclassCardLayout>('vertical');
 
   /**
+   * The URL segment of the page the card opens: `masterclass` by default,
+   * `micro-learning` for a reel. A plain segment, so this card knows no feature.
+   */
+  readonly pathSegment = input('masterclass');
+
+  /**
    * Image priority (`fetchpriority="high"`, eager): for the few cards that are
    * in the first viewport, where one of them is the LCP element. Off by default.
    */
@@ -95,7 +101,7 @@ export class MasterclassCourseCard {
     '/',
     this.utils.country(),
     this.utils.profession(),
-    'masterclass',
+    this.pathSegment(),
     this.course().id,
     this.course().slug,
   ]);

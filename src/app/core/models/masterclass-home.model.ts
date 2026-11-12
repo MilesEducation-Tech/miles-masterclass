@@ -75,6 +75,12 @@ export interface MasterclassCourse {
   thumbnails: MasterclassThumbnails;
   /** Was `trailer_url` until UAT renamed it on 2026-10-14 (Postman not updated yet). */
   horizontal_trailer_url: string | null;
+  /**
+   * The 9:16 trailer, which the reel cards play. Optional: it is on every card
+   * route in the collection of 2026-11-03, but the guard doesn't fail a card
+   * route that leaves it out.
+   */
+  vertical_trailer_url?: string | null;
   fields_of_study: MasterclassFieldOfStudy[];
   /** The course total, summed by the API. Render it as sent; never re-sum. */
   total_cpe_credits: number | null;
@@ -234,6 +240,7 @@ export function isMasterclassCourse(v: unknown): v is MasterclassCourse {
     isStrOrNull(v['short_description']) &&
     isThumbnails(v['thumbnails']) &&
     isStrOrNull(v['horizontal_trailer_url']) &&
+    (v['vertical_trailer_url'] === undefined || isStrOrNull(v['vertical_trailer_url'])) &&
     listOf(isFieldOfStudy)(v['fields_of_study']) &&
     isNumOrNull(v['total_cpe_credits']) &&
     isBool(v['has_individual_badge']) &&

@@ -18,6 +18,10 @@ import {
  * - `GET web-api/v1/masterclass/completed-course-section/`
  *   (`web-masterclass-completed-course-section-v1`): the courses the learner
  *   has closed.
+ * - `GET web-api/v1/masterclass/reels-activity/`
+ *   (`web-masterclass-reels-activity-v1`, checked on UAT 2026-11-12): the
+ *   reels' learner rails, in place of the two above: Continue Watching, My
+ *   List and the mastered reels.
  * - `GET web-api/v1/masterclass/coming-soon/` (`web-masterclass-coming-soon-v1`,
  *   checked on UAT 2026-10-27): the teasers, which are not courses yet. Each
  *   row carries the learner's `notify_me` since 2026-10-28.
@@ -43,18 +47,29 @@ export type WebCourseType = 'course' | 'podcast' | 'nano_learning' | 'micro_lear
  * shows the learner rails. An offering joins by adding its `LIBRARY_OFFERINGS`
  * entry.
  */
-export type LibraryOffering = 'masterclass' | 'podcast';
+export type LibraryOffering = 'masterclass' | 'podcast' | 'reels';
+
+/**
+ * Where an offering's signed-in rails come from: `library/` plus
+ * `completed-course-section/` (masterclass, podcast), or `reels-activity/`,
+ * the reels' own read of Continue Watching, My List and the mastered reels.
+ */
+export type LearnerRowsSource = 'library' | 'reels-activity';
 
 /** What differs per offering on its landing page's rails. */
 export interface LibraryOfferingConfig {
-  /** Narrows `library/`, `completed-course-section/`, `coming-soon/` and `tracks-page/`, and My List. */
-  courseType: WebCourseType;
+  /**
+   * Narrows every list read and My List, sent comma-joined as `course_type`:
+   * reels are two course types (`nano_learning`, `micro_learning`).
+   */
+  courseTypes: readonly WebCourseType[];
   /**
    * Whether the facade reads the offering's `tracks-page/` itself. Masterclass
    * does not: its tracks come from the root `MasterclassHomeFacade`, which the
    * home page shares.
    */
   ownTracks: boolean;
+  learnerRows: LearnerRowsSource;
 }
 
 // ---- Rails -----------------------------------------------------------------
@@ -95,6 +110,24 @@ export interface MasterclassComingSoonCourse {
 /** A rail above the tracks: the `library/` rail it reads, its section id and heading. */
 export interface LibraryRailConfig {
   key: LibraryRailKey;
+  id: string;
+  heading: string;
+}
+
+/** The `reels-activity/` rails, by their response keys. */
+export type ReelsActivityRailKey = 'continue_watching' | 'my_list' | 'mastered';
+
+/**
+ * One answer of `reels-activity/`, unwrapped: each rail's reels. Already
+ * narrowed by the request's `course_type`, unlike `library/`'s `bookmarked`.
+ * A row is the reel feed's item (the card plus `chapter` and `user_state`);
+ * the landing page reads its card.
+ */
+export type ReelsActivity = Readonly<Record<ReelsActivityRailKey, LibraryCourse[]>>;
+
+/** A `reels-activity/` rail on the page: the key it reads, its section id and heading. */
+export interface ReelsActivityRailConfig {
+  key: ReelsActivityRailKey;
   id: string;
   heading: string;
 }
@@ -143,6 +176,24 @@ export function parseMasterclassLibrary(raw: unknown): MasterclassLibrary {
       because_you_watched: rail('because_you_watched'),
       bookmarked: rail('bookmarked'),
     },
+  };
+}
+
+/** `parse` for `reels-activity/`: the envelope and the three learner rails. */
+export function parseReelsActivity(raw: unknown): ReelsActivity {
+  const data = isObject(raw) ? raw['data'] : undefined;
+  if (!isObject(data)) throw contractError('reels-activity');
+
+  const rail = (key: ReelsActivityRailKey): LibraryCourse[] => {
+    const block = data[key];
+    if (blockOf(isLibraryCourse)(block)) return block.results;
+    throw contractError('reels-activity');
+  };
+
+  return {
+    continue_watching: rail('continue_watching'),
+    my_list: rail('my_list'),
+    mastered: rail('mastered'),
   };
 }
 

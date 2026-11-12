@@ -35,6 +35,10 @@ import {
   MASTERCLASS_RAILS_ABOVE_TRACKS,
   MASTERCLASS_REMINDER_TOASTS,
   OFFERING_TRACKS_PAGE_SIZES,
+  REELS_ACTIVITY_PARAMS,
+  REELS_ACTIVITY_URL,
+  REELS_RAILS_ABOVE_TRACKS,
+  REELS_RAILS_BELOW_TRACKS,
 } from '@features/offerings/constants/masterclass-library';
 import {
   LibraryOffering,
@@ -44,6 +48,9 @@ import {
   parseCompletedSection,
   parseMasterclassLibrary,
   parseNotifyMe,
+  parseReelsActivity,
+  ReelsActivity,
+  ReelsActivityRailConfig,
 } from '@features/offerings/models/masterclass-library.model';
 
 /**
@@ -51,17 +58,22 @@ import {
  * For You, Complimentary and Because You Watched above the tracks, My List,
  * the completed courses and Coming Soon below them. Offering-wide, like
  * `CourseDetailFacade`: the routes are the same for every course type, and
- * what differs (`course_type`) comes from `LIBRARY_OFFERINGS` once the page
- * calls `connect()`. Route-scoped: the landing route lists it in `providers`.
- * An offering whose config says `ownTracks` (podcast) reads its tracks here
- * too; masterclass reads them through the root `MasterclassHomeFacade`.
+ * what differs (`course_type`, where the learner rails come from) comes from
+ * `LIBRARY_OFFERINGS` once the page calls `connect()`. Route-scoped: the
+ * landing route lists it in `providers`. An offering whose config says
+ * `ownTracks` (podcast, reels) reads its tracks here too; masterclass reads
+ * them through the root `MasterclassHomeFacade`. Reels read their learner
+ * rails from `reels-activity/` (Continue Watching above the tracks, My List
+ * and the mastered reels below), the others from `library/` and
+ * `completed-course-section/`.
  *
  * The reads run only once connected, only signed in and only in the browser:
- * the token lives there, and signed out `library/` sends these rails empty.
- * `coming-soon/` is public, but the rail shows only signed in. Signing in or
- * out re-runs them by itself, off the session's boolean. A bookmark changed
- * anywhere re-reads `library/`, so My List follows it. A Coming Soon card's
- * Remind Me and trailer live here too, beside the rail they belong to.
+ * the token lives there, and signed out the learner reads send these rails
+ * empty. `coming-soon/` is public, but the rail shows only signed in. Signing
+ * in or out re-runs them by itself, off the session's boolean. A bookmark
+ * changed anywhere re-reads the learner rails, so My List follows it. A Coming
+ * Soon card's Remind Me and trailer live here too, beside the rail they
+ * belong to.
  */
 @Service({ autoProvided: false })
 export class MasterclassLibraryFacade {
@@ -82,15 +94,18 @@ export class MasterclassLibraryFacade {
     return offering ? LIBRARY_OFFERINGS[offering] : null;
   });
 
-  /** The connected offering's `course_type`; `null` until `connect()`. */
-  private readonly courseType = computed(() => this.config()?.courseType ?? null);
+  /** The connected offering's `course_type` param (comma-joined); `null` until `connect()`. */
+  private readonly courseType = computed(() => this.config()?.courseTypes.join(',') ?? null);
+
+  /** Which read builds the learner rails; `null` until `connect()`. */
+  private readonly learnerRows = computed(() => this.config()?.learnerRows ?? null);
 
   private readonly signedIn = computed(() => this.isBrowser && this.auth.isAuthenticated());
 
   private readonly library = httpResource<MasterclassLibrary>(
     () => {
       const course_type = this.courseType();
-      if (!course_type || !this.signedIn()) return undefined;
+      if (!course_type || this.learnerRows() !== 'library' || !this.signedIn()) return undefined;
       // `course_type` second, where it always sat, so the query string is unchanged.
       const { login_type, ...pageSizes } = MASTERCLASS_LIBRARY_PARAMS;
       return {
@@ -105,13 +120,29 @@ export class MasterclassLibraryFacade {
   private readonly completed = httpResource<MasterclassCourse[]>(
     () => {
       const course_type = this.courseType();
-      if (!course_type || !this.signedIn()) return undefined;
+      if (!course_type || this.learnerRows() !== 'library' || !this.signedIn()) return undefined;
       return {
         url: apiUrl(MASTERCLASS_COMPLETED_URL),
         params: { course_type, ...MASTERCLASS_COMPLETED_PARAMS },
       };
     },
     { parse: parseCompletedSection },
+  );
+
+  /** The reels' learner rails, in place of `library/` and `completed-course-section/`. */
+  private readonly reelsActivity = httpResource<ReelsActivity>(
+    () => {
+      const course_type = this.courseType();
+      if (!course_type || this.learnerRows() !== 'reels-activity' || !this.signedIn()) {
+        return undefined;
+      }
+      const { login_type, ...pageSizes } = REELS_ACTIVITY_PARAMS;
+      return {
+        url: apiUrl(REELS_ACTIVITY_URL),
+        params: { login_type, course_type, ...pageSizes },
+      };
+    },
+    { parse: parseReelsActivity },
   );
 
   private readonly comingSoonResource = httpResource<MasterclassComingSoonCourse[]>(
@@ -144,7 +175,7 @@ export class MasterclassLibraryFacade {
         url: apiUrl(MASTERCLASS_TRACKS_PAGE_URL),
         params: {
           login_type: signedIn ? 'post_login' : 'pre_login',
-          course_type: config.courseType,
+          course_type: config.courseTypes.join(','),
           ...OFFERING_TRACKS_PAGE_SIZES,
         },
       };
@@ -182,8 +213,22 @@ export class MasterclassLibraryFacade {
     this.library.hasValue() ? this.library.value() : undefined,
   );
 
+  private readonly latestReelsActivity = computed(() =>
+    this.reelsActivity.hasValue() ? this.reelsActivity.value() : undefined,
+  );
+
+  /** `reels-activity/` rails as page rails, in config order; a rail with no reels is left out. */
+  private reelsRails(configs: readonly ReelsActivityRailConfig[]): MasterclassRail[] {
+    const activity = this.latestReelsActivity();
+    if (!activity) return [];
+    return configs
+      .map(({ key, id, heading }) => ({ id, heading, courses: activity[key] }))
+      .filter((rail) => rail.courses.length > 0);
+  }
+
   /** The rails above the tracks, in order; a rail with no courses is left out. */
   readonly railsAboveTracks = computed<MasterclassRail[]>(() => {
+    if (this.learnerRows() === 'reels-activity') return this.reelsRails(REELS_RAILS_ABOVE_TRACKS);
     const library = this.latestLibrary();
     if (!library) return [];
     return MASTERCLASS_RAILS_ABOVE_TRACKS.map(({ key, id, heading }) => ({
@@ -200,15 +245,19 @@ export class MasterclassLibraryFacade {
    * My List and the completed courses, below the tracks. `bookmarked` is not
    * narrowed by the request's `course_type`, so My List keeps the connected
    * offering's own: a bookmarked podcast belongs on the podcast page.
+   * `reels-activity/` is narrowed already.
    */
   readonly railsBelowTracks = computed<MasterclassRail[]>(() => {
+    if (this.learnerRows() === 'reels-activity') return this.reelsRails(REELS_RAILS_BELOW_TRACKS);
     const bookmarked = this.latestLibrary()?.rails.bookmarked ?? [];
-    const courseType = this.courseType();
+    const courseTypes = this.config()?.courseTypes ?? [];
     const rails: MasterclassRail[] = [
       {
         id: MASTERCLASS_RAIL_SECTION_IDS.myList,
         heading: MASTERCLASS_RAIL_HEADINGS.myList,
-        courses: bookmarked.filter((course) => course.course_type === courseType),
+        courses: bookmarked.filter((course) =>
+          courseTypes.some((type) => type === course.course_type),
+        ),
       },
       {
         id: MASTERCLASS_RAIL_SECTION_IDS.completed,
@@ -295,7 +344,9 @@ export class MasterclassLibraryFacade {
   // `reload()` keeps the rails on screen while it reads.
   private readonly myListSync = this.bookmarks.changed$
     .pipe(takeUntilDestroyed())
-    .subscribe(() => this.library.reload());
+    .subscribe(() =>
+      this.learnerRows() === 'reels-activity' ? this.reelsActivity.reload() : this.library.reload(),
+    );
 
   // The rails hide on failure, so the log is the only place a drift shows.
   private readonly tracksErrorLog = effect(() => {
@@ -311,6 +362,11 @@ export class MasterclassLibraryFacade {
   private readonly completedErrorLog = effect(() => {
     const error = this.completed.error();
     if (error) this.logger.error('[MasterclassLibraryFacade] completed load failed', error);
+  });
+
+  private readonly reelsActivityErrorLog = effect(() => {
+    const error = this.reelsActivity.error();
+    if (error) this.logger.error('[MasterclassLibraryFacade] reels-activity load failed', error);
   });
 
   /** One teaser's reminder, set on the rail's own rows so every read of them agrees. */

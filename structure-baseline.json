@@ -319,10 +319,6 @@
       "count": 5,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
-    "src/app/features/offerings/micro-learning/pages/micro-learning/micro-learning.ts": {
-      "count": 1,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
     "src/app/features/offerings/pages/course-feedback/course-feedback.ts": {
       "count": 1,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"

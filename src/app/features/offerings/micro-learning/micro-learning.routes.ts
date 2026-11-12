@@ -1,6 +1,8 @@
 import { Route } from '@angular/router';
 import { authGuard } from '@core/guards/auth/auth-guard';
+import { MasterclassRailFilter } from '@shared/services/masterclass-rail-filter';
 import { FeedbackFacade } from '@features/offerings/services/feedback-facade';
+import { MasterclassLibraryFacade } from '@features/offerings/services/masterclass-library-facade';
 import { MicroLearningCourseFacade } from '@features/offerings/services/micro-learning-course-facade';
 import { MicroLearning } from '@features/offerings/micro-learning/pages/micro-learning/micro-learning';
 
@@ -11,7 +13,12 @@ import { MicroLearning } from '@features/offerings/micro-learning/pages/micro-le
  * a visitor is sent to sign-in and back, and the page's chunk never loads.
  */
 export const microLearningRoutes: Route[] = [
-  { path: '', component: MicroLearning },
+  {
+    path: '',
+    component: MicroLearning,
+    // The landing page's rows (connected to `reels`) and the rails' filter.
+    providers: [MasterclassLibraryFacade, MasterclassRailFilter],
+  },
   {
     path: ':courseId/:courseTitle',
     children: [
