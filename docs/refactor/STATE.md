@@ -7,8 +7,32 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- 🟡 **2026-11-12, NON-REFACTOR — MIL-183 (story 3 of the reels epic), the steps after a reel: old binding removed,
-  rebound to the new Postman collection. DONE, PR AGAINST `master`** (`prompts/reels-learning-steps.md`, "As
+- 🟡 **2026-11-12, NON-REFACTOR — MIL-184 (clean-up Task of the reels epic), remove the legacy reels code. DONE,
+  UNCOMMITTED** (`prompts/remove-legacy-reels-code.md`, "As built"), on
+  `refactor/MIL-184-remove-legacy-reels-code`, cut from `master` (`6a64d867`).
+  - **Verified (dev 4101, Playwright, English):**
+    - MIL-181's 38, MIL-182's 37, MIL-185's 26 and MIL-183's 48 checks re-run green.
+    - A new 35-check run covers the main pages and the edited call sites: the legacy card's info and bookmark,
+      and the webinar feedback submit. One check's own expectation was wrong (id `"501"` is a string, as on
+      `master`); fixed in the script.
+  - **Gates:**
+    - tsc ✔, lint 0 errors (74 warnings), structure ✔ (pruned);
+    - build:prod ✔ (999.36 kB / 225.86 kB, only `ai-labs.css`), build-storybook ✔;
+    - `feature-facade.ts` taken off `LEGACY_ANY_FILES`.
+  - About 1,800 lines of deletions. Each one's last caller was removed by a reels PR (#254 / #256 / #258):
+    - `FeatureFacade`'s listing cache (`FeatureResource`, `getResource`, both broadcasts) and the
+      `FEATURE_ROUTES` keys it read;
+    - `Utils.startFinalAssessment` / `requireCpeModeAccess` / `openCertificateDownloadDialog` and
+      `cpe-mode-access.ts`;
+    - the dead `MASTERCLASS_ROUTES` entries;
+    - `app-coming-soon`;
+    - the reel player's commented-out search and filter sheet;
+    - the reel arm of the legacy feedback page;
+    - the empty `nano-learning.model.ts`.
+  - Code dead before the epic is listed in the plan and not touched.
+
+- ✅ **2026-11-12, NON-REFACTOR — MIL-183 (story 3 of the reels epic), the steps after a reel: old binding removed,
+  rebound to the new Postman collection. MERGED as #258 (`6a64d867`)** (`prompts/reels-learning-steps.md`, "As
   built"), on `feat/MIL-183-reels-learning-steps`, cut from MIL-185 and rebased onto `master` after #257 merged
   (`60afbacb`).
   - **Removed:** the "Coming soon" placeholder on the reel's step button (`REEL_STEP_UNAVAILABLE`) and the reel's
@@ -7189,6 +7213,8 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-11-12 · NON-REFACTOR · **MIL-184 legacy reels code removed** (uncommitted): `FeatureFacade` cache + `FEATURE_ROUTES` listing keys, `Utils` exam / CPE gate / certificate dialog, `cpe-mode-access`, `offering-type`, dead `MASTERCLASS_ROUTES`, `app-coming-soon`, reel filter sheet, feedback reel arm, empty nano model · −1,921 source lines · 149 reels checks re-run + 35 new · lint 0 errors (74 warnings), structure ✔ (pruned), build:prod ✔ (225.86 kB), storybook ✔
+- 2026-11-12 · NON-REFACTOR · **MIL-183 merged as #258 (`6a64d867`)**; MIL-184 branch cut from `master`, legacy reels code audited (every `Utils` / `FeatureFacade` member, route key and reel component grepped, `git log -S` for the last caller), plan `prompts/remove-legacy-reels-code.md` written, awaiting approval
 - 2026-11-12 · NON-REFACTOR · **MIL-185 merged as #257 (`60afbacb`)**; MIL-183 rebased onto `master` (the two MIL-185 commits drop, the squash matches their tree), its PR opened against `master`
 - 2026-11-12 · NON-REFACTOR · **MIL-183 reel learning steps** (uncommitted, cut from MIL-185 / #257): reel route → podcast's course tree (`offering: 'reels'`, shared facades, exam / report / evaluation), quiz pop-up on the chapter facades, exam start, feedback with `redirect`, certificate link, re-read after each step and on return; placeholder and legacy feedback route removed · 48 Playwright checks green + MIL-185 / 182 / 177 re-run · lint 0 errors (97 warnings), structure ✔, build:prod ✔ (230.47 kB)
 - 2026-11-12 · NON-REFACTOR · **MIL-182 merged as #256 (`bdcb7c2f`)** · **MIL-185 reel progress and mode** (uncommitted, cut from MIL-182, rebase onto `master` next): `chapter-start/` + Preview on first play, `course-progress-update/` tracker, `course-mode/` CPE switch, server `action_status` button, re-read at the end, `leave()` from the page · 26 Playwright checks green + MIL-182's 37 re-run · lint 0 errors (97 warnings), structure ✔, build:prod ✔ (230.48 kB)
