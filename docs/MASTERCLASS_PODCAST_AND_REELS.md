@@ -187,46 +187,26 @@ The plans are `prompts/podcast-landing-binding.md` and `prompts/podcast-course-c
 mastered reels from `reels-activity/`, Coming Soon from `coming-soon/`. The plan, with the rest of the reels epic
 and the reel access rules, is `prompts/reels-landing-binding.md`.
 
-The reel player, its quiz, final assessment and feedback have **not been rebound**: every read and write they make
-goes to the legacy API, which answers 404 on UAT (`prompts/envelope-fallout.md`). What their rebind has to change:
+**The reel player is rebound (MIL-182, PR A).** `MicroLearningCourseFacade` reads `reels-feed/<uuid>/` and then
+`reels-feed/?page=n` (`course_type=nano_learning,micro_learning`), keyed by UUID, and old numeric links through
+`about-course/?slug=`. What plays comes from the reel's `user_state.course_is_locked`: signed out or without access
+the vertical trailer with a sign-in / subscribe message, with access `chapter.hls_video_url`. Bookmark goes through
+`MasterclassBookmarks`; About renders `MasterclassCourseAbout` from its own `CourseDetailFacade`
+(`COURSE_DETAIL_API.reels`); Transcript and Glossary read `course-detail/`. The plan is
+`prompts/reels-player-binding.md`.
 
-**Legacy routes still called**
+**Still to rebind**
 
-- Reels: `v2/nano-learning/` and `v2/nano-learning/<id>/` with cursor paging, `chapter-quiz`,
-  `v2/library/:id/about/` (in `features/offerings/services/micro-learning-course-facade.ts`).
-- Also for reels: `feedback-category/`, `user-feedback/*` (`feedback-facade.ts`, which always sends
-  `master_class__id`).
-
-**Model and id mismatches**
-
-- Ids are numeric: `Number(id)` / `+id` in `micro-learning-course.ts`, `course-feedback.ts` and `Utils`. A UUID
-  becomes `NaN`.
-- `MicroLearningReel` (`features/offerings/models/micro-learning-course.model.ts`) extends the legacy `Content`.
-  It plays `video_url`, not `hls_video_url`, and needs both `id` and `chapter_id`.
-- `core/models/nano-learning.model.ts` is an empty file.
-- No single `course_type` union covers the four types. `CourseOffering` (`models/course-detail.model.ts`) is
-  `'masterclass' | 'podcast'`, and `toApiCourseType` (`Utils`) folds `nano_learning` into `micro_learning`.
-
-**Behaviour the contract moves to the server**
-
-- `action_status` is derived client-side by `deriveActionStatus`:
-  - It returns `null` in Preview even when the server sent a value.
-  - It is overridden locally with `TAKE_QUIZ` / `TAKE_EXAM`.
-  - When the status is `null`, it is rebuilt from the feedback and assessment fields.
-
-  Section 5 says to render the server's value as sent.
-
-- The reel quiz branch keys on the literal `'micro_learning'` (`handleVideoEnded`), and the no-status fallback can
-  still open the chapter quiz for a nano reel.
-- Nothing resets local `last_activity` after a failed nano exam, so the 95% gates keep blocking heartbeats until
-  a reload. The contract erases the progress server-side and answers `REWATCH`.
-- Completion is client-side: `isReelCompleted` (95% of `total_duration`). The contract judges completion on
-  `max_watched_duration_seconds` via `course-progress-update/`, as the podcast and masterclass chapters now do.
+- PR B: progress (`chapter-start/`, `course-progress-update/`), CPE / Preview (`course-mode/`) and the server's
+  `action_status` button. Until then an entitled reel plays and pauses but saves nothing.
+- Story 3: the chapter quiz (`quiz-questions/`, `quiz-submit/`), the final assessment, report and feedback on the
+  shared pages, and the certificate (`user_state.certificate_url`). The reel's `feedback` route still uses the
+  legacy `FeedbackFacade` (`feedback-category/`, `user-feedback/*`).
+- `toApiCourseType` (`Utils`) still folds `nano_learning` into `micro_learning` for the legacy cards.
+- `core/models/nano-learning.model.ts` is an empty file (the clean-up Task removes it).
 
 **Players**
 
-- The reel card labels any non-`.m3u8` URL `video/mp4`, and its check uses `endsWith`, which a query string
-  breaks.
 - Every podcast chapter plays in the shared video player (`CourseChapterPlayer`): the web API sends no audio-or-video
   flag (question 5). `AudioJs` is kept for the record-disk audio player that returns when it does.
 
@@ -236,8 +216,6 @@ goes to the legacy API, which answers 404 on UAT (`prompts/envelope-fallout.md`)
   unless the page passes another `pathSegment` (the reels landing page passes `micro-learning`). That includes the
   course library's Podcast and Micro Learning tabs. Once the backend serves those types, the card has to route by
   `course_type`: `course` → `masterclass`, `podcast` → `podcast`, and both reel types → `micro-learning`.
-- Until the player is rebound, a reel card opens the player at the reel's UUID, which the player's legacy reads
-  turn into `NaN`.
 
 ## 10. Open questions for the backend
 

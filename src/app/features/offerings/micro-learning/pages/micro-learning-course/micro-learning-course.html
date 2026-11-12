@@ -18,33 +18,31 @@
           class="h-full aspect-9/16 max-w-full min-h-0 overflow-y-auto snap-y snap-mandatory scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           (scrollend)="onReelScroll()"
         >
-          @for (episode of facade.detailsList(); track episode.id) {
+          @for (reel of facade.reels(); track reel.id) {
             <div class="snap-start snap-always h-full shrink-0 flex items-center justify-center">
-              <app-micro-learning-reel-card
-                [episode]="episode"
-                [muted]="muted()"
-                [active]="episode.id === facade.courseDetails()?.id"
-                [preloaded]="preloadedIds().has(episode.id)"
-                [rewatchToken]="rewatchTokenFor(episode.id)"
-                [pauseToken]="pauseTokenFor(episode.id)"
-                [ctaDisabled]="facade.ctaLoading()"
-                (muteToggled)="toggleMute()"
-                (shared)="facade.openShareDialog()"
-                (optionSelected)="onOptionSelected($event)"
-                (bookmarkToggled)="facade.toggleBookmark()"
-                (actionInvoked)="facade.handleActionStatus($event)"
-                (timeUpdate)="facade.handleTimeUpdate($event)"
-                (exited)="facade.handleExited($event)"
-              />
+              <app-micro-learning-reel-card [reel]="reel" />
             </div>
           } @empty {
-            @if (facade.loading()) {
+            @if (facade.notFound()) {
               <div class="h-full flex items-center justify-center text-sm text-muted-foreground">
-                Loading…
+                {{ copy.notFound }}
               </div>
-            } @else if (facade.error(); as err) {
-              <div class="h-full flex items-center justify-center text-sm text-destructive">
-                {{ err }}
+            } @else if (facade.loadError()) {
+              <div
+                role="alert"
+                class="h-full flex flex-col items-center justify-center gap-4 text-center"
+              >
+                <p class="text-sm text-muted-foreground">{{ copy.loadError }} Please try again.</p>
+                <button app-button type="button" variant="outline" (click)="facade.reload()">
+                  Try again
+                </button>
+              </div>
+            } @else {
+              <div
+                class="h-full flex items-center justify-center text-sm text-muted-foreground"
+                aria-busy="true"
+              >
+                Loading…
               </div>
             }
           }
@@ -59,25 +57,6 @@
           />
         </div>
       </section>
-      <!-- <div
-        #gridScroller
-        class="hidden md:block min-h-0 overflow-y-auto max-h-full"
-        (scroll)="onGridScroll(gridScroller)"
-      >
-        @if (facade.detailsList().length) {
-          <app-micro-learning-episode-grid
-            [episodes]="facade.detailsList()"
-            [activeId]="facade.courseDetails()!.id || null"
-            (episodeSelected)="goToEpisode($event)"
-          />
-        } @else if (facade.loading()) {
-          <div class="grid grid-cols-2 gap-3 p-2" aria-hidden="true">
-            @for (_ of [0, 1, 2, 3, 4, 5]; track $index) {
-              <div class="aspect-9/16 rounded-xl bg-muted animate-pulse"></div>
-            }
-          </div>
-        }
-      </div> -->
     </div>
   </main>
 </div>

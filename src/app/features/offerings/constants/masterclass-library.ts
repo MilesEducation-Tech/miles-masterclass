@@ -2,6 +2,7 @@ import { environment } from '@env/environment';
 import { MASTERCLASS_COURSE_TYPE, RAIL_PAGE_SIZE } from '@core/constants/masterclass';
 import { RouteConfig } from '@core/models/http.model';
 import { MasterclassHomePage } from '@core/models/masterclass-home.model';
+import { REEL_COURSE_TYPES } from '@features/offerings/constants/reels';
 import {
   LibraryOffering,
   LibraryOfferingConfig,
@@ -23,7 +24,7 @@ export const LIBRARY_OFFERINGS: Readonly<Record<LibraryOffering, LibraryOffering
   podcast: { courseTypes: ['podcast'], ownTracks: true, learnerRows: 'library' },
   // A reel is a course of either type; every list route takes both at once (UAT, 2026-11-12).
   reels: {
-    courseTypes: ['nano_learning', 'micro_learning'],
+    courseTypes: REEL_COURSE_TYPES,
     ownTracks: true,
     learnerRows: 'reels-activity',
   },
