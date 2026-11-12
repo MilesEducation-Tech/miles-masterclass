@@ -1,1017 +1,485 @@
-import { computed, DestroyRef, effect, inject, Service, signal, untracked } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Location } from '@angular/common';
-import { HttpContext } from '@angular/common/http';
+import { isPlatformBrowser, Location } from '@angular/common';
+import { HttpContext, HttpErrorResponse, httpResource } from '@angular/common/http';
+import {
+  computed,
+  DOCUMENT,
+  effect,
+  inject,
+  linkedSignal,
+  PLATFORM_ID,
+  Service,
+  Signal,
+  signal,
+  untracked,
+} from '@angular/core';
 import { Router, UrlSegment } from '@angular/router';
-import { Observable, catchError, finalize, of, tap } from 'rxjs';
-import { ApiClient } from '@core/services/api-client/api-client';
-import { Logger } from '@core/services/logger/logger';
-import { NotificationService } from '@core/services/notification/notification';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-import { Utils } from '@shared/services/utils';
+import { firstValueFrom } from 'rxjs';
+import { SKIP_ERROR_NOTIFICATION } from '@core/models/http.model';
+import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
+import { AuthSession } from '@core/services/auth-session/auth-session';
+import { SUBSCRIPTION_DIALOG } from '@core/services/dialog/feature-dialog-tokens';
+import { Logger } from '@core/services/logger/logger';
+import { MasterclassBookmarks } from '@core/services/masterclass-bookmarks/masterclass-bookmarks';
+import { NotificationService } from '@core/services/notification/notification';
+import { withPreviousValue } from '@core/utils/with-previous-value';
+import { VideoSource } from '@shared/components/video-js/video-js';
+import { detectVideoMimeType, Utils } from '@shared/services/utils';
 import {
-  CommonResponse,
-  RouteParams,
-  RouteRequest,
-  RouteResponse,
-  SKIP_ERROR_NOTIFICATION,
-  SKIP_LOADING,
-} from '@core/models/http.model';
-import { CourseContentResponse, MASTERCLASS_ROUTES } from '@core/models/masterclass.model';
-import { ContentDetails } from '@core/models/course.model';
-// Type-only: both dialogs load with `import()` when opened (PROMPT.md §4.4).
-import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
-import { CHAPTER_QUIZ_UNAVAILABLE } from '@features/offerings/constants/micro-learning';
+  COURSE_DETAIL_API,
+  COURSE_DETAIL_CHAPTERS_PAGE_SIZE,
+  COURSE_ID_PATTERN,
+} from '@features/offerings/constants/course-detail';
 import {
-  ActionStatus,
-  deriveActionStatus,
-  isReelCompleted,
-  MicroLearningReel,
-  NANO_LEARNING_HANDOFF_KEY,
-  NANO_LEARNING_ROUTES,
-  NanoLearningListResponse,
-  ReelActivityPayload,
-  MicroLearningFieldOfStudy,
-  NanoLearningPage,
-} from '@features/offerings/models/micro-learning-course.model';
-
-type ActivityEvent = 'heartbeat' | 'completed' | 'exit';
-type SetCpeModeRequest = RouteRequest<typeof MASTERCLASS_ROUTES.setCpeMode>;
-type SetCpeModeResponse = RouteResponse<typeof MASTERCLASS_ROUTES.setCpeMode>;
-type CourseContentParams = RouteParams<typeof MASTERCLASS_ROUTES.getCourseContent>;
+  REEL_ACCESS_COPY,
+  REEL_COURSE_TYPES,
+  REEL_PLAYER_COPY,
+  REELS_FEED_PAGE_SIZE,
+  REELS_FEED_URL,
+} from '@features/offerings/constants/reels';
+import {
+  MasterclassCourseDetail,
+  parseAboutCourseId,
+  parseCourseDetail,
+} from '@features/offerings/models/course-detail.model';
+import { MicroLearningOptionId } from '@features/offerings/models/micro-learning-course.model';
+import {
+  parseReelAnchor,
+  parseReelFeed,
+  Reel,
+  ReelAccess,
+  ReelFeedPage,
+  ReelRouteParams,
+  ReelScrollRequest,
+} from '@features/offerings/models/reel.model';
+// Type-only: both dialogs load with `import()` when opened (AGENTS.md §4.4).
+import type { HtmlContentDialogData } from '@features/offerings/dialogs/html-content-dialog/html-content-dialog';
 
 /** Window (ms) after a programmatic scroll during which scroll events are ignored. */
 const PROGRAMMATIC_SCROLL_DEBOUNCE_MS = 600;
 
-/**
- * The reel fields the course-level details endpoint is authoritative for — the
- * ones `applyCourseDetails` copies over. Everything else on a reel stays owned
- * by the anchor response, deliberately: `video_url` and `chapter_id` only exist
- * there, `total_duration` comes back as 0 on the details payload, and
- * `last_activity` means different things on the two shapes (seconds watched on
- * a reel, a date string on ContentDetails).
- */
-type StateField =
-  | 'cpe_mode_details'
-  | 'action_status'
-  | 'user_assessment_details'
-  | 'user_feedback_details'
-  | 'exam_rules';
-
-/** Build a minimal ContentDetails shape from a reel for Utils.openCertificateDownloadDialog. */
-function reelToContentDetails(reel: MicroLearningReel): ContentDetails {
-  return {
-    ...reel,
-    active_plan: null,
-    can_purchase_individually: false,
-    is_subscription_excluded: !!reel.is_subscription_excluded,
-    is_added_to_cart: !!reel.is_added_to_cart,
-    user_feedback_details: reel.user_feedback_details ?? {
-      user_feedback_submitted: false,
-      user_rating: 0,
-    },
-  } as unknown as ContentDetails;
-}
-
-/** `Exam_Passed` / `Retake` — anything but the backend's "not appeared" status. */
-function examAttempted(details: MicroLearningReel['user_assessment_details']): boolean {
-  const status = details?.status;
-  return status === 'Exam_Passed' || status === 'Retake';
-}
-
-/** A details payload that carries what the player needs, so it can stand in for the anchor row. */
-type SeedableDetails = ContentDetails & Required<Pick<ContentDetails, 'video_url' | 'chapter_id'>>;
+/** A 404 for a reel the feed doesn't show, or a 400 for a malformed id or slug. */
+const isMissing = (error: unknown): boolean =>
+  error instanceof HttpErrorResponse && (error.status === 404 || error.status === 400);
 
 /**
- * Whether a course page can run off the details payload alone. Needs the
- * video, the chapter it tracks against, and a real duration — the
- * micro-learning serializer sends none of those yet (`total_duration` is 0),
- * which is what keeps the anchor fetch alive as a fallback.
+ * The reel player, on the web API's reel feed. The page `connect()`s it to the
+ * reel in its URL; the feed opens on that reel (`reels-feed/<uuid>/`), and
+ * scrolling to the end reads the next page. A reel carries the learner's state
+ * on it, so what plays is decided from the reel itself: the server's
+ * `course_is_locked` strips the stream, and the player then plays the trailer
+ * with a sign-in (signed out) or subscribe (signed in) button. Signing in
+ * re-reads the feed as `post_login`, so a reel the learner may watch unlocks in
+ * place.
+ *
+ * Route-scoped: the player's route lists it in `providers`. The page and the
+ * reel cards inject it, read its signals and call its methods; none of them
+ * calls the API.
  */
-function canSeedReel(details: ContentDetails): details is SeedableDetails {
-  return !!details.video_url && details.chapter_id != null && details.total_duration > 0;
-}
-
-/** The reel the facade runs on, built from a course details payload. */
-function detailsToReel(details: SeedableDetails): MicroLearningReel {
-  return {
-    ...details,
-    fields_of_study: (details.fields_of_study ?? []) as MicroLearningFieldOfStudy[],
-    has_exercise_files: !!details.has_exercise_files,
-    is_downloadable: false,
-    additional_resource: [],
-    // Seconds watched on a reel; on details the same name is a date string.
-    last_activity: details.total_duration_watched ?? 0,
-  };
-}
-
 @Service({ autoProvided: false })
 export class MicroLearningCourseFacade {
-  private readonly http = inject(ApiClient);
+  private readonly api = inject(ApiClient);
+  private readonly auth = inject(AuthSession);
   private readonly logger = inject(Logger);
   private readonly notification = inject(NotificationService);
   private readonly dialogs = inject(NgpDialogManager);
+  private readonly subscriptionDialog = inject(SUBSCRIPTION_DIALOG);
+  private readonly bookmarks = inject(MasterclassBookmarks);
   private readonly router = inject(Router);
   private readonly location = inject(Location);
   private readonly utils = inject(Utils);
-  // Only the cart-removal signal is needed here, and it lives in core so this
-  // feature does not have to import the payment feature (PROMPT.md §3).
-  private readonly destroyRef = inject(DestroyRef);
+  private readonly document = inject(DOCUMENT);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
-  /**
-   * First page handed off by the landing hero via router navigation state,
-   * captured at construction (during route activation, while
-   * `getCurrentNavigation()` is still live). Consumed once by `initForCourse`
-   * so the Start Watching path skips the redundant `:id` fetch. Null on card /
-   * deep-link / refresh (no in-app navigation state).
-   */
-  private pendingHandoff: NanoLearningPage | null =
-    (this.router.getCurrentNavigation()?.extras?.state?.[NANO_LEARNING_HANDOFF_KEY] as
-      NanoLearningPage | undefined) ?? null;
-  readonly detailsList = signal<MicroLearningReel[]>([]);
-  readonly selectedReelId = signal<number | null>(null);
-  readonly loading = signal(false);
-  readonly error = signal<string | null>(null);
+  // ─── The reel in the URL ──────────────────────────────────────────────────
 
-  /** Course anchor id already initialized — guards `initForCourse` against re-fires that would reorder the list. */
-  private loadedCourseId: number | null = null;
+  /** The reel the page opened on, as a signal; `null` until `connect()`. */
+  private readonly params = signal<Signal<ReelRouteParams> | null>(null);
 
-  /**
-   * Endpoint `loadNextPage` paginates against — set to whichever endpoint the
-   * course was loaded from: `v2/nano-learning/:id/` for the card/deep-link
-   * path, or the list endpoint for the Start Watching handoff path. Both take
-   * the same opaque `?cursor=`.
-   */
-  private paginationPath: string = NANO_LEARNING_ROUTES.getCourseList.path;
-
-  /** Opaque cursor for the next feed page; null once the feed is exhausted. */
-  readonly nextCursor = signal<string | null>(null);
-  /** True while a `loadNextPage` append is in flight — guards against duplicate fetches. */
-  readonly loadingMore = signal(false);
-
-  /** True while a CTA request is in flight — bind `[disabled]` on the button. */
-  readonly ctaLoading = signal(false);
-
-  /** Monotonic tokens the page/reel card observe to scroll / rewatch / pause. */
-  private tokenSeq = 0;
-  readonly scrollToIdRequest = signal<{ id: number; token: number } | null>(null);
-  readonly rewatchRequest = signal<{ id: number; token: number } | null>(null);
-  /** Reel-card pauses its player when this token changes. */
-  readonly pauseRequest = signal<{ id: number; token: number } | null>(null);
-
-  /** Timestamp of the last programmatic scroll — guards `onReelScroll` from overwriting. */
-  private lastProgrammaticScrollAt = 0;
-
-  readonly activeIndex = computed(() => {
-    const list = this.detailsList();
-    const id = this.selectedReelId();
-    if (id == null) return 0;
-    const idx = list.findIndex((r) => r.id === id);
-    return idx >= 0 ? idx : 0;
+  private readonly routeId = computed(() => {
+    const id = this.params()?.().courseId;
+    return id && COURSE_ID_PATTERN.test(id) ? id : null;
   });
 
-  readonly activeReel = computed<MicroLearningReel | null>(
-    () => this.detailsList()[this.activeIndex()] ?? null,
+  /** An old numeric link (still in search results and shared links) is looked up by slug. */
+  private readonly legacySlug = computed(() =>
+    this.routeId() ? null : this.params()?.().slug || null,
   );
 
-  /** Alias for the currently-focused reel — single source of truth derived from selectedReelId. */
-  readonly courseDetails = this.activeReel;
+  private readonly unresolvable = computed(
+    () => this.params() !== null && !this.routeId() && !this.legacySlug(),
+  );
 
-  readonly actionStatus = computed<ActionStatus | null>(() => {
-    const reel = this.activeReel();
-    return reel ? deriveActionStatus(reel) : null;
+  /** The feed takes a UUID only, so an old link's slug asks `about-course/` for it first. */
+  private readonly legacyIdResource = httpResource<string>(
+    () => {
+      const slug = this.legacySlug();
+      return slug
+        ? { url: apiUrl(COURSE_DETAIL_API.reels.aboutCourse), params: { slug } }
+        : undefined;
+    },
+    { parse: parseAboutCourseId },
+  );
+
+  /** The reel the feed opens on. */
+  private readonly openedId = computed(
+    () =>
+      this.routeId() ?? (this.legacyIdResource.hasValue() ? this.legacyIdResource.value() : null),
+  );
+
+  /** From the session's boolean, never the token, so a token rotation doesn't refetch. */
+  private readonly loginType = computed(() =>
+    this.auth.isAuthenticated() ? 'post_login' : 'pre_login',
+  );
+
+  /** What the feed is keyed on: a new reel, or signing in or out, starts it over. */
+  private readonly feedKey = computed(() => `${this.openedId()}|${this.loginType()}`);
+
+  private readonly feedParams = (page?: number) => ({
+    login_type: this.loginType(),
+    course_type: REEL_COURSE_TYPES.join(','),
+    page_size: REELS_FEED_PAGE_SIZE,
+    ...(page ? { page } : {}),
   });
 
-  /** Overall series progress (0–100) — ratio of completed reels to total reels. */
-  readonly currentProgress = computed(() => {
-    const list = this.detailsList();
-    if (list.length === 0) return 0;
-    const completed = list.filter((r) => isReelCompleted(r)).length;
-    return Math.round((completed / list.length) * 100);
-  });
+  // ─── The feed ─────────────────────────────────────────────────────────────
 
   /**
-   * Reel IDs for which we've already fired the auto-init setCpeMode(false)
-   * request. Guards against re-calling the API on every scroll/selection.
+   * The feed opened on the reel: that reel, then page 1 without it. `pre_login`
+   * is public, so the SERVER reads it: the reel is in the SSR HTML and the
+   * browser reuses it. `post_login` needs the learner's token, which lives in
+   * the browser.
    */
-  private readonly autoInitedReelIds = new Set<number>();
+  private readonly anchorResource = httpResource(
+    () => {
+      const id = this.openedId();
+      if (!id) return undefined;
+      if (!this.isBrowser && this.loginType() === 'post_login') return undefined;
+      return { url: apiUrl(`${REELS_FEED_URL}${id}/`), params: this.feedParams() };
+    },
+    { parse: parseReelAnchor },
+  );
 
-  constructor() {
-    // Per product spec: when the user lands on a reel that has no cpe_mode
-    // decision yet (`cpe_mode_details === null`), auto-initialize it to
-    // Preview mode server-side.
-    // ponytail: guests used to skip this — the API requires auth.
-    effect(() => {
-      const reel = this.activeReel();
-      if (!reel) return;
-      if (reel.cpe_mode_details !== null && reel.cpe_mode_details !== undefined) return;
-      if (this.autoInitedReelIds.has(reel.id)) return;
-      untracked(() => {
-        this.autoInitedReelIds.add(reel.id);
-        this.selectCpeMode(false, { silent: true });
-      });
+  /** Holds the feed through a re-read (sign-in), so the player doesn't flash empty. */
+  private readonly anchor = withPreviousValue(this.anchorResource);
+
+  /** The feed page asked for beyond the first; 1 (none) until the learner nears the end. */
+  private readonly requestedPage = linkedSignal({ source: this.feedKey, computation: () => 1 });
+
+  private readonly pageResource = httpResource(
+    () => {
+      const page = this.requestedPage();
+      if (page < 2 || !this.openedId()) return undefined;
+      return { url: apiUrl(REELS_FEED_URL), params: this.feedParams(page) };
+    },
+    { parse: parseReelFeed },
+  );
+
+  /** The reels of the pages read after the first, in order; reset with the feed. */
+  private readonly appended = linkedSignal<string, Reel[]>({
+    source: this.feedKey,
+    computation: () => [],
+  });
+
+  /** The last page read, and whether there is another. */
+  private readonly lastPage = linkedSignal<
+    ReelFeedPage | undefined,
+    Pick<ReelFeedPage, 'page' | 'hasNext'>
+  >({
+    source: () => (this.anchor.hasValue() ? this.anchor.value().rest : undefined),
+    computation: (rest) => ({ page: rest?.page ?? 1, hasNext: rest?.hasNext ?? false }),
+  });
+
+  private readonly appendPage = effect(() => {
+    if (!this.pageResource.hasValue()) return;
+    const page = this.pageResource.value();
+    untracked(() => {
+      this.appended.update((reels) => [...reels, ...page.reels]);
+      this.lastPage.set({ page: page.page, hasNext: page.hasNext });
     });
-  }
-
-  // ─── Loaders ──────────────────────────────────────────────────────────────
+  });
 
   /**
-   * Entry point for the course page. On the Start Watching path the hero has
-   * already fetched the first page and stashed it in the catalog — consume it
-   * and skip the `:id` call. Otherwise (card click / deep-link / refresh) fall
-   * back to the anchored `v2/nano-learning/:id` load.
-   *
-   * A page that already holds the course's details payload passes it in: when
-   * it carries the video (`canSeedReel`) the course is seeded from it and the
-   * anchor feed — a page of unrelated reels around the one course — is never
-   * fetched. When it doesn't, the anchor is fetched and the details merged on
-   * top as soon as it lands.
+   * Every reel read so far: the one opened on first. A later page can repeat a
+   * reel (the anchor's page leaves it out, the plain feed doesn't), so each
+   * reel is listed once.
    */
-  initForCourse(id: number, details?: ContentDetails): void {
-    // The `courseId` route-input effect can fire more than once (Angular
-    // re-emits the input). Guard on the *course* we've already initialized —
-    // NOT on `selectedReelId`, which drifts as the user scrolls/clicks. A late
-    // re-fire after such drift would otherwise re-run `loadCourseDetails` and
-    // REPLACE `detailsList` with a freshly seed-shuffled order, desyncing the
-    // scroll position from the active reel + episode grid.
-    if (this.loadedCourseId === id) return;
-    this.loadedCourseId = id;
-    const page = this.pendingHandoff;
-    this.pendingHandoff = null; // one-shot
-    if (page) {
-      this.selectedReelId.set(id);
-      this.hydrateFromArray(page.reels);
-      this.nextCursor.set(page.nextCursor);
-      this.paginationPath = NANO_LEARNING_ROUTES.getCourseList.path;
-      return;
-    }
-    if (details && canSeedReel(details)) {
-      this.selectedReelId.set(id);
-      this.hydrateFromArray([detailsToReel(details)]);
-      this.nextCursor.set(null);
-      return;
-    }
-    this.loadCourseDetails(id);
-    // Parks as `pendingDetails` until the anchor row hydrates.
-    if (details) this.applyCourseDetails(details);
+  readonly reels = computed<Reel[]>(() => {
+    if (!this.anchor.hasValue()) return [];
+    const { anchor, rest } = this.anchor.value();
+    const seen = new Set<string>();
+    return [anchor, ...rest.reels, ...this.appended()].filter((reel) => {
+      if (seen.has(reel.id)) return false;
+      seen.add(reel.id);
+      return true;
+    });
+  });
+
+  readonly loading = computed(
+    () => this.legacyIdResource.isLoading() || this.anchorResource.isLoading(),
+  );
+
+  /** No such reel: a URL that names none, or a 404 / 400 for its id or slug. */
+  readonly notFound = computed(
+    () =>
+      this.unresolvable() ||
+      isMissing(this.legacyIdResource.error()) ||
+      isMissing(this.anchorResource.error()),
+  );
+
+  /** Any other failed read, a contract mismatch included; the page shows it with a retry. */
+  readonly loadError = computed(() =>
+    this.notFound() ? null : (this.legacyIdResource.error() ?? this.anchorResource.error() ?? null),
+  );
+
+  /** Follow the reel in the page's URL; called once, from the page's constructor. */
+  connect(params: Signal<ReelRouteParams>): void {
+    this.params.set(params);
   }
 
-  loadCourseDetails(id: number, cursor?: string): void {
-    this.loading.set(true);
-    this.error.set(null);
-    this.pendingDetails = null;
-    this.selectedReelId.set(id);
-
-    const path = NANO_LEARNING_ROUTES.getCourseDetails.path.replace(':id', id.toString() + '/');
-    // Paginate subsequent pages against this same `:id` endpoint. Always send
-    // `cursor` (empty on first load) so the backend returns `next_cursor`.
-    this.paginationPath = path;
-    this.http
-      .get<NanoLearningListResponse>(path, { params: { cursor: cursor ?? '' } })
-      .pipe(
-        tap((res) => {
-          this.hydrateFromArray(res?.data ?? []);
-          this.nextCursor.set(res?.pagination_data?.next_cursor ?? null);
-        }),
-        catchError((err) => {
-          this.logger.error('Failed to load micro-learning course details', err);
-          this.error.set(err?.error?.message || 'Failed to load reel');
-          this.notification.error('Error', 'Failed to load reel');
-          return of(null);
-        }),
-        finalize(() => this.loading.set(false)),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe();
+  reload(): void {
+    if (this.legacyIdResource.error()) this.legacyIdResource.reload();
+    else this.anchorResource.reload();
   }
 
-  /**
-   * Append the next feed page using the tracked cursor. Fired as the user
-   * nears the end of the loaded reels. Self-guards on `nextCursor` (feed
-   * exhausted) and `loadingMore` (already in flight) so repeated scrollends
-   * are safe.
-   */
+  /** Read the next page; the page calls it as the learner nears the end. */
   loadNextPage(): void {
-    const cursor = this.nextCursor();
-    if (!cursor || this.loadingMore()) return;
-    this.loadingMore.set(true);
-    this.http
-      .get<NanoLearningListResponse>(this.paginationPath, { params: { cursor } })
-      .pipe(
-        tap((res) => {
-          this.hydrateAppend(res?.data ?? []);
-          this.nextCursor.set(res?.pagination_data?.next_cursor ?? null);
-        }),
-        catchError((err) => {
-          this.logger.error('Failed to load next micro-learning page', err);
-          return of(null);
-        }),
-        finalize(() => this.loadingMore.set(false)),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe();
-  }
-
-  trackActivity(
-    chapterId: number,
-    timeStatus: number,
-    event: ActivityEvent,
-  ): Observable<CommonResponse<void> | null> {
-    // ponytail: guests skipped the network call and only got a local playhead
-    // update. Without a session layer every caller takes the network path.
-
-    // Product gate (CPE mode): once the reel is considered completed by the
-    // 95% rule on server-reported `last_activity`, suppress all activity
-    // events — no more heartbeats, no duplicate 'completed', no pause-exit.
-    // The server is authoritative once we've crossed the threshold.
-    const reel = this.detailsList().find((r) => r.chapter_id === chapterId);
-    if (
-      reel?.cpe_mode_details?.cpe_mode &&
-      reel.total_duration &&
-      ((reel.last_activity ?? 0) / reel.total_duration) * 100 >= 95
-    ) {
-      return of(null);
-    }
-
-    // Persist the player's position locally so `last_activity` (seconds
-    // watched) stays in sync with what we send to `myclassactivity`.
-    this.updateLocalProgress(chapterId, timeStatus, event);
-
-    const body = { chapter_id: chapterId, time_status: timeStatus, event };
-    // Sent by the player on its own clock, so it never drives the loading bar.
-    const context = new HttpContext().set(SKIP_LOADING, true);
-    return this.http
-      .post<CommonResponse<void>>(MASTERCLASS_ROUTES.myClassActivity.path, body, { context })
-      .pipe(
-        catchError((err) => {
-          this.logger.error('Failed to track reel activity', err);
-          return of(null);
-        }),
-        takeUntilDestroyed(this.destroyRef),
-      );
-  }
-
-  /** Details that arrived before their reel — applied by `hydrateFromArray`. */
-  private pendingDetails:
-    (Pick<ContentDetails, 'id'> & Partial<Pick<MicroLearningReel, StateField>>) | null = null;
-
-  /**
-   * Merge the course-level `v2/:course_type/details/` payload onto the matching
-   * reel.
-   *
-   * The anchor serializer (`v2/nano-learning/:id/`) ships a lean row — no
-   * `cpe_mode_details`, `action_status`, `last_activity` or
-   * `user_assessment_details` — so on a reload the CTA would fall back to
-   * "Play" for a learner who is actually mid-exam. The details endpoint is the
-   * authority on that state; the anchor stays the authority on `video_url` and
-   * `chapter_id`, which details doesn't carry. Only the fields details owns are
-   * copied, and only when present, so a lean details payload can't blank a reel.
-   */
-  applyCourseDetails(
-    details: Pick<ContentDetails, 'id'> & Partial<Pick<MicroLearningReel, StateField>>,
-  ): void {
-    // The anchor and details requests race. If details lands first there is
-    // no reel to merge onto yet — hold it, and apply once the anchor hydrates.
-    if (!this.detailsList().some((r) => r.id === details.id)) {
-      this.pendingDetails = details;
+    if (this.pageResource.isLoading()) return;
+    if (this.pageResource.error()) {
+      this.pageResource.reload();
       return;
     }
-    this.detailsList.update((list) =>
-      list.map((r) =>
-        r.id !== details.id
-          ? r
-          : {
-              ...r,
-              // The anchor row carries no progress. An attempted exam can only
-              // exist for a watched-through video, so fill the gap — otherwise
-              // `deriveActionStatus` never gets past playback after a refresh
-              // and the feedback / certificate stages are unreachable.
-              ...(r.last_activity == null && examAttempted(details.user_assessment_details)
-                ? { last_activity: r.total_duration ?? 0 }
-                : {}),
-              ...(details.cpe_mode_details !== undefined
-                ? { cpe_mode_details: details.cpe_mode_details }
-                : {}),
-              ...(details.action_status !== undefined
-                ? { action_status: details.action_status }
-                : {}),
-              ...(details.user_assessment_details !== undefined
-                ? { user_assessment_details: details.user_assessment_details }
-                : {}),
-              ...(details.user_feedback_details !== undefined
-                ? { user_feedback_details: details.user_feedback_details }
-                : {}),
-              ...(details.exam_rules ? { exam_rules: details.exam_rules } : {}),
-            },
-      ),
-    );
+    const { page, hasNext } = this.lastPage();
+    if (hasNext) this.requestedPage.set(page + 1);
   }
 
-  // ─── Activity tracking (heartbeat / completion) ───────────────────────────
-  // Lives here, not on the page: both the reel page and the AI Lab course page
-  // report playback against the same rules, and the throttle state has to sit
-  // next to `trackActivity` for the CPE gates below to stay in one place.
+  // ─── The reel on screen ───────────────────────────────────────────────────
 
-  /** Throttle key — tracks the last % milestone reported to the API, per reel. */
-  private lastTrackedPercentage = 0;
-  private trackedReelChapterId: number | null = null;
-  /**
-   * Chapter IDs we've already sent a `completed` event for in this session.
-   * Decoupled from `isReelComplete` (derived from last_activity) so the
-   * `completed` event fires exactly once per reel even after the heartbeat
-   * that crossed 95% updated local progress.
-   */
-  private readonly completedChapterIds = new Set<number>();
+  private readonly selectedId = linkedSignal(() => this.openedId());
 
-  /**
-   * Mirrors masterclass-chapter.updateTime:
-   *  • fires a `heartbeat` every 5% of progress
-   *  • fires a `completed` once crossing 95% (only once per reel)
-   *  • CPE-mode gate: if the reel is already at ≥95% (by progress or
-   *    server-reported last_activity) AND the user has seeked back below
-   *    last_activity, skip the API — don't regress completed progress.
-   */
-  handleTimeUpdate(event: ReelActivityPayload): void {
-    if (event.duration <= 0) return;
+  readonly activeIndex = computed(() => {
+    const index = this.reels().findIndex((reel) => reel.id === this.selectedId());
+    return index >= 0 ? index : 0;
+  });
 
-    // Reset the throttle when the active reel changes.
-    if (this.trackedReelChapterId !== event.chapterId) {
-      this.trackedReelChapterId = event.chapterId;
-      this.lastTrackedPercentage = 0;
-    }
+  readonly activeReel = computed<Reel | null>(() => this.reels()[this.activeIndex()] ?? null);
 
-    const reel = this.detailsList().find((r) => r.chapter_id === event.chapterId);
-    if (!reel) return;
+  /** The page scrolls a reel into view when this changes. */
+  readonly scrollRequest = signal<ReelScrollRequest | null>(null);
 
-    const inCpeMode = !!reel.cpe_mode_details?.cpe_mode;
-    const totalDuration = reel.total_duration ?? event.duration;
-    const lastActivity = reel.last_activity ?? 0;
-    const currentPercent = (event.currentTime / event.duration) * 100;
-    const lastActivityPercent = totalDuration > 0 ? (lastActivity / totalDuration) * 100 : 0;
-    const alreadyEmittedCompleted = this.completedChapterIds.has(event.chapterId);
+  private scrollToken = 0;
 
-    // CPE-mode API gate per product spec:
-    //  (a) Server already considers the reel completed (last_activity >= 95%)
-    //      → suppress ALL activity events (no more heartbeats, no duplicate
-    //      `completed`). The reel is done; server state is authoritative.
-    //  (b) Progress crossed 95% this session AND the user has seeked back
-    //      below last_activity → suppress (don't regress completed progress).
-    if (inCpeMode) {
-      if (lastActivityPercent >= 95) return;
-      if (currentPercent >= 95 && event.currentTime < lastActivity) return;
-    }
+  /** When a programmatic scroll started, so the scroll it causes doesn't re-select. */
+  private lastProgrammaticScrollAt = 0;
 
-    if (currentPercent >= 95 && !alreadyEmittedCompleted) {
-      this.completedChapterIds.add(event.chapterId);
-      this.lastTrackedPercentage = 100;
-      this.trackActivity(event.chapterId, event.duration, 'completed').subscribe();
-      // Trigger the post-video flow now (open quiz / start exam). We can't
-      // wait for video.js's `ended` event: crossing 95% sets last_activity
-      // to total_duration, which flips `isCompleted` → `loop = true` via
-      // the videoConfig effect *before* the player reaches 100%, so `ended`
-      // never fires. 95% is the reliable signal. `completedChapterIds`
-      // already dedups, so this only runs once per reel per session.
-      if (reel.id === this.activeReel()?.id) {
-        this.handleVideoEnded();
-      }
-      return;
-    }
+  /** Sound on by default; `VideoJs` swallows an autoplay the browser blocks. */
+  readonly muted = signal(false);
 
-    // Once a reel has emitted completion, stop sending heartbeats.
-    if (alreadyEmittedCompleted) return;
-
-    if (Math.abs(currentPercent - this.lastTrackedPercentage) >= 5) {
-      this.lastTrackedPercentage = currentPercent;
-      this.trackActivity(event.chapterId, event.currentTime, 'heartbeat').subscribe();
-    }
+  isActive(reel: Reel): boolean {
+    return reel.id === this.activeReel()?.id;
   }
 
-  handleExited(event: ReelActivityPayload): void {
-    this.trackActivity(event.chapterId, event.currentTime, 'exit').subscribe();
+  /** The reel on screen and its neighbours mount a player, so a swipe starts at once. */
+  isPreloaded(reel: Reel): boolean {
+    const index = this.reels().findIndex((item) => item.id === reel.id);
+    return index >= 0 && Math.abs(index - this.activeIndex()) <= 1;
   }
 
-  /** Clears throttle + completion state — call when the course changes. */
-  resetActivityTracking(): void {
-    this.lastTrackedPercentage = 0;
-    this.trackedReelChapterId = null;
-    this.completedChapterIds.clear();
+  toggleMute(): void {
+    this.muted.update((muted) => !muted);
   }
 
-  /** Drops one chapter's completion dedup + throttle, so REWATCH can re-report. */
-  resetChapterActivity(chapterId: number): void {
-    this.completedChapterIds.delete(chapterId);
-    if (this.trackedReelChapterId === chapterId) {
-      this.trackedReelChapterId = null;
-      this.lastTrackedPercentage = 0;
-    }
-  }
-
-  clear(): void {
-    this.detailsList.set([]);
-    this.selectedReelId.set(null);
-    this.loading.set(false);
-    this.error.set(null);
-    this.nextCursor.set(null);
-    this.loadingMore.set(false);
-    this.loadedCourseId = null;
-    this.paginationPath = NANO_LEARNING_ROUTES.getCourseList.path;
-    this.ctaLoading.set(false);
-    this.scrollToIdRequest.set(null);
-    this.rewatchRequest.set(null);
-    this.pauseRequest.set(null);
-    this.autoInitedReelIds.clear();
-    this.resetActivityTracking();
-  }
-
-  // ─── Navigation / CPE-mode guards ─────────────────────────────────────────
-
-  isReelComplete(reelId: number): boolean {
-    const reel = this.detailsList().find((r) => r.id === reelId);
-    return !!reel && isReelCompleted(reel);
-  }
-
-  /** In CPE mode, the first incomplete reel before target blocks forward navigation. */
-  getBlockingReel(targetIndex: number): MicroLearningReel | undefined {
-    const list = this.detailsList();
-    const active = this.activeReel();
-    const isCpeMode = !!active?.cpe_mode_details?.cpe_mode;
-    if (!isCpeMode) return undefined;
-
-    for (let i = 0; i < targetIndex; i++) {
-      if (!this.isReelComplete(list[i].id)) return list[i];
-    }
-    return undefined;
-  }
-
-  findInProgressReel(): MicroLearningReel | undefined {
-    const list = this.detailsList();
-    if (list.length === 0) return undefined;
-    const isCpeMode = !!this.activeReel()?.cpe_mode_details?.cpe_mode;
-
-    if (isCpeMode) return list.find((r) => !this.isReelComplete(r.id));
-
-    const incomplete = list.filter((r) => !isReelCompleted(r));
-    if (incomplete.length === 0) return undefined;
-
-    // Highest `last_activity` (seconds watched) == most-recently-touched reel.
-    const recentlyWatched = incomplete
-      .filter((r) => (r.last_activity ?? 0) > 0)
-      .sort((a, b) => (b.last_activity ?? 0) - (a.last_activity ?? 0))[0];
-    return recentlyWatched ?? incomplete[0];
-  }
-
-  /**
-   * Block forward navigation while the active reel is in CPE mode and not yet
-   * completed. Backward navigation is always allowed — same rule as masterclass.
-   */
-  canAdvanceTo(targetIndex: number): boolean {
-    if (targetIndex <= this.activeIndex()) return true;
-    const active = this.activeReel();
-    if (!active?.cpe_mode_details?.cpe_mode) return true;
-    if (isReelCompleted(active)) return true;
-    // this.notification.info('Finish watching', 'Complete this reel before advancing in CPE mode.');
-    return true;
-  }
-
-  navigateToReel(reelId: number): void {
-    const index = this.detailsList().findIndex((r) => r.id === reelId);
-    if (index < 0) return;
-    if (!this.canAdvanceTo(index)) return;
-    this.selectedReelId.set(reelId);
+  navigateToReel(id: string): void {
+    if (!this.reels().some((reel) => reel.id === id)) return;
+    this.selectedId.set(id);
     this.lastProgrammaticScrollAt = Date.now();
-    this.scrollToIdRequest.set({ id: reelId, token: ++this.tokenSeq });
-    this.syncUrlToReel(reelId);
+    this.scrollRequest.set({ id, token: ++this.scrollToken });
+    this.syncUrlToReel(id);
   }
 
-  /**
-   * Called by the course page when the reel list scrolls. Guards against
-   * overriding a recent programmatic scroll triggered by `navigateToReel`.
-   */
-  onScrollSelect(reelId: number): void {
+  /** The page's scroll settled on a reel. Ignored right after a programmatic scroll. */
+  onScrollSelect(id: string): void {
     if (Date.now() - this.lastProgrammaticScrollAt < PROGRAMMATIC_SCROLL_DEBOUNCE_MS) return;
-    if (reelId === this.selectedReelId()) return;
-    this.selectedReelId.set(reelId);
-    this.syncUrlToReel(reelId);
+    if (id === this.selectedId()) return;
+    this.selectedId.set(id);
+    this.syncUrlToReel(id);
   }
 
+  // An old numeric link: once the feed answers, the URL carries the reel's UUID and slug.
+  private readonly urlFromLegacyLink = effect(() => {
+    if (this.routeId() || !this.anchor.hasValue()) return;
+    const id = this.anchor.value().anchor.id;
+    untracked(() => this.syncUrlToReel(id));
+  });
+
   /**
-   * Replace the `:courseId/:courseTitle` path segments with the active reel's
-   * id + slugified title. `Location.replaceState` bypasses the Angular
-   * router, so `ActivatedRoute` doesn't fire and the `effect()` watching
-   * `courseId` does not refire — `loadCourseDetails` stays put. Refresh /
-   * share-link entry points work because the route's existing param parsing
-   * picks up the new id and the load runs once on cold mount.
+   * Put the reel's UUID and slug in the URL's last two segments.
+   * `Location.replaceState` bypasses the router, so the route's inputs (and so
+   * the feed) stay put; a refresh or a shared link opens on this reel.
    */
-  private syncUrlToReel(reelId: number): void {
-    const reel = this.detailsList().find((r) => r.id === reelId);
-    if (!reel) return;
+  private syncUrlToReel(id: string): void {
+    const reel = this.reels().find((item) => item.id === id);
+    if (!reel || !this.isBrowser) return;
     const tree = this.router.parseUrl(this.router.url);
     const primary = tree.root.children['primary'];
     const segments = primary?.segments ?? [];
-    if (segments.length < 2) return;
-    const titleSlug = this.utils.slugify(reel.title) || segments[segments.length - 1].path;
-    // Build a fresh segment array instead of mutating the parsed tree in
-    // place — keeps us off Angular's `UrlSegment` internals.
-    const replaced = segments.map((seg, i) => {
-      if (i === segments.length - 2) return new UrlSegment(String(reelId), seg.parameters);
-      if (i === segments.length - 1) return new UrlSegment(titleSlug, seg.parameters);
-      return seg;
+    if (!primary || segments.length < 2) return;
+    primary.segments = segments.map((segment, index) => {
+      if (index === segments.length - 2) return new UrlSegment(reel.id, segment.parameters);
+      if (index === segments.length - 1) return new UrlSegment(reel.slug, segment.parameters);
+      return segment;
     });
-    primary!.segments = replaced;
     this.location.replaceState(this.router.serializeUrl(tree));
   }
 
-  // ─── Bookmark / Cart ──────────────────────────────────────────────────────
+  /** The reel's own page: what sign-in returns to and what share sends. */
+  private reelPath(reel: Reel): string {
+    return `/${this.utils.country()}/${this.utils.profession()}/${COURSE_DETAIL_API.reels.urlSegment}/${reel.id}/${reel.slug}`;
+  }
 
-  toggleBookmark(): void {
-    const reel = this.activeReel();
-    if (!reel) return;
-    this.utils
-      .toggleBookmarkCourse(reel.id, { course_type: reel.course_type })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((response) => {
-        if (!response?.status) return;
-        this.detailsList.update((list) =>
-          list.map((r) =>
-            r.id === reel.id ? { ...r, added_bookmark: response.is_bookmarked } : r,
-          ),
-        );
+  // ─── Access ───────────────────────────────────────────────────────────────
+
+  /** Decided by the server: `course_is_locked` is set signed out and without an entitlement. */
+  access(reel: Reel): ReelAccess {
+    if (!this.auth.isAuthenticated()) return 'guest';
+    return reel.user_state.course_is_locked ? 'locked' : 'open';
+  }
+
+  /** What the overlay over a locked reel says; `null` when the learner may watch it. */
+  accessCopy(reel: Reel): (typeof REEL_ACCESS_COPY)[keyof typeof REEL_ACCESS_COPY] | null {
+    const access = this.access(reel);
+    return access === 'open' ? null : REEL_ACCESS_COPY[access];
+  }
+
+  /** The reel's stream when the learner may watch it, its trailer otherwise. */
+  sources(reel: Reel): VideoSource[] {
+    const url =
+      this.access(reel) === 'open' ? reel.chapter.hls_video_url : reel.vertical_trailer_url;
+    return url ? [{ src: url, type: detectVideoMimeType(url) }] : [];
+  }
+
+  /** The overlay's button: sign in and come back to this reel, or the subscription offer. */
+  async unlock(reel: Reel): Promise<void> {
+    if (this.access(reel) === 'guest') {
+      void this.router.navigate(['/auth/login'], {
+        queryParams: { redirect: this.reelPath(reel) },
       });
-  }
-
-  // ─── CPE mode ─────────────────────────────────────────────────────────────
-
-  /**
-   * Entry point for the bottom CTA in the default state. When the user isn't
-   * authenticated, bounce to login. Otherwise — because reels now default to
-   * Preview mode (cpe_mode: false) when the server hasn't set a mode yet —
-   * a click on "Watch in CPE MODE" flips CPE mode to true directly. No picker
-   * dialog is shown; the button is a one-click upgrade from Preview → CPE.
-   */
-  launchCourse(): void {
-    // ponytail: bounced guests to `/auth/login` first. No session layer now.
-    const reel = this.activeReel();
-    if (!reel) return;
-    if (reel.cpe_mode_details?.cpe_mode) {
-      // Already in CPE mode — playback is driven by scroll/active state.
       return;
     }
-    // Reels show no picker — this CTA *is* the mode selection, so it carries
-    // the same subscription gate the masterclass picker does. Without it this
-    // is an unguarded one-click route into the paid tier.
-    // ponytail: `active_plan` is not on the reel payload (see
-    // `reelToContentDetails`), so an individually-purchased reel currently
-    // hits the upsell. Fix upstream by returning `active_plan` from
-    // `v2/nano-learning`; the gate picks it up with no client change.
-    if (!this.utils.requireCpeModeAccess(reel)) return;
-    this.selectCpeMode(true);
+    const SubscriptionDialog = await this.subscriptionDialog();
+    this.dialogs.open(SubscriptionDialog);
   }
 
-  /**
-   * Set the CPE mode for the active reel.
-   *
-   * @param cpeModeStatus `true` = CPE Certification Mode, `false` = Preview.
-   * @param options.silent when true (used by auto-init), suppress success and
-   *   error notifications AND the Preview→CPE restart side-effect. Failures
-   *   still log but don't reload the course.
-   *
-   * Per product spec: when switching Preview → CPE (cpe_mode_details was
-   * null/false and becomes true), reset progress and restart playback from 0
-   * with restrictions re-applied. Switching to Preview pauses tracking but
-   * keeps the current playhead + `last_activity`.
-   */
-  selectCpeMode(cpeModeStatus: boolean, options: { silent?: boolean } = {}): void {
-    const reel = this.activeReel();
-    if (!reel) {
-      if (!options.silent) this.notification.error('Error', 'Reel data not available');
+  // ─── Bookmark and share ───────────────────────────────────────────────────
+
+  isBookmarked(reel: Reel): boolean {
+    return this.bookmarks.isBookmarked(reel);
+  }
+
+  /** `bookmark/<uuid>/`, through the root service, so the landing page's My List follows. */
+  toggleBookmark(reel: Reel): void {
+    this.bookmarks.toggle(reel);
+  }
+
+  /** The reel's own URL: the address bar can lag a swipe behind. */
+  share(reel: Reel): void {
+    void this.utils.openShareDialog({
+      url: `${this.document.location.origin}${this.reelPath(reel)}`,
+    });
+  }
+
+  // ─── About, Transcript, Glossary ──────────────────────────────────────────
+
+  onOption(reel: Reel, option: MicroLearningOptionId): void {
+    if (option === 'about') void this.openAbout(reel);
+    else if (option === 'transcript') void this.openTranscript(reel);
+    else void this.openGlossary(reel);
+  }
+
+  /** The side panel reads the reel's `course-detail/` through its own `CourseDetailFacade`. */
+  private async openAbout(reel: Reel): Promise<void> {
+    const { MicroLearningAboutPanel } =
+      await import('@features/offerings/micro-learning/components/micro-learning-about-panel/micro-learning-about-panel');
+    this.dialogs.open<ReelRouteParams>(MicroLearningAboutPanel, {
+      data: { courseId: reel.id, slug: reel.slug },
+    });
+  }
+
+  private async openTranscript(reel: Reel): Promise<void> {
+    const detail = await this.reelDetail(reel);
+    if (!detail) return;
+    const chapter =
+      detail.chapters.find((item) => item.id === reel.chapter.id) ?? detail.chapters[0];
+    const html = chapter?.transcript_text;
+    if (!html) {
+      const { title, body } = REEL_PLAYER_COPY.noTranscript;
+      this.notification.info(title, body);
       return;
     }
+    await this.showHtml(`Transcript - ${reel.title}`, html);
+  }
 
-    // Capture the previous state BEFORE the server response mutates it — so
-    // we can detect the Preview → CPE transition and fire the restart.
-    const wasInCpeMode = !!reel.cpe_mode_details?.cpe_mode;
-    const enteringCpeMode = cpeModeStatus && !wasInCpeMode;
+  private async openGlossary(reel: Reel): Promise<void> {
+    const detail = await this.reelDetail(reel);
+    if (!detail) return;
+    const html = detail.miscellaneous_data.glossary;
+    if (!html) {
+      const { title, body } = REEL_PLAYER_COPY.noGlossary;
+      this.notification.info(title, body);
+      return;
+    }
+    await this.showHtml(`${reel.title} - Glossary`, html);
+  }
 
-    if (!options.silent) this.loading.set(true);
-    const body: SetCpeModeRequest = {
-      nano_learning_id: reel.id,
-      cpe_mode_status: cpeModeStatus,
-    };
+  /** `course-detail/` per reel, read when the learner first asks, kept for the visit. */
+  private readonly details = new Map<string, Promise<MasterclassCourseDetail>>();
 
-    this.http
-      .post<SetCpeModeResponse>(MASTERCLASS_ROUTES.setCpeMode.path, body)
-      .pipe(
-        tap(() => {
-          this.loading.set(false);
-          if (!options.silent) {
-            this.notification.success(
-              'Mode Selected',
-              cpeModeStatus ? 'CPE Certification Mode enabled' : 'Preview Mode enabled',
-            );
-          }
-          const date = new Date().toISOString();
-          // Only reset progress when entering CPE mode (fresh-start semantics).
-          // Preview mode just pauses tracking; keep `last_activity` intact.
-          // Silent auto-init to Preview also preserves `last_activity`.
-          const resetProgress = enteringCpeMode;
-          const applyMode = (r: MicroLearningReel): MicroLearningReel => ({
-            ...r,
-            cpe_mode_details: {
-              cpe_mode: cpeModeStatus,
-              class_started: date,
-              class_ends_on: date,
-            },
-            ...(resetProgress ? { last_activity: 0, action_status: null } : {}),
-          });
-          // Scope the mutation to the reel we set — CPE mode is per-course.
-          this.detailsList.update((list) => list.map((r) => (r.id === reel.id ? applyMode(r) : r)));
-
-          // Preview → CPE: restart the live player from 0. Reuse the rewatch
-          // channel the reel card already listens to — it seeks to 0 + plays.
-          if (enteringCpeMode && !options.silent) {
-            this.rewatchRequest.set({ id: reel.id, token: ++this.tokenSeq });
-          }
+  /**
+   * The reel's `course-detail/`, for its transcript and glossary, which the
+   * feed doesn't carry. On demand: a learner swipes through many reels and
+   * opens these on few. `null` (and a toast) when the read fails.
+   */
+  private async reelDetail(reel: Reel): Promise<MasterclassCourseDetail | null> {
+    const key = `${reel.id}|${this.loginType()}`;
+    let pending = this.details.get(key);
+    if (!pending) {
+      pending = firstValueFrom(
+        this.api.get<unknown>(`${COURSE_DETAIL_API.reels.courseDetail}${reel.id}/`, {
+          params: {
+            login_type: this.loginType(),
+            'chapters.page_size': COURSE_DETAIL_CHAPTERS_PAGE_SIZE,
+          },
+          context: new HttpContext().set(SKIP_ERROR_NOTIFICATION, true),
         }),
-        catchError((err) => {
-          this.loading.set(false);
-          this.logger.error('Failed to set CPE mode for micro-learning', err);
-          if (!options.silent) {
-            this.notification.error(
-              'Mode Change Failed',
-              err?.error?.message || 'Unable to update CPE mode. Please try again.',
-            );
-            const id = this.activeReel()?.id;
-            if (id != null) this.loadCourseDetails(id);
-          }
-          return of(null);
-        }),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe();
-  }
-
-  async toggleCpeMode(cpeModeStatus: boolean): Promise<void> {
-    const isSwitchingToCpe = cpeModeStatus === true;
-
-    // Upgrade only. Switching down to Preview stays open to everyone.
-    if (isSwitchingToCpe) {
-      const reel = this.activeReel();
-      if (!reel) return;
-      if (!this.utils.requireCpeModeAccess(reel)) return;
+      ).then(parseCourseDetail);
+      this.details.set(key, pending);
     }
-
-    const title = isSwitchingToCpe ? 'Switching to CPE Mode?' : 'Switching to Preview Mode?';
-    const description = isSwitchingToCpe
-      ? 'Heads up! Switching means starting fresh - your current progress will reset. Step into CPE Mode to earn your certificate and level up your learning journey.'
-      : 'Heads up! Switching to Preview Mode means you can explore freely without CPE tracking. Your CPE progress will be paused.';
-
-    const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
-    const dialogRef = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
-      data: {
-        title,
-        content: [{ type: 'text', value: description }],
-        buttons: [{ label: 'Switch', variant: 'default', action: 'confirm' }],
-        maxWidth: '100%',
-      },
-    });
-    dialogRef.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
-      if (result) this.selectCpeMode(cpeModeStatus);
-    });
-  }
-
-  // ─── Quiz / assessment / feedback / download ──────────────────────────────
-
-  startFinalAssessment(): void {
-    const reel = this.activeReel();
-    if (!reel) return;
-    // The type comes off the payload (`micro_learning` | `ai_lab`), not a
-    // literal — `Utils.startFinalAssessment` maps it to the id key and the URL
-    // segment, so an AI Lab exam lands on the /ai-labs route.
-    this.utils.startFinalAssessment(
-      String(reel.id),
-      reel.title,
-      reel.course_type || 'micro_learning',
-      reel.exam_rules ?? '',
-    );
-  }
-
-  submitFeedback(): void {
-    const reel = this.activeReel();
-    if (!reel) return;
-    const url = this.router.url.split('?')[0];
-    this.router.navigate([url, 'feedback'], { queryParams: { redirect: this.router.url } });
-  }
-
-  openCertificateDownloadDialog(): void {
-    const reel = this.activeReel();
-    if (!reel) return;
-    this.utils.openCertificateDownloadDialog(reelToContentDetails(reel));
-  }
-
-  openShareDialog(): void {
-    if (!this.activeReel()) return;
-    this.utils.openShareDialog();
-  }
-
-  /**
-   * Dispatch the CTA defined by a reel's `action_status`. `reelId` scopes the
-   * action to the card whose button was clicked — the scroll-driven active reel
-   * can lag behind the visible card, so without this a click on reel B could
-   * run reel A's action (e.g. open A's certificate dialog).
-   */
-  handleActionStatus(reelId?: number): void {
-    // Promote the clicked reel to active so every `activeReel()` read below
-    // (action_status dispatch, quiz, download, rewatch) targets the right reel.
-    if (reelId != null && reelId !== this.selectedReelId()) {
-      this.selectedReelId.set(reelId);
-    }
-    // Every deliberate CTA on an in-progress reel — quiz, exam, feedback,
-    // certificate, rewatch — is paid-tier, and a reel already in CPE mode
-    // never reaches `launchCourse`'s gate. Check once here so resuming is
-    // gated the same way starting is.
-    const clicked = this.activeReel();
-    if (clicked && !this.utils.requireCpeModeAccess(clicked)) return;
-
-    // Debounce rapid clicks; cleared by the handlers below or by the next interaction.
-    if (this.ctaLoading()) return;
-    this.ctaLoading.set(true);
-    // Short auto-clear so the button re-enables even when the target action is fire-and-forget.
-    setTimeout(() => this.ctaLoading.set(false), 500);
-
-    // Server-pushed `action_status` is authoritative — dispatch it first.
-    // `TAKE_EXAM` / `RETAKE_EXAM` route to Utils.startFinalAssessment (the
-    // canonical rules-dialog + /user-assessment/start_assessment flow).
-    switch (this.actionStatus()) {
-      case ActionStatus.TAKE_QUIZ:
-        this.chapterQuizUnavailable();
-        return;
-      case ActionStatus.TAKE_EXAM:
-      case ActionStatus.RETAKE_EXAM:
-        this.startFinalAssessment();
-        return;
-      case ActionStatus.FEEDBACK:
-        this.submitFeedback();
-        return;
-      case ActionStatus.DOWNLOAD:
-        this.openCertificateDownloadDialog();
-        return;
-      case ActionStatus.REWATCH: {
-        const reel = this.activeReel();
-        if (reel) {
-          // Product spec: REWATCH resets all user progress for this reel and
-          // starts playback from 0. The reel card's `rewatchRequest` effect
-          // handles the seek + play; we reset `last_activity` and clear
-          // `action_status` locally so CTA / gating reflect a fresh start.
-          this.detailsList.update((list) =>
-            list.map((r) =>
-              r.id === reel.id ? { ...r, last_activity: 0, action_status: null } : r,
-            ),
-          );
-          this.rewatchRequest.set({ id: reel.id, token: ++this.tokenSeq });
-        }
-        return;
-      }
-    }
-
-    // No action_status set — fall back based on local state:
-    //  • CPE + locally completed → the chapter quiz is the next step.
-    //  • Otherwise → launch flow (login / CPE-mode upgrade).
-    const active = this.activeReel();
-    if (active?.cpe_mode_details?.cpe_mode && isReelCompleted(active)) {
-      this.chapterQuizUnavailable();
-      return;
-    }
-    this.launchCourse();
-  }
-
-  /**
-   * Locally override the active reel's `action_status`, ahead of the next
-   * server fetch: the end of a reel that hands straight to the exam flips the
-   * CTA to "Take Final Assessment".
-   */
-  markActiveReelActionStatus(status: ActionStatus | null): void {
-    const reel = this.activeReel();
-    if (!reel) return;
-    this.detailsList.update((list) =>
-      list.map((r) => (r.id === reel.id ? { ...r, action_status: status } : r)),
-    );
-  }
-
-  /**
-   * Handle natural end-of-video for the active reel:
-   *  • `micro_learning` / `ai_lab` → the chapter quiz, which is unbound for
-   *    now (`chapterQuizUnavailable`).
-   *  • Anything else → set TAKE_EXAM + start the final assessment flow.
-   *
-   * Defensive `else` branch: production data in this module is always
-   * `nano_learning`, but this keeps the action_status consistent if a
-   * non-micro-learning reel ever lands in this list.
-   */
-  handleVideoEnded(): void {
-    const reel = this.activeReel();
-    if (!reel) return;
-    // The post-video flow (chapter quiz → final assessment) is CPE-mode only.
-    // In Preview mode the reel just plays/loops; crossing 95% must not open the
-    // quiz. `handleTimeUpdate` calls this at 95% regardless of mode (video-js
-    // `ended` never fires while Preview loops), so the CPE gate lives here — the
-    // single chokepoint every end-of-video path routes through.
-    if (!reel.cpe_mode_details?.cpe_mode) return;
-    // Response-driven: AI Lab courses come back as `ai_lab` and carry the same
-    // chapter quiz as a micro-learning reel.
-    if (reel.course_type === 'micro_learning' || reel.course_type === 'ai_lab') {
-      this.chapterQuizUnavailable();
-      return;
-    }
-    this.markActiveReelActionStatus(ActionStatus.TAKE_EXAM);
-    this.startFinalAssessment();
-  }
-
-  /**
-   * The chapter quiz's entry points: the `TAKE_QUIZ` CTA, a reel finished
-   * locally in CPE mode, and the end of a micro-learning or AI Lab reel. The
-   * quiz they opened read `chapter-quiz` and answered on `user-quiz-details/`,
-   * both of which answer 404, so they say so until the web API's quiz is wired
-   * in. No request is made.
-   */
-  private chapterQuizUnavailable(): void {
-    this.notification.info(CHAPTER_QUIZ_UNAVAILABLE.title, CHAPTER_QUIZ_UNAVAILABLE.body);
-  }
-
-  // ─── Private helpers ──────────────────────────────────────────────────────
-
-  private hydrateFromArray(list: MicroLearningReel[]): void {
-    const normalized = list.map((reel) => this.normalize(reel));
-    this.detailsList.set(normalized);
-    const pending = this.pendingDetails;
-    if (pending) {
-      this.pendingDetails = null;
-      this.applyCourseDetails(pending);
+    try {
+      return await pending;
+    } catch (error) {
+      this.details.delete(key);
+      this.logger.error('[MicroLearningCourse] course-detail read failed', error);
+      const { title, body } = REEL_PLAYER_COPY.readFailed;
+      this.notification.error(title, body);
+      return null;
     }
   }
 
-  /** Append a fetched page, skipping reels already loaded (seed-shuffled feeds can overlap). */
-  private hydrateAppend(list: MicroLearningReel[]): void {
-    this.detailsList.update((current) => {
-      const seen = new Set(current.map((r) => r.id));
-      const fresh = list.filter((r) => !seen.has(r.id)).map((reel) => this.normalize(reel));
-      return fresh.length ? [...current, ...fresh] : current;
-    });
+  private async showHtml(title: string, htmlContent: string): Promise<void> {
+    const { HtmlContentDialog } =
+      await import('@features/offerings/dialogs/html-content-dialog/html-content-dialog');
+    this.dialogs.open<HtmlContentDialogData>(HtmlContentDialog, { data: { title, htmlContent } });
   }
 
-  private normalize(reel: MicroLearningReel): MicroLearningReel {
-    // Bookmark first so the local field is canonical — the API can ship
-    // either `added_bookmark` or `is_bookmarked` and we want the UI to only
-    // ever read `added_bookmark`.
-    const bookmarkResolved = reel.added_bookmark ?? reel.is_bookmarked;
-    return {
-      ...reel,
-      added_bookmark: bookmarkResolved,
-      thumbnail_gif: reel.thumbnail_gif ?? '',
-      mobile_thumbnail_gif: reel.mobile_thumbnail_gif ?? '',
-      instructor_details: reel.instructor_details ?? {
-        id: 0,
-        first_name: '',
-        last_name: '',
-      },
-    };
-  }
+  // A contract drift is a backend conversation, so it must reach the logs and
+  // not only the learner's screen.
+  private readonly loadErrorLog = effect(() => {
+    const error = this.loadError();
+    if (error) this.logger.error('[MicroLearningCourse] reels-feed load failed', error);
+  });
 
-  /**
-   * Persist the player's current time (and, on completion, the full duration)
-   * into `last_activity` on the matching reel. Completion is derived from the
-   * 95% threshold in `isReelCompleted` — no separate flag to keep in sync.
-   */
-  private updateLocalProgress(chapterId: number, timeStatus: number, event: ActivityEvent): void {
-    this.detailsList.update((list) =>
-      list.map((reel) => {
-        if (reel.chapter_id !== chapterId) return reel;
-        // On 'completed', snap to full duration so the 95% check is satisfied
-        // even if the player over/under-shoots by a frame.
-        const watched = event === 'completed' ? (reel.total_duration ?? timeStatus) : timeStatus;
-        // Never regress — heartbeats past a seek-back shouldn't drop progress.
-        const next = Math.max(reel.last_activity ?? 0, watched);
-        return { ...reel, last_activity: next };
-      }),
-    );
-  }
-
-  /**
-   * Fetch glossary or per-chapter transcript text from the course-content
-   * endpoint. Pass a `chapter_id` to get that chapter's transcript;
-   * omit it to get the course-level glossary. Caller is responsible for
-   * subscription cleanup (`takeUntilDestroyed`).
-   */
-  fetchCourseContent(
-    params: CourseContentParams,
-    options: { skipErrorNotification?: boolean } = {},
-  ): Observable<CourseContentResponse> {
-    const requestOptions: { params: CourseContentParams; context?: HttpContext } = { params };
-    if (options.skipErrorNotification) {
-      requestOptions.context = new HttpContext().set(SKIP_ERROR_NOTIFICATION, true);
-    }
-    return this.http.get<CourseContentResponse>(
-      MASTERCLASS_ROUTES.getCourseContent.path,
-      requestOptions,
-    );
-  }
+  private readonly pageErrorLog = effect(() => {
+    const error = this.pageResource.error();
+    if (error) this.logger.error('[MicroLearningCourse] next feed page failed', error);
+  });
 }

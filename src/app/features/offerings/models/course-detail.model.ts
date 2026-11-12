@@ -35,11 +35,11 @@ import {
 
 /**
  * The offerings `CourseDetailFacade` serves: those whose courses the web
- * `course-detail/` route answers. Masterclass and podcast (a course with
- * `course_type: "podcast"`, MIL-177) share every route; micro-learning joins
- * when the backend ships its web routes.
+ * `course-detail/` route answers. Masterclass, podcast (a course with
+ * `course_type: "podcast"`, MIL-177) and reels (`nano_learning` /
+ * `micro_learning`, MIL-182: the reel player's About panel) share every route.
  */
-export type CourseOffering = 'masterclass' | 'podcast';
+export type CourseOffering = 'masterclass' | 'podcast' | 'reels';
 
 /** What differs per offering: its routes, its URL segment and its analytics name. */
 export interface CourseDetailApi {
@@ -78,7 +78,7 @@ export interface CourseDetailApi {
   /** The course page's URL segment: `/:country/:profession/<segment>/:id/:slug`. */
   urlSegment: string;
   /** The offering's name in the mode picker: "Choose Your <name> Mode". */
-  modeLabel: 'Masterclass' | 'Podcast';
+  modeLabel: 'Masterclass' | 'Podcast' | 'Micro Learning';
 }
 
 /** A course's id and slug, as the route (or a card) carries them. */

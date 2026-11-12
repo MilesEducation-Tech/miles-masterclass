@@ -168,6 +168,8 @@ const WEB_COURSE_ROUTES: Omit<CourseDetailApi, 'urlSegment' | 'modeLabel'> = {
 export const COURSE_DETAIL_API: Record<CourseOffering, CourseDetailApi> = {
   masterclass: { ...WEB_COURSE_ROUTES, urlSegment: 'masterclass', modeLabel: 'Masterclass' },
   podcast: { ...WEB_COURSE_ROUTES, urlSegment: 'podcast', modeLabel: 'Podcast' },
+  // A reel is a course of type `nano_learning` or `micro_learning` (UAT, 2026-11-12).
+  reels: { ...WEB_COURSE_ROUTES, urlSegment: 'micro-learning', modeLabel: 'Micro Learning' },
 };
 
 /**
