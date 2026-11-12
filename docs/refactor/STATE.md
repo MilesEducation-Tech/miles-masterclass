@@ -7,8 +7,44 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- 🟡 **2026-11-12, NON-REFACTOR — MIL-181 (story 1 of the reels epic), the reels landing page: old binding removed,
-  rebound to the new Postman collection. DONE, UNCOMMITTED** (`prompts/reels-landing-binding.md`), on
+- 🟡 **2026-11-12, NON-REFACTOR — MIL-182 (story 2 of the reels epic, PR A of 2), the reel player: old binding
+  removed, rebound to the new Postman collection. DONE, UNCOMMITTED** (`prompts/reels-player-binding.md`), on
+  `feat/MIL-182-reels-player-binding`, cut from MIL-181 and rebased onto `master` (`1f489408`) after #254 merged.
+  Split decided by the user (2026-11-12): PR B (progress, CPE / Preview, the server's step button) gets its own
+  ticket.
+  - **Removed (the old binding):** the legacy feed and reel reads (numeric ids, cursor paging), the landing
+    hand-off, `myClassActivity` progress, `setCpeMode`, `getCourseContent`, `FeatureFacade.getAbout` and the legacy
+    About, `Utils.toggleBookmarkCourse` from the player, the client-side rules (`deriveActionStatus`, 95 %
+    `isReelCompleted`, the details merge), the 60-second preview, `MicroLearningReel` / `ActionStatus` /
+    `NANO_LEARNING_*`, `CHAPTER_QUIZ_UNAVAILABLE`, and the commented-out episode grid (deleted).
+  - **Rebound:**
+    - New `models/reel.model.ts` (`Reel`, `ReelChapter`, `ReelUserState`, guards, `parseReelFeed` /
+      `parseReelAnchor`) and `constants/reels.ts` (`REEL_COURSE_TYPES`, which `LIBRARY_OFFERINGS.reels` now uses,
+      the feed URL, the access and player copy).
+    - `MicroLearningCourseFacade` rewritten: `reels-feed/<uuid>/` then `?page=n` as `httpResource`s (`pre_login`
+      on the server, `post_login` in the browser), old numeric links through `about-course/?slug=`, URL sync,
+      access (`guest` / `locked` / `open` from `course_is_locked`), trailer vs stream, sign-in / subscription
+      dialog, bookmark (`MasterclassBookmarks`), share, Transcript / Glossary from an on-demand `course-detail/`.
+    - The reel card injects the facade and takes only its reel; the page stops relaying outputs.
+    - About panel: its own `CourseDetailFacade` connected to `reels` (`COURSE_DETAIL_API.reels`,
+      `CourseOffering` + `'reels'`), rendering `MasterclassCourseAbout`.
+    - The reel menu was never positioned (no `absolute` on the portalled `ngpMenu`): fixed.
+    - The rail's cart button (a plan-page link on excluded / individually sold reels) is removed, with its rule
+      and model keys: the cart is out of scope for now (user, 2026-11-12).
+  - **Verified (dev 4101, Playwright, English):** 37 checks green.
+    - Signed out, live UAT: the reel in the server HTML; anchor first then the rest; the trailer plays under
+      "Sign in to watch this reel"; sign-in and back to the same reel; bookmark → sign-in; share; About (reads
+      `course-detail/`); "No transcript / glossary" notices; next moves the URL; an old numeric link opens the
+      reel on its UUID; an unknown id says so.
+    - Signed in, stubbed: `post_login` feed; locked → "Subscribe to watch" → the subscription dialog; a failed
+      feed → Try again; page 2 read and appended; bookmark posts the UUID and flips; entitled → the stream (not the
+      trailer), no overlay, Preview tag, Play; Transcript and Glossary show their text.
+    - MIL-181's 38 and MIL-177's 34 re-run green; 375 / 768 / 1440, no sideways scroll.
+  - Gates: tsc ✔, lint 0 errors (97 warnings), structure ✔ (pruned: the player page's relative imports),
+    build:prod ✔ (1.01 MB / 230.49 kB, only `ai-labs.css`).
+
+- ✅ **2026-11-12, NON-REFACTOR — MIL-181 (story 1 of the reels epic), the reels landing page: old binding removed,
+  rebound to the new Postman collection. MERGED as #254 (`1f489408`)** (`prompts/reels-landing-binding.md`), on
   `feat/MIL-181-reels-landing-binding` off `master` (`bd153073`, 4.2.0). The epic, its four tickets and the reel
   access rules (user, 2026-11-12: a reel the learner can't watch plays its trailer; signed out → sign in, signed in
   without access → subscribe, entitled → the full reel) are at the end of the plan.
@@ -7101,6 +7137,8 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-11-12 · NON-REFACTOR · **MIL-182 PR A, reel player** (uncommitted): old binding removed, `reel.model.ts`, facade rewritten on `reels-feed/`, access (trailer + sign-in / subscribe), bookmark, share, About (own `CourseDetailFacade`, `COURSE_DETAIL_API.reels`), Transcript / Glossary, menu position fixed · 37 Playwright checks green + MIL-181's 38 and MIL-177's 34 re-run · lint 0 errors (97 warnings), structure ✔ (pruned), build:prod ✔ (230.49 kB) · split agreed: PR B (progress, mode, step button) on its own ticket
+- 2026-11-12 · NON-REFACTOR · **MIL-181 merged as #254 (`1f489408`)**; MIL-182 rebased onto `master` (no commits of its own yet); reel player plan written (`prompts/reels-player-binding.md`), awaiting approval and the split decision
 - 2026-11-12 · NON-REFACTOR · **MIL-181 reels landing page** (uncommitted): old binding removed, `LIBRARY_OFFERINGS.reels` (`courseTypes`, `learnerRows: 'reels-activity'`), `reels-activity/` read, vertical `MasterclassCourseCard` with `pathSegment`, page rebuilt · 38 Playwright checks green + MIL-176's 33 and MIL-179's 37 re-run · lint 0 errors (97 warnings), structure ✔ (pruned), build:prod ✔ (1.01 MB / 230.35 kB) · MIL-178 merged as #251 (`ec1be371`), podcast epic done
 - 2026-11-10 · NON-REFACTOR · **MIL-177 merged as #250 (`6e370561`)**; MIL-178 rebased onto `master`: the old MIL-179, MIL-176 and MIL-177 commits dropped (their conflicts resolved to `master`'s side), one STATE.md conflict on its own entry (both sides kept), code unchanged, PR next
 - 2026-11-10 · NON-REFACTOR · **MIL-176 merged as #248 (`f90131d1`)**; MIL-177 rebased onto `master`: the old MIL-179 and MIL-176 commits dropped (their conflicts resolved to `master`'s side), one STATE.md conflict on its own entry (both sides kept), code unchanged, PR next
