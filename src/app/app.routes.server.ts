@@ -37,6 +37,19 @@ export const serverRoutes: ServerRoute[] = [
     path: ':country/:profession_type/podcast/:courseId/:courseTitle/feedback',
     renderMode: RenderMode.Client,
   },
+  // And under a reel (MIL-183): a reel is a one-chapter course on the web API.
+  {
+    path: ':country/:profession_type/micro-learning/:courseId/:courseTitle/final-assessment/:sessionId/exam',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: ':country/:profession_type/micro-learning/:courseId/:courseTitle/final-assessment/report',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: ':country/:profession_type/micro-learning/:courseId/:courseTitle/feedback',
+    renderMode: RenderMode.Client,
+  },
   {
     path: ':country/:profession_type/cpe-tracker',
     renderMode: RenderMode.Client,

@@ -5,6 +5,7 @@ import {
   DOCUMENT,
   effect,
   inject,
+  Injector,
   linkedSignal,
   PLATFORM_ID,
   Service,
@@ -13,7 +14,7 @@ import {
   untracked,
 } from '@angular/core';
 import { Router, UrlSegment } from '@angular/router';
-import { NgpDialogManager } from 'ng-primitives/dialog';
+import { NgpDialogManager, NgpDialogRef } from 'ng-primitives/dialog';
 import { firstValueFrom } from 'rxjs';
 import { SKIP_ERROR_NOTIFICATION, SKIP_LOADING } from '@core/models/http.model';
 import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
@@ -26,6 +27,7 @@ import { withPreviousValue } from '@core/utils/with-previous-value';
 import { VideoSource } from '@shared/components/video-js/video-js';
 import { detectVideoMimeType, Utils } from '@shared/services/utils';
 import {
+  CERTIFICATE_COPY,
   CHAPTER_COPY,
   COURSE_DETAIL_API,
   COURSE_DETAIL_CHAPTERS_PAGE_SIZE,
@@ -40,8 +42,8 @@ import {
   REEL_MODE_COPY,
   REEL_PLAYER_COPY,
   REEL_PROGRESS_CLEARED,
+  REEL_STEP_COPY,
   REEL_STEP_LABELS,
-  REEL_STEP_UNAVAILABLE,
   REELS_FEED_PAGE_SIZE,
   REELS_FEED_URL,
 } from '@features/offerings/constants/reels';
@@ -58,6 +60,7 @@ import {
 } from '@features/offerings/models/course-detail.model';
 import { MicroLearningOptionId } from '@features/offerings/models/micro-learning-course.model';
 import {
+  MicroLearningQuizDialogData,
   parseCourseModeResult,
   parseReelAnchor,
   parseReelFeed,
@@ -65,10 +68,14 @@ import {
   ReelAccess,
   ReelButtonAction,
   ReelFeedPage,
+  ReelPendingStep,
   ReelRequest,
   ReelRouteParams,
+  ReelStep,
   ReelUserState,
 } from '@features/offerings/models/reel.model';
+import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
+import { FinalAssessmentFacade } from '@features/offerings/services/final-assessment-facade';
 // Type-only: both dialogs load with `import()` when opened (AGENTS.md §4.4).
 import type { HtmlContentDialogData } from '@features/offerings/dialogs/html-content-dialog/html-content-dialog';
 
@@ -99,6 +106,12 @@ const saveKey = (update: CourseProgressUpdate): string =>
  * `course-mode/`; in CPE mode the button follows the server's next step
  * (`action_status`), re-read once a reel is watched to its end.
  *
+ * The steps after a reel are the course pages' own: the chapter quiz in a
+ * pop-up over the player, and the final assessment, its report and the course
+ * evaluation on the pages under the reel. The reel's route provides the course
+ * read and the final assessment they share; this facade connects that read to
+ * a reel only when a step needs it.
+ *
  * Route-scoped: the player's route lists it in `providers`. The page and the
  * reel cards inject it, read its signals and call its methods; none of them
  * calls the API.
@@ -116,7 +129,11 @@ export class MicroLearningCourseFacade {
   private readonly location = inject(Location);
   private readonly utils = inject(Utils);
   private readonly document = inject(DOCUMENT);
+  private readonly injector = inject(Injector);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  // From the reel's route, shared with the exam, report and evaluation pages.
+  private readonly detail = inject(CourseDetailFacade);
+  private readonly assessment = inject(FinalAssessmentFacade);
 
   // ─── The reel in the URL ──────────────────────────────────────────────────
 
@@ -292,8 +309,25 @@ export class MicroLearningCourseFacade {
   /** Follow the reel in the page's URL; called once, from the page's constructor. */
   connect(params: Signal<ReelRouteParams>): void {
     this.params.set(params);
+    // Back from a page after the player (the exam, its report, feedback): what
+    // happened there moved the reel's next step, which the feed doesn't know yet.
+    this.returning.set(this.away);
     this.away = false;
   }
+
+  /** The page came back after `leave()`: the reel in the URL is re-read once the feed is in. */
+  private readonly returning = signal(false);
+
+  private readonly refreshOnReturn = effect(() => {
+    const id = this.openedId();
+    if (!this.returning() || !id || this.anchorResource.isLoading()) return;
+    const reel = this.reels().find((item) => item.id === id);
+    if (!reel) return;
+    untracked(() => {
+      this.returning.set(false);
+      void this.refreshReel(reel);
+    });
+  });
 
   reload(): void {
     if (this.legacyIdResource.error()) this.legacyIdResource.reload();
@@ -467,18 +501,147 @@ export class MicroLearningCourseFacade {
       case 'rewatch':
         this.restart(reel);
         return;
-      case 'step': {
-        // The quiz, the exam, feedback and the certificate come with the next story.
-        const { title, body } = REEL_STEP_UNAVAILABLE;
-        this.notification.info(title, body);
+      case 'step':
+        this.runStep(reel);
         return;
-      }
     }
+  }
+
+  /** The button waits: a mode switch, a step waiting for its course read, a sitting starting. */
+  isBusy(reel: Reel): boolean {
+    return (
+      this.modePending() === reel.id ||
+      this.pendingStep()?.reelId === reel.id ||
+      (this.assessment.starting() && this.stepReel()?.id === reel.id)
+    );
   }
 
   /** Play the reel from the beginning: its card seeks to 0 and plays. */
   private restart(reel: Reel): void {
     this.restartRequest.set({ id: reel.id, token: ++this.requestToken });
+  }
+
+  // ─── The steps after a reel ───────────────────────────────────────────────
+  // The quiz and the exam are the course pages' own, on the course read and the
+  // final assessment the reel's route provides. Feedback is a page under the
+  // reel, and the certificate a link the feed already sends.
+
+  /** The reel the course read follows: the last one a quiz or exam was asked on. */
+  private readonly stepReel = signal<Reel | null>(null);
+
+  private readonly stepParams = computed(() => {
+    const reel = this.stepReel();
+    return { courseId: reel?.id, slug: reel?.slug };
+  });
+
+  /** A quiz or exam asked, waiting for its reel's course read. */
+  private readonly pendingStep = signal<ReelPendingStep | null>(null);
+
+  /** The reel whose quiz is open over the player; its card pauses. */
+  readonly quizOpenFor = signal<string | null>(null);
+
+  private quizRef: NgpDialogRef | null = null;
+
+  /** The server's next step, from the reel's button. */
+  private runStep(reel: Reel): void {
+    switch (reel.user_state.action_status) {
+      case 'TAKE_QUIZ':
+        this.askStep(reel, 'quiz');
+        return;
+      case 'TAKE_EXAM':
+      case 'RETAKE_EXAM':
+        this.askStep(reel, 'exam');
+        return;
+      case 'FEEDBACK':
+        // Back to this reel after: the shared page's own redirect reads the
+        // router's URL, which a swipe has left behind.
+        void this.router.navigate([this.reelPath(reel), 'feedback'], {
+          queryParams: { redirect: this.reelPath(reel) },
+        });
+        return;
+      case 'DOWNLOAD':
+        this.downloadCertificate(reel);
+        return;
+    }
+  }
+
+  /**
+   * Read the reel's `course-detail/` for a quiz (its chapter) or the exam (its
+   * rules), then run the step. Connected here rather than on load, so the player
+   * never reads it unasked, and so it follows the player again after the exam
+   * page connected it to its own URL. A second step on the same reel reads it
+   * again: the feed and this read are two sources, and a stale mode or quiz
+   * flag would close the quiz as soon as it opened.
+   */
+  private askStep(reel: Reel, step: ReelStep): void {
+    if (this.pendingStep() || this.quizOpenFor()) return;
+    this.detail.connect('reels', this.stepParams);
+    if (this.stepReel()?.id === reel.id) this.detail.reload();
+    else this.stepReel.set(reel);
+    this.pendingStep.set({ reelId: reel.id, step });
+  }
+
+  private readonly runPendingStep = effect(() => {
+    const pending = this.pendingStep();
+    if (!pending || this.detail.isLoading()) return;
+    const ready = this.detail.course()?.id === pending.reelId;
+    const failed = !!this.detail.loadError() || this.detail.notFound();
+    if (!ready && !failed) return;
+    untracked(() => {
+      this.pendingStep.set(null);
+      const reel = this.current(pending.reelId);
+      if (!ready || !reel) {
+        const { title, body } = REEL_STEP_COPY.unavailable;
+        this.notification.error(title, body);
+      } else if (pending.step === 'quiz') {
+        void this.openQuiz(reel);
+      } else {
+        // The rules, a sitting, then the exam page under the reel; a refusal toasts.
+        void this.assessment.start();
+      }
+    });
+  });
+
+  /** The chapter quiz in a pop-up over the reel, opened with this route's injector. */
+  private async openQuiz(reel: Reel): Promise<void> {
+    if (this.quizOpenFor()) return;
+    this.quizOpenFor.set(reel.id);
+    try {
+      const { MicroLearningQuizDialog } =
+        await import('@features/offerings/micro-learning/dialogs/micro-learning-quiz-dialog/micro-learning-quiz-dialog');
+      if (this.away) {
+        this.quizOpenFor.set(null);
+        return;
+      }
+      const ref = this.dialogs.open<MicroLearningQuizDialogData>(MicroLearningQuizDialog, {
+        injector: this.injector,
+        data: { chapterId: reel.chapter.id },
+      });
+      this.quizRef = ref;
+      // However it closes (Watch again, on to the exam, ×, Esc), the reel's next step moved.
+      ref.afterClosed.subscribe(() => {
+        if (this.quizRef === ref) this.quizRef = null;
+        this.quizOpenFor.set(null);
+        void this.refreshReel(reel);
+      });
+    } catch (error) {
+      this.logger.error('[MicroLearningCourse] quiz dialog failed to load', error);
+      this.quizOpenFor.set(null);
+      const { title, body } = REEL_STEP_COPY.unavailable;
+      this.notification.error(title, body);
+    }
+  }
+
+  /** The feed's certificate link, in a new tab inside the click so no popup blocker stops it. */
+  private downloadCertificate(reel: Reel): void {
+    const url = reel.user_state.certificate_url;
+    if (url) {
+      this.document.defaultView?.open(url, '_blank', 'noopener');
+      return;
+    }
+    const { title, body } = CERTIFICATE_COPY.notReady;
+    this.notification.info(title, body);
+    void this.refreshReel(reel);
   }
 
   // ─── CPE / Preview ────────────────────────────────────────────────────────
@@ -572,6 +735,8 @@ export class MicroLearningCourseFacade {
     this.queueSave();
     this.tracker = null;
     this.away = true;
+    // Dialogs don't close on navigation in this app; the quiz belongs to the player.
+    this.quizRef?.close();
   }
 
   /** The player's clock. Only a reel the learner may watch is tracked; its first play starts it. */
@@ -602,12 +767,18 @@ export class MicroLearningCourseFacade {
   /**
    * The reel played to its end (CPE mode; Preview loops). The save goes first,
    * then the reel is re-read, so its button moves on to the server's next step.
+   * When that step is the quiz and the reel is still on screen, the quiz opens,
+   * as it does at the end of a chapter.
    */
   async videoEnded(reel: Reel): Promise<void> {
     if (this.tracker?.reelId !== reel.id) return;
     this.queueSave();
     await this.drain();
     await this.refreshReel(reel);
+    const now = this.current(reel.id);
+    if (!this.away && now && this.isActive(now) && now.user_state.action_status === 'TAKE_QUIZ') {
+      this.askStep(now, 'quiz');
+    }
   }
 
   /** Where the reel resumes: the saved playhead, unless it was watched to the end. */

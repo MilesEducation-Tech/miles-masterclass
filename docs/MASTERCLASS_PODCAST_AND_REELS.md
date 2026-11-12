@@ -200,13 +200,23 @@ the vertical trailer with a sign-in / subscribe message, with access `chapter.hl
 furthest point played straight through). "Watch in CPE mode" posts `course-mode/ cpe`. In CPE mode the button shows
 the server's `action_status`, re-read once a reel is watched to its end.
 
+**The steps after a reel are rebound (MIL-183).** The reel's route is podcast's course tree: `data: { offering:
+'reels' }`, the four shared course facades, and the shared exam, report and evaluation pages under
+`/micro-learning/<uuid>/<slug>/`. The button runs the server's step:
+
+- Take Quiz opens the chapter quiz (`quiz-questions/`, `quiz-submit/`) in a pop-up over the player, on the chapter
+  page's own facades. It also opens by itself when a CPE reel ends with `TAKE_QUIZ`.
+- Take / Retake Final Assessment starts a sitting (`assessment-start/`) and opens the exam page.
+- Submit Feedback opens the evaluation page with a `redirect` back to the reel.
+- Download Certificate opens `user_state.certificate_url`.
+
+The quiz and the exam read the reel's `course-detail/` first, only when asked. The reel is re-read after each
+step and when the player comes back from those pages. The plan is `prompts/reels-learning-steps.md`.
+
 **Still to rebind**
 
-- Story 3, the steps after a reel: the chapter quiz (`quiz-questions/`, `quiz-submit/`), the final assessment,
-  report and feedback on the shared pages, and the certificate (`user_state.certificate_url`). Until then Take
-  Quiz, Take Final Assessment, Retake, Submit Feedback and Download Certificate say "This step isn't available
-  yet." (Rewatch already restarts the reel), and the reel's `feedback` route still uses the legacy
-  `FeedbackFacade` (`feedback-category/`, `user-feedback/*`).
+- The clean-up Task (MIL-184): the legacy reels code nothing calls any more, including the micro-learning and
+  nano branch of the legacy `course-feedback` page (webinar still uses that page).
 - `toApiCourseType` (`Utils`) still folds `nano_learning` into `micro_learning` for the legacy cards.
 - `core/models/nano-learning.model.ts` is an empty file (the clean-up Task removes it).
 

@@ -75,8 +75,8 @@ export const masterclassRoutes: Route[] = [
           ),
       },
       {
-        // The course evaluation on the web API; podcast, micro-learning and
-        // webinar keep the legacy `course-feedback` page until their own rebinds.
+        // The course evaluation on the web API, as under a podcast and a reel;
+        // webinar keeps the legacy `course-feedback` page until its own rebind.
         path: 'feedback',
         canMatch: [authGuard],
         loadComponent: () =>

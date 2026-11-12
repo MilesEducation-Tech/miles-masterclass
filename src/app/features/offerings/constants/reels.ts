@@ -49,10 +49,9 @@ export const REEL_STEP_LABELS: Readonly<Record<ReelActionStatus, string>> = {
   DOWNLOAD: 'Download Certificate',
 };
 
-/** What the steps after a reel say until their story builds them (the quiz, the exam, feedback, the certificate). */
-export const REEL_STEP_UNAVAILABLE = {
-  title: 'Coming soon',
-  body: "This step isn't available yet.",
+/** A step whose `course-detail/` read failed, so the quiz or the exam couldn't open. */
+export const REEL_STEP_COPY = {
+  unavailable: { title: "Couldn't open this step", body: 'Please try again.' },
 } as const;
 
 /** A reel's state after a mode switch that erased its progress (`progress_reset`). */

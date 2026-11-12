@@ -7,10 +7,36 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- 🟡 **2026-11-12, NON-REFACTOR — MIL-185 (story 2 of the reels epic, PR B of 2), the reel player's progress, CPE /
-  Preview mode and the server's next-step button. DONE, UNCOMMITTED** (`prompts/reels-player-binding.md`, "As
-  built: PR B"), on `feat/MIL-185-reels-progress-mode`, cut from MIL-182; PR A merged as #256 (`bdcb7c2f`), so
-  this branch is rebased onto `master` next (its old MIL-182 commits drop) and its PR opened after.
+- 🟡 **2026-11-12, NON-REFACTOR — MIL-183 (story 3 of the reels epic), the steps after a reel: old binding removed,
+  rebound to the new Postman collection. DONE, PR AGAINST `master`** (`prompts/reels-learning-steps.md`, "As
+  built"), on `feat/MIL-183-reels-learning-steps`, cut from MIL-185 and rebased onto `master` after #257 merged
+  (`60afbacb`).
+  - **Removed:** the "Coming soon" placeholder on the reel's step button (`REEL_STEP_UNAVAILABLE`) and the reel's
+    legacy `feedback` route (`FeedbackFacade`, `pages/course-feedback`; webinar still uses them).
+  - **Routes:** the reel's `:courseId/:courseTitle` is podcast's course tree: `data: { offering: 'reels' }`, the
+    four shared course facades, and the shared exam, report and evaluation pages under `/micro-learning/…`; three
+    `RenderMode.Client` entries.
+  - **The button runs the server's step:**
+    - Take Quiz opens the chapter quiz in a pop-up (`MicroLearningQuizDialog`: `ChapterQuiz` on its own
+      `CourseChapterFacade` + `CourseChapterQuizFacade`), and it opens by itself when a CPE reel ends with
+      `TAKE_QUIZ`.
+    - Take / Retake Final Assessment starts a sitting and opens the exam.
+    - Submit Feedback opens the evaluation page with a `redirect` back to the reel.
+    - Download Certificate opens `user_state.certificate_url`.
+    - The quiz and the exam read the reel's `course-detail/` first, only when asked. The reel is re-read after
+      each step and on coming back to the player.
+  - **Verified (dev 4101, Playwright, English):** 48 checks green on stubs (UAT has no quiz or exam data for
+    reels). MIL-185's 26 (its placeholder check now expects the hand-off), MIL-182's 37 and MIL-177's 34 re-run
+    green; 375 / 768 / 1440.
+  - Gates: tsc ✔, lint 0 errors (97 warnings), structure ✔, build:prod ✔ (1.01 MB / 230.47 kB, only
+    `ai-labs.css`; the quiz frame is a 1.5 kB lazy chunk).
+  - `AGENTS.md` §5: the reel row now describes `reel.model.ts`, and the assessment row `final-assessment.model.ts`
+    with one `:sessionId` exam route for every offering.
+
+- ✅ **2026-11-12, NON-REFACTOR — MIL-185 (story 2 of the reels epic, PR B of 2), the reel player's progress, CPE /
+  Preview mode and the server's next-step button. MERGED as #257 (`60afbacb`)** (`prompts/reels-player-binding.md`, "As
+  built: PR B"), on `feat/MIL-185-reels-progress-mode`, rebased onto `master` after PR A merged as #256
+  (`bdcb7c2f`).
   - **Progress:** a reel's first play sends `chapter-start/` (once per visit) and, with no mode yet,
     `course-mode/ preview` without a toast; then the chapter page's tracker (play vs seek, the furthest point,
     whole seconds) saves to `course-progress-update/` every 15 s of play, on pause, at the end, on switching
@@ -7163,6 +7189,8 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-11-12 · NON-REFACTOR · **MIL-185 merged as #257 (`60afbacb`)**; MIL-183 rebased onto `master` (the two MIL-185 commits drop, the squash matches their tree), its PR opened against `master`
+- 2026-11-12 · NON-REFACTOR · **MIL-183 reel learning steps** (uncommitted, cut from MIL-185 / #257): reel route → podcast's course tree (`offering: 'reels'`, shared facades, exam / report / evaluation), quiz pop-up on the chapter facades, exam start, feedback with `redirect`, certificate link, re-read after each step and on return; placeholder and legacy feedback route removed · 48 Playwright checks green + MIL-185 / 182 / 177 re-run · lint 0 errors (97 warnings), structure ✔, build:prod ✔ (230.47 kB)
 - 2026-11-12 · NON-REFACTOR · **MIL-182 merged as #256 (`bdcb7c2f`)** · **MIL-185 reel progress and mode** (uncommitted, cut from MIL-182, rebase onto `master` next): `chapter-start/` + Preview on first play, `course-progress-update/` tracker, `course-mode/` CPE switch, server `action_status` button, re-read at the end, `leave()` from the page · 26 Playwright checks green + MIL-182's 37 re-run · lint 0 errors (97 warnings), structure ✔, build:prod ✔ (230.48 kB)
 - 2026-11-12 · NON-REFACTOR · **MIL-182 PR A, reel player** (uncommitted): old binding removed, `reel.model.ts`, facade rewritten on `reels-feed/`, access (trailer + sign-in / subscribe), bookmark, share, About (own `CourseDetailFacade`, `COURSE_DETAIL_API.reels`), Transcript / Glossary, menu position fixed · 37 Playwright checks green + MIL-181's 38 and MIL-177's 34 re-run · lint 0 errors (97 warnings), structure ✔ (pruned), build:prod ✔ (230.49 kB) · split agreed: PR B (progress, mode, step button) on its own ticket
 - 2026-11-12 · NON-REFACTOR · **MIL-181 merged as #254 (`1f489408`)**; MIL-182 rebased onto `master` (no commits of its own yet); reel player plan written (`prompts/reels-player-binding.md`), awaiting approval and the split decision
