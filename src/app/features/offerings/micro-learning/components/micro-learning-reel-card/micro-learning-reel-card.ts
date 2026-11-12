@@ -100,8 +100,8 @@ export class MicroLearningReelCard {
     return this.hasStarted() || this.facade.resumeAt(this.reel()) > 0 ? 'Resume' : 'Play';
   });
 
-  /** The reel's mode switch is in flight. */
-  protected readonly buttonBusy = computed(() => this.facade.modePending() === this.reel().id);
+  /** A mode switch, or a step on this reel, is in flight. */
+  protected readonly buttonBusy = computed(() => this.facade.isBusy(this.reel()));
 
   /** The CPE / Preview tag, from the learner's mode on the reel; none before a mode is chosen. */
   protected readonly modeTag = computed<{ label: string; classes: string } | null>(() => {
@@ -156,6 +156,14 @@ export class MicroLearningReelCard {
       const player = this.videoPlayer();
       if (!player) return;
       untracked(() => (isActive ? player.play() : player.pause()));
+    });
+
+    // The quiz opens over the reel: it pauses. Closing the quiz doesn't play it
+    // again, since a CPE reel that had ended would start over from 0.
+    effect(() => {
+      const held = this.facade.quizOpenFor() === this.reel().id;
+      const player = this.videoPlayer();
+      if (held && player) untracked(() => player.pause());
     });
 
     // Start again from the beginning when the facade asks (a CPE switch, Rewatch).

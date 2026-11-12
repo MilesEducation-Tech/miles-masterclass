@@ -127,6 +127,20 @@ export interface CourseModeResult {
 /** What the reel's main button does, decided from its access, mode and next step. */
 export type ReelButtonAction = 'unlock' | 'cpe' | 'play' | 'rewatch' | 'step';
 
+/** A step that needs the reel's `course-detail/` first: the quiz (its chapter) or the exam (its rules). */
+export type ReelStep = 'quiz' | 'exam';
+
+/** A step asked on a reel, waiting for that reel's `course-detail/` read. */
+export interface ReelPendingStep {
+  reelId: string;
+  step: ReelStep;
+}
+
+/** The quiz pop-up's data: the reel's one chapter, whose quiz it opens. */
+export interface MicroLearningQuizDialogData {
+  chapterId: string;
+}
+
 // ---- Trust boundary --------------------------------------------------------
 //
 // Every key the player reads is checked; extra keys pass. A missing or retyped
