@@ -182,16 +182,20 @@ So nothing podcast- or reel-shaped can be verified end to end until the backend 
 feedback onto the shared course facades (`COURSE_DETAIL_API.podcast`). MIL-178 removed the legacy code they used.
 The plans are `prompts/podcast-landing-binding.md` and `prompts/podcast-course-chapter-binding.md`.
 
-The micro-learning pages have **not been rebound**: every read and write they make goes to the legacy API, which
-answers 404 on UAT (`prompts/envelope-fallout.md`). What a rebind has to change:
+**The reels landing page is rebound (MIL-181).** It runs on `MasterclassLibraryFacade` connected to `reels`
+(`course_type=nano_learning,micro_learning`): the tracks from `tracks-page/`, Continue Watching, My List and the
+mastered reels from `reels-activity/`, Coming Soon from `coming-soon/`. The plan, with the rest of the reels epic
+and the reel access rules, is `prompts/reels-landing-binding.md`.
+
+The reel player, its quiz, final assessment and feedback have **not been rebound**: every read and write they make
+goes to the legacy API, which answers 404 on UAT (`prompts/envelope-fallout.md`). What their rebind has to change:
 
 **Legacy routes still called**
 
 - Reels: `v2/nano-learning/` and `v2/nano-learning/<id>/` with cursor paging, `chapter-quiz`,
   `v2/library/:id/about/` (in `features/offerings/services/micro-learning-course-facade.ts`).
-- Also for reels:
-  - `feedback-category/`, `user-feedback/*` (`feedback-facade.ts`, which always sends `master_class__id`)
-  - the landing page's `FeatureFacade` feeds (`v2/dashboard/`, `v2/user/*`, `v2/tracks/…`)
+- Also for reels: `feedback-category/`, `user-feedback/*` (`feedback-facade.ts`, which always sends
+  `master_class__id`).
 
 **Model and id mismatches**
 
@@ -228,12 +232,12 @@ answers 404 on UAT (`prompts/envelope-fallout.md`). What a rebind has to change:
 
 **Links**
 
-- Every web-API card (`MasterclassCourseCard`, the masterclass slider) links to `/masterclass/<uuid>/<slug>`.
-  That includes the course library's Podcast and Micro Learning tabs. Once the backend serves those types, the
-  card has to route by `course_type`: `course` → `masterclass`, `podcast` → `podcast`, and both reel types →
-  `micro-learning`.
-- The micro-learning landing page mixes types: `completed` sends `micro_learning` and the other lists send
-  `nano_learning`.
+- Every web-API card (`MasterclassCourseCard`, the masterclass slider) links to `/masterclass/<uuid>/<slug>`
+  unless the page passes another `pathSegment` (the reels landing page passes `micro-learning`). That includes the
+  course library's Podcast and Micro Learning tabs. Once the backend serves those types, the card has to route by
+  `course_type`: `course` → `masterclass`, `podcast` → `podcast`, and both reel types → `micro-learning`.
+- Until the player is rebound, a reel card opens the player at the reel's UUID, which the player's legacy reads
+  turn into `NaN`.
 
 ## 10. Open questions for the backend
 

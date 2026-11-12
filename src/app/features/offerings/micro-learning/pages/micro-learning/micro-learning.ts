@@ -1,120 +1,126 @@
-import { Component, DestroyRef, ElementRef, PLATFORM_ID, inject, viewChild } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
-import { Observable, Subject, of } from 'rxjs';
-import { catchError, exhaustMap, map } from 'rxjs/operators';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { environment } from '@env/environment';
-import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
-import { ApiClient } from '@core/services/api-client/api-client';
-import { Logger } from '@core/services/logger/logger';
-import {
-  NANO_LEARNING_HANDOFF_KEY,
-  NANO_LEARNING_ROUTES,
-  NanoLearningListResponse,
-  NanoLearningPage,
-} from '@features/offerings/models/micro-learning-course.model';
-import {
-  swiperConfigComingSoon,
-  swiperConfigEven,
-  swiperConfigOdd,
-} from '@core/config/swiper.config';
+import { isPlatformBrowser, NgTemplateOutlet } from '@angular/common';
+import { Component, computed, ElementRef, inject, PLATFORM_ID, viewChild } from '@angular/core';
+import { Router } from '@angular/router';
+import { swiperConfigComingSoon, swiperConfigOdd } from '@core/config/swiper.config';
+import { filterIcon } from '@core/constants/icon';
+import { RAIL_FILTER_EMPTY } from '@core/constants/masterclass';
+import { MasterclassCourse, trackRail } from '@core/models/masterclass-home.model';
+import { MasterclassBookmarks } from '@core/services/masterclass-bookmarks/masterclass-bookmarks';
+import { NgIcon } from '@ng-icons/core';
 import { Carousel } from '@shared/components/carousel/carousel';
-import { Vertical } from '@shared/components/cards/vertical/vertical';
-import { ComingSoon } from '@shared/components/cards/coming-soon/coming-soon';
-import { Utils } from '@shared/services/utils';
-import { MicroLearningHero } from '../../components/micro-learning-hero/micro-learning-hero';
+import { MasterclassCourseCard } from '@shared/components/cards/masterclass-course-card/masterclass-course-card';
 import { Faq } from '@shared/components/faq/faq';
 import { PartnerContentList } from '@shared/components/partner-content-list/partner-content-list';
+import { CourseAiKit } from '@shared/services/course-ai-kit';
+import { MasterclassRailFilter } from '@shared/services/masterclass-rail-filter';
+import { Utils } from '@shared/services/utils';
+import { Button } from '@shared/ui/button/button';
+import { ComingSoonCard } from '@features/offerings/components/coming-soon-card/coming-soon-card';
+import { MicroLearningHero } from '@features/offerings/micro-learning/components/micro-learning-hero/micro-learning-hero';
+import {
+  REELS_COMING_SOON_HEADING,
+  REELS_COMING_SOON_SECTION_ID,
+  REELS_FILTER_CONTENT_TYPE,
+  REELS_PATH_SEGMENT,
+} from '@features/offerings/micro-learning/constants/reels-landing';
+import { MasterclassLibraryFacade } from '@features/offerings/services/masterclass-library-facade';
 
+/**
+ * The reels landing page, on the web API: the hero, then the reel tracks from
+ * `tracks-page/?course_type=nano_learning,micro_learning` (both sides of
+ * sign-in), and signed in Continue Watching above them, My List and the
+ * mastered reels below them (`reels-activity/`) and Coming Soon last. Every row
+ * comes from `MasterclassLibraryFacade`, connected to `reels`, the same service
+ * as the masterclass and podcast pages'. Every rail has a filter over the reels
+ * (`MasterclassRailFilter`), and every card a bookmark.
+ *
+ * No paywall here: every card and the hero open the reel, and the player
+ * decides what plays.
+ */
 @Component({
   selector: 'app-micro-learning',
-  imports: [Carousel, Vertical, ComingSoon, MicroLearningHero, Faq, PartnerContentList],
+  imports: [
+    Button,
+    Carousel,
+    ComingSoonCard,
+    Faq,
+    MasterclassCourseCard,
+    MicroLearningHero,
+    NgIcon,
+    NgTemplateOutlet,
+    PartnerContentList,
+  ],
   templateUrl: './micro-learning.html',
 })
 export class MicroLearning {
-  S3_BUCKET_URL = environment.ASSETS.s3Url;
-  readonly feature: FeatureFacade = inject(FeatureFacade);
   private readonly utils = inject(Utils);
-  private readonly platformId = inject(PLATFORM_ID);
-  private readonly http = inject(ApiClient);
-  private readonly logger = inject(Logger);
-  private readonly destroyRef = inject(DestroyRef);
+  private readonly router = inject(Router);
+  private readonly aiKit = inject(CourseAiKit);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
+  protected readonly library = inject(MasterclassLibraryFacade);
+  protected readonly railFilter = inject(MasterclassRailFilter);
+  protected readonly bookmarks = inject(MasterclassBookmarks);
 
   private readonly carouselsRef = viewChild<ElementRef<HTMLElement>>('carousels');
 
-  // Swiper configurations for templates
-  readonly swiperConfigEven = swiperConfigEven;
-  readonly swiperConfigOdd = swiperConfigOdd;
-  readonly swiperConfigComingSoon = swiperConfigComingSoon;
+  constructor() {
+    this.library.connect('reels');
+    this.railFilter.contentType.set(REELS_FILTER_CONTENT_TYPE);
+  }
 
-  filterConfig = {
-    filterEnabled: true,
-  };
+  protected readonly swiperConfigOdd = swiperConfigOdd;
+  protected readonly swiperConfigComingSoon = swiperConfigComingSoon;
+  protected readonly comingSoonHeading = REELS_COMING_SOON_HEADING;
+  protected readonly comingSoonSectionId = REELS_COMING_SOON_SECTION_ID;
+  protected readonly pathSegment = REELS_PATH_SEGMENT;
+  protected readonly filterIcon = filterIcon;
+  protected readonly railFilterEmpty = RAIL_FILTER_EMPTY;
 
-  readonly inprogress = this.feature.getResource('inprogress', 'nano_learning', {
-    requiresAuth: true,
-  });
+  // Every rail through its filter.
+  protected readonly railsAboveTracks = computed(() =>
+    this.railFilter.narrow(this.library.railsAboveTracks()),
+  );
+  protected readonly trackRails = computed(() =>
+    this.railFilter.narrow(this.library.tracks().map(trackRail)),
+  );
+  protected readonly railsBelowTracks = computed(() =>
+    this.railFilter.narrow(this.library.railsBelowTracks()),
+  );
 
-  readonly track = this.feature.getResource('track', 'nano_learning');
-  readonly bookmark = this.feature.getResource('bookmark', 'nano_learning', {
-    requiresAuth: true,
-  });
-  readonly completed = this.feature.getResource('completed', 'micro_learning', {
-    requiresAuth: true,
-  });
-  readonly comingSoon = this.feature.getResource('comingSoon', 'nano_learning');
+  /** A reel's trailer: the 9:16 one, else the 16:9 one. */
+  protected openTrailer(course: MasterclassCourse): void {
+    const url = course.vertical_trailer_url || course.horizontal_trailer_url;
+    void this.utils.openVideoDialog(url, course.title);
+  }
+
+  protected openAiKit(course: MasterclassCourse): void {
+    this.aiKit.open(course);
+  }
 
   /**
-   * Hero CTA stream — `exhaustMap` drops repeated clicks while a request is
-   * in flight so a rapid double-click can't fire two HTTP calls + two
-   * `router.navigate`s. Mirrors `CertificateDownload.perCourseTrigger`.
+   * The hero's "Start Watching": the first reel of the first track, which the
+   * page already has (and the server HTML carries), so it needs no read of its
+   * own. With no tracks, the rows instead.
    */
-  private readonly startWatchingTrigger = new Subject<void>();
-
-  constructor() {
-    this.startWatchingTrigger
-      .pipe(
-        exhaustMap(() => this.fetchFirstPage()),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((page) => {
-        const first = page.reels[0];
-        if (!first) {
-          this.onBrowseLibrary();
-          return;
-        }
-        // Hand the fetched first page to the course page via router state so it
-        // hydrates from it and skips the redundant `v2/nano-learning/:id` call.
-        this.utils.navigateToCourse('micro-learning', first.id, first.title, {
-          [NANO_LEARNING_HANDOFF_KEY]: page,
-        });
-      });
+  protected onStartWatching(): void {
+    const first = this.library.tracks()[0]?.courses[0];
+    if (!first) {
+      this.onBrowseLibrary();
+      return;
+    }
+    void this.router.navigate([
+      '/',
+      this.utils.country(),
+      this.utils.profession(),
+      REELS_PATH_SEGMENT,
+      first.id,
+      first.slug,
+    ]);
   }
 
-  onStartWatching(): void {
-    this.startWatchingTrigger.next();
-  }
-
-  /** Fetch the first page of the reel feed to pick the reel to open. Empty page on error. */
-  private fetchFirstPage(): Observable<NanoLearningPage> {
-    return this.http
-      .get<NanoLearningListResponse>(NANO_LEARNING_ROUTES.getCourseList.path, {
-        params: { cursor: '' },
-      })
-      .pipe(
-        map((res) => ({
-          reels: res?.data ?? [],
-          nextCursor: res?.pagination_data?.next_cursor ?? null,
-        })),
-        catchError((err) => {
-          this.logger.error('MicroLearning.fetchFirstPage failed', err);
-          return of<NanoLearningPage>({ reels: [], nextCursor: null });
-        }),
-      );
-  }
-
-  onBrowseLibrary(): void {
-    if (!isPlatformBrowser(this.platformId)) return;
+  protected onBrowseLibrary(): void {
+    if (!this.isBrowser) return;
     this.carouselsRef()?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }
