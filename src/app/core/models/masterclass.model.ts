@@ -1,4 +1,3 @@
-import { ContentDetails, CourseChapter, FinalAssessmentExamResponse } from './course.model';
 import { CommonResponse, RouteConfig } from './http.model';
 
 /**
@@ -33,91 +32,13 @@ export interface ClaimBadgeResult {
   message?: string;
 }
 
-export interface CourseContentData {
-  course_id: number;
-  course_type: string;
-  glossary_transcript_text: string;
-  chapter: {
-    chapter_id: number;
-    chapter_name: string;
-    transcript_text: string;
-  } | null;
-}
-
-export interface CourseContentResponse {
-  status_code: number;
-  message: string;
-  data: CourseContentData;
-}
-
 export const MASTERCLASS_ROUTES = {
-  getCourseDetails: {
-    path: 'v2/:course_type/details/',
-    method: 'GET',
-  } as RouteConfig<void, CommonResponse<ContentDetails>, {}, { id: number }>,
-
-  getCourseChapter: {
-    path: 'v2/chapters/',
-    method: 'GET',
-  } as RouteConfig<void, CommonResponse<CourseChapter[]>, {}, { id: number; course_type: string }>,
-
-  setCpeMode: {
-    path: 'user/customaction/set_cpe_mode/',
-    method: 'POST',
-  } as RouteConfig<
-    {
-      masterclass_id?: number;
-      podcast_id?: number;
-      nano_learning_id?: number;
-      cpe_mode_status: boolean;
-    },
-    CommonResponse<void>,
-    {},
-    {}
-  >,
-
-  myClassActivity: {
-    path: 'v2/user/myclassactivity/',
-    method: 'POST',
-  } as RouteConfig<
-    { chapter_id: number; time_status: number; event: 'heartbeat' | 'completed' | 'exit' },
-    CommonResponse<void>,
-    {},
-    {}
-  >,
-
-  startFinalAssessment: {
-    path: 'user-assessment/start_assessment/',
-    method: 'POST',
-  } as RouteConfig<
-    void,
-    FinalAssessmentExamResponse,
-    {},
-    {
-      masterclass_id?: number;
-      podcast_id?: number;
-      nano_learning_id?: number;
-      /** AI Lab courses share `nano_learning_id`; this tells the backend which flavour. */
-      course_type?: 'ai_lab';
-    }
-  >,
-
   toggleBookmark: {
     path: 'v2/user/toggle-bookmark/',
     method: 'POST',
   } as RouteConfig<
     { course_id: number; course_type: 'masterclass' | 'podcast' | 'micro_learning' },
     { status: boolean; is_bookmarked: boolean; message: string }
-  >,
-
-  getCourseContent: {
-    path: 'v2/course-content/',
-    method: 'GET',
-  } as RouteConfig<
-    void,
-    CourseContentResponse,
-    {},
-    { id: number; course_type: string; chapter_id?: number }
   >,
 
   downloadCertificate: {
@@ -143,11 +64,6 @@ export const MASTERCLASS_ROUTES = {
     path: 'v2/dashboard/:courseId/additional-resources/',
     method: 'GET',
   } as RouteConfig<void, CommonResponse<AdditionalResourceItem[]>, {}, {}>,
-
-  downloadExerciseFile: {
-    path: 'exercise-files/:id/download/',
-    method: 'GET',
-  } as RouteConfig<void, Blob, {}, { id: number; course_type: string }>,
 
   claimBadge: {
     path: 'user-badges/:id/claim/',

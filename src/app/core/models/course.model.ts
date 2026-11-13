@@ -336,12 +336,6 @@ export interface ContentDetails extends Content {
   attendance_threshold?: number;
 }
 
-export interface FinalAssessmentExamResponse {
-  status_code: boolean;
-  session_id: number;
-  questions: QuizQuestion[];
-}
-
 /**
  * Normalize the bookmark field on an API payload so the rest of the app can
  * read just `added_bookmark`. List endpoints inconsistently ship either

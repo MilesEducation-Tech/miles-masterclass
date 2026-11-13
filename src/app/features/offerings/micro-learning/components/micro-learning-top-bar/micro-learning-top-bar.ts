@@ -1,4 +1,4 @@
-import { Component, input, model, output } from '@angular/core';
+import { Component } from '@angular/core';
 import { Backward } from '@shared/components/backward/backward';
 
 @Component({
@@ -7,13 +7,4 @@ import { Backward } from '@shared/components/backward/backward';
   templateUrl: './micro-learning-top-bar.html',
   host: { class: 'block' },
 })
-export class MicroLearningTopBar {
-  readonly placeholder = input<string>('Shows, Episodes, and More');
-  readonly searchValue = model<string>('');
-
-  readonly filterToggled = output<void>();
-
-  handleFilterClick(): void {
-    this.filterToggled.emit();
-  }
-}
+export class MicroLearningTopBar {}

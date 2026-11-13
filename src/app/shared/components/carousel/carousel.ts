@@ -148,11 +148,7 @@ export class Carousel {
 
   icons = signal({ filterIcon });
   readonly loadMore = output<void>();
-  /**
-   * Emitted after API-mode filter apply. Page bindings forward this to
-   * `FeatureResource.setFilters($event)` (or `setTrackFilters(trackId, $event)`
-   * for the track section).
-   */
+  /** Emitted after API-mode filter apply, with the applied selection. */
   readonly filtersChanged = output<CourseFilterSelection>();
 
   constructor() {

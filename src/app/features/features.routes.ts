@@ -17,11 +17,6 @@ export const featuresRoutes: Route[] = [
   {
     path: '',
     component: DynamicLayout,
-    // FeatureFacade is `providedIn: 'root'` and MUST stay a single app-wide
-    // instance: root-level services (e.g. Utils) inject it to broadcast
-    // bookmark/profile changes via `applyBookmarkChange`/`refreshPersonalized`
-    // to the very resources the offering pages render. Re-providing it here
-    // would fork a route-scoped copy that those broadcasts never reach.
     children: [
       {
         // Home is the signed-out landing page; a signed-in learner starts on the
