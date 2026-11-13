@@ -1,5 +1,15 @@
 # Changelog
 
+## [4.3.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v4.2.0...v4.3.0) (2026-11-13)
+
+
+### Features
+
+* **offerings:** bind the reel player to the web API ([#256](https://github.com/MilesEducation-Tech/miles-masterclass/issues/256)) ([bdcb7c2](https://github.com/MilesEducation-Tech/miles-masterclass/commit/bdcb7c2fd61d0e4d163857589339c5c8e841fe69))
+* **offerings:** bind the reels landing page to the web API ([#254](https://github.com/MilesEducation-Tech/miles-masterclass/issues/254)) ([1f48940](https://github.com/MilesEducation-Tech/miles-masterclass/commit/1f489408321c5bc09922b1e885fdf1b0ab6f3b70))
+* **offerings:** run the reel's quiz, final assessment, feedback and certificate steps ([#258](https://github.com/MilesEducation-Tech/miles-masterclass/issues/258)) ([6a64d86](https://github.com/MilesEducation-Tech/miles-masterclass/commit/6a64d8678fb67daf3f4d8e2376a2231ae77a9fb3))
+* **offerings:** save reel progress and switch CPE mode on the web API ([#257](https://github.com/MilesEducation-Tech/miles-masterclass/issues/257)) ([60afbac](https://github.com/MilesEducation-Tech/miles-masterclass/commit/60afbacbda5a51d0c9d04a11cecd828a26b40f0d))
+
 ## [4.2.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v4.1.0...v4.2.0) (2026-11-10)
 
 
